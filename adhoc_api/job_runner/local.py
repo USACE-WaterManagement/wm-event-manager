@@ -1,24 +1,19 @@
 from .base import JobRunner
-import subprocess
+import docker
 
 
 class LocalJobRunner(JobRunner):
     def run_job(self, office: str, script: str):
-        proc = subprocess.run(
-            [
-                "docker",
-                "run",
-                "--rm",
-                "--env-file",
-                ".env",
-                f"{office}-jobs",
-                "python",
-                f"/jobs/python/{script}",
+        client = docker.from_env()
+        container = client.containers.run(
+            image=f"{office}-jobs",
+            command=f"python /jobs/python/{script}",
+            remove=True,
+            environment=[
+                "OFFICE=lrh",
+                "GITHUB_BRANCH=cwbi-dev",
+                "CDA_API_ROOT=https://water.dev.cwbi.us/cwms-data/",
             ],
-            capture_output=True,
         )
-        return {
-            "stdout": proc.stdout,
-            "stderr": proc.stderr,
-            "returncode": proc.returncode,
-        }
+
+        return container
