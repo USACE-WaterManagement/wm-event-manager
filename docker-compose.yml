@@ -1,0 +1,15 @@
+services:
+  api:
+    build:
+      context: .
+      args:
+        - REQ_FILE=requirements-dev.txt
+    container_name: wmes-adhoc-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DEPLOY_MODE=local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      uvicorn adhoc_api.main:app --host 0.0.0.0 --port 8000 --reload
