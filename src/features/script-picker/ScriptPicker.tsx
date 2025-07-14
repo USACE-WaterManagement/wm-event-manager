@@ -1,6 +1,7 @@
 import { useState } from "react";
 import useScriptsCatalog from "./useScriptCatalog";
 import { Dropdown } from "@usace/groundwork";
+import ScriptExecutor from "./ScriptExecutor";
 
 const OFFICE_PLACEHOLDER = "Office...";
 const SCRIPT_PLACEHOLDER = "Script...";
@@ -50,6 +51,9 @@ const ScriptPicker = () => {
             </option>
           ))}
         />
+      </div>
+      <div className="mt-8">
+        <ScriptExecutor office={office} script={script} />
       </div>
     </div>
   );
