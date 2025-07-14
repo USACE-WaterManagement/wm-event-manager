@@ -1,13 +1,12 @@
-import { SiteWrapper, Container, UsaceBox } from "@usace/groundwork";
+import { SiteWrapper, Container } from "@usace/groundwork";
 import "@usace/groundwork/dist/style.css";
+import AdHocScriptsPage from "./pages/AdHocScriptsPage";
 
 function App() {
   return (
     <SiteWrapper>
       <Container>
-        <UsaceBox title="My New Site">
-          <div>Hello World</div>
-        </UsaceBox>
+        <AdHocScriptsPage />
       </Container>
     </SiteWrapper>
   );
