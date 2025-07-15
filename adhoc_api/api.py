@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from .auth import get_current_user, User
+from .auth.user import get_current_user, User
 from .catalog import get_scripts_catalog
 from .job_runner.local import LocalJobRunner
 from .schemas import ScriptRunRequest
