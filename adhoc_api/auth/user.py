@@ -1,5 +1,12 @@
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 from pydantic import BaseModel
+
+from .jwt import verify_jwt
+
+
+oauth2_scheme = HTTPBearer()
 
 
 class User(BaseModel):
@@ -7,17 +14,27 @@ class User(BaseModel):
     offices: list[str]
 
 
-async def get_current_user_aws() -> User:
-    return User(username="not-implemented", offices=[])
+async def get_current_user_keycloak(
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+) -> User:
+    token = credentials.credentials
+    try:
+        verify_jwt(token)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
+        )
+
+    return User(username="not-implemented", offices=["lrh"])
 
 
-async def get_current_user_local() -> User:
+async def get_current_user_mock() -> User:
     return User(username="dev-user", offices=["lrh"])
 
 
-DEPLOY_MODE = os.getenv("DEPLOY_MODE", "aws")
+MOCK_USER = os.getenv("MOCK_USER", "false")
 
-if DEPLOY_MODE == "local":
-    get_current_user = get_current_user_local
+if MOCK_USER == "true":
+    get_current_user = get_current_user_mock
 else:
-    get_current_user = get_current_user_aws
+    get_current_user = get_current_user_keycloak

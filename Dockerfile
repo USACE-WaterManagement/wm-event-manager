@@ -26,6 +26,4 @@ COPY ./adhoc_api ./adhoc_api
 
 EXPOSE 8000
 
-ENV DEPLOY_MODE=aws
-
 CMD ["uvicorn", "adhoc_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

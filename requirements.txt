@@ -2,3 +2,5 @@ boto3
 fastapi
 pydantic
 uvicorn
+pyjwt[crypto]
+httpx

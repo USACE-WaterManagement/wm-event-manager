@@ -8,16 +8,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEPLOY_MODE=local
+      # Comment out MOCK_USER to test a "real" keycloak workflow
+      - MOCK_USER=true
       - S3_ENDPOINT_URL=http://minio:9000
       - AWS_ACCESS_KEY_ID=adhocadmin
       - AWS_SECRET_ACCESS_KEY=adhocadmin
+      - AUTH_HOST=http://traefik/auth
+      - AUTH_REALM=cwms
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio
     command: >
       uvicorn adhoc_api.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - cwms
 
   minio:
     image: minio/minio
@@ -31,6 +36,12 @@ services:
       - MINIO_ROOT_USER=adhocadmin
       - MINIO_ROOT_PASSWORD=adhocadmin
     command: server /data --console-address ":9001"
+    networks:
+      - cwms
 
 volumes:
   minio-data:
+
+networks:
+  cwms:
+    external: true
