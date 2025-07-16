@@ -29,7 +29,7 @@ async def get_current_user_keycloak(
 
 
 async def get_current_user_mock() -> User:
-    return User(username="dev-user", offices=["lrh"])
+    return User(username="dev-user", offices=["lrh", "lrl"])
 
 
 MOCK_USER = os.getenv("MOCK_USER", "false")

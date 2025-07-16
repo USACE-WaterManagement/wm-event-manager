@@ -1,4 +1,5 @@
 import boto3
+import botocore.exceptions
 import json
 import os
 
@@ -14,9 +15,13 @@ def get_scripts_catalog(office: str):
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
-    response = s3.get_object(
-        Bucket="wm-web-internal-dev", Key=f"{office}/scripts_catalog.json"
-    )
-    body = response["Body"].read().decode("utf-8")
-    json_data = json.loads(body)
-    return json_data
+
+    try:
+        response = s3.get_object(
+            Bucket="wm-web-internal-dev", Key=f"{office}/scripts_catalog.json"
+        )
+        body = response["Body"].read().decode("utf-8")
+        json_data = json.loads(body)
+        return json_data
+    except botocore.exceptions.ClientError:
+        return None

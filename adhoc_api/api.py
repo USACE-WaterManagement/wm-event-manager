@@ -20,7 +20,14 @@ async def execute_script(
             detail=f"Not authorized to run scripts for {payload.office_name}.",
         )
 
-    scripts = get_scripts_catalog(payload.office_name)["scripts"]
+    catalog = get_scripts_catalog(payload.office_name)
+    if not catalog:
+        raise HTTPException(
+            status_code=403,
+            detail=f"No script catalog found for {payload.office_name}.",
+        )
+
+    scripts = catalog["scripts"]
     if payload.script_name not in scripts:
         raise HTTPException(
             status_code=403,
