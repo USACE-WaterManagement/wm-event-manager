@@ -27,7 +27,7 @@ async def execute_script(
             detail=f"No script catalog found for {payload.office_name}.",
         )
 
-    scripts = catalog["scripts"]
+    scripts = catalog.scripts
     if payload.script_name not in scripts:
         raise HTTPException(
             status_code=403,

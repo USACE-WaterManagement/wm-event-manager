@@ -3,6 +3,8 @@ import botocore.exceptions
 import json
 import os
 
+from adhoc_api.schemas import ScriptCatalog
+
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -22,6 +24,6 @@ def get_scripts_catalog(office: str):
         )
         body = response["Body"].read().decode("utf-8")
         json_data = json.loads(body)
-        return json_data
+        return ScriptCatalog(**json_data)
     except botocore.exceptions.ClientError:
         return None
