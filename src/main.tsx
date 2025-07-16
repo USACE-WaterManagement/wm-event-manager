@@ -7,17 +7,28 @@ import {
   AuthProvider,
   createKeycloakAuthMethod,
 } from "@usace-watermanagement/groundwork-water";
+import createMockAuthMethod from "./features/auth/mockAuthMethod.ts";
+
+const buildMode = import.meta.env.MODE;
+const authHost = import.meta.env.VITE_AUTH_HOST;
+const authRealm = import.meta.env.VITE_AUTH_REALM;
+
+const authMethod = (() => {
+  if (buildMode === "dev-cda-compose") {
+    return createKeycloakAuthMethod({
+      host: authHost,
+      realm: authRealm,
+      client: "cwms",
+      flow: "direct-grant",
+      username: "h2lrltest",
+      password: "h2lrltest",
+    });
+  } else {
+    return createMockAuthMethod();
+  }
+})();
 
 const queryClient = new QueryClient();
-
-const authMethod = createKeycloakAuthMethod({
-  host: "http://localhost:8081/auth",
-  realm: "cwms",
-  client: "cwms",
-  flow: "direct-grant",
-  username: "h2lrltest",
-  password: "h2lrltest",
-});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
