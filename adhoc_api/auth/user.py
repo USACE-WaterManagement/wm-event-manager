@@ -3,6 +3,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 from pydantic import BaseModel
 
+from adhoc_api.auth.roles import get_user_allowed_offices
+
 from .jwt import verify_jwt
 
 
@@ -25,7 +27,8 @@ async def get_current_user_keycloak(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
         )
 
-    return User(username="not-implemented", offices=["lrh"])
+    allowed_offices = get_user_allowed_offices(token)
+    return User(username="not-implemented", offices=allowed_offices)
 
 
 async def get_current_user_mock() -> User:

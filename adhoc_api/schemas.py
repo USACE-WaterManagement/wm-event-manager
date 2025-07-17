@@ -1,5 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
+
+
+class CdaUserProfile(BaseModel):
+    user_name: str = Field(alias="user-name")
+    principal: str
+    cac_auth: bool = Field(alias="cac-auth")
+    roles: dict[str, list[str]]
 
 
 class ScriptCatalog(BaseModel):
