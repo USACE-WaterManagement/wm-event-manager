@@ -12,6 +12,8 @@ import createMockAuthMethod from "./features/auth/mockAuthMethod.ts";
 const buildMode = import.meta.env.MODE;
 const authHost = import.meta.env.VITE_AUTH_HOST;
 const authRealm = import.meta.env.VITE_AUTH_REALM;
+const authUser = import.meta.env.VITE_AUTH_USER;
+const authPassword = import.meta.env.VITE_AUTH_PASSWORD;
 
 const authMethod = (() => {
   if (buildMode === "dev-cda-compose") {
@@ -20,8 +22,8 @@ const authMethod = (() => {
       realm: authRealm,
       client: "cwms",
       flow: "direct-grant",
-      username: "h2lrltest",
-      password: "h2lrltest",
+      username: authUser,
+      password: authPassword,
     });
   } else {
     return createMockAuthMethod();
