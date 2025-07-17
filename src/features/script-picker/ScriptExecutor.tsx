@@ -22,10 +22,10 @@ const ScriptExecutor = ({ office, script }: ScriptExecutorProps) => {
       <div className="mt-4">
         <span>
           {isSuccess && (
-            <p>
-              Script executed successfully. Result:{" "}
-              {JSON.stringify(data, null, 2)}
-            </p>
+            <>
+              <p>Script executed successfully. Result: </p>
+              <textarea rows={20} cols={100} value={data} readOnly />
+            </>
           )}
         </span>
         <span>{isError && <p>Script failed. Error: {error.message}</p>}</span>
