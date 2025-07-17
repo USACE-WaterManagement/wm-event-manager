@@ -17,6 +17,7 @@ services:
       - AUTH_REALM=cwms
       - CDA_HOST=http://traefik/cwms-data
     volumes:
+      - ./adhoc_api:/code/adhoc_api
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio
