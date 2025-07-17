@@ -9,6 +9,7 @@ class LocalJobRunner(JobRunner):
             image=f"{office}-jobs",
             command=f"python /jobs/python/{script}",
             remove=True,
+            stderr=True,
             environment=[
                 "OFFICE=lrh",
                 "GITHUB_BRANCH=cwbi-dev",
