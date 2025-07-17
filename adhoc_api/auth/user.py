@@ -4,9 +4,11 @@ import os
 from pydantic import BaseModel
 
 from adhoc_api.auth.roles import get_user_allowed_offices
+from adhoc_api.utils import ALL_OFFICES
 
 from .jwt import verify_jwt
 
+ALL_OFFICES_LOWER = [office.lower() for office in ALL_OFFICES]
 
 oauth2_scheme = HTTPBearer()
 
@@ -32,7 +34,7 @@ async def get_current_user_keycloak(
 
 
 async def get_current_user_mock() -> User:
-    return User(username="dev-user", offices=["lrh", "lrl"])
+    return User(username="dev-user", offices=ALL_OFFICES_LOWER)
 
 
 MOCK_USER = os.getenv("MOCK_USER", "false")
