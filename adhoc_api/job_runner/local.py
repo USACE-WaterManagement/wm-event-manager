@@ -1,5 +1,9 @@
-from .base import JobRunner
 import docker
+import os
+
+from .base import JobRunner
+
+CDA_HOST = os.getenv("CDA_HOST")
 
 
 class LocalJobRunner(JobRunner):
@@ -11,9 +15,9 @@ class LocalJobRunner(JobRunner):
             remove=True,
             stderr=True,
             environment=[
-                "OFFICE=lrh",
+                f"OFFICE={office}",
                 "GITHUB_BRANCH=cwbi-dev",
-                "CDA_API_ROOT=https://water.dev.cwbi.us/cwms-data/",
+                f"CDA_API_ROOT={CDA_HOST}/",
             ],
         )
 
