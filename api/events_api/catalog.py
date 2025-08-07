@@ -3,7 +3,7 @@ import botocore.exceptions
 import json
 import os
 
-from adhoc_api.schemas import ScriptCatalog
+from events_api.schemas import ScriptCatalog
 
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")

@@ -3,8 +3,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 from pydantic import BaseModel
 
-from adhoc_api.auth.roles import get_user_allowed_offices
-from adhoc_api.utils import ALL_OFFICES
+from events_api.auth.roles import get_user_allowed_offices
+from events_api.utils import ALL_OFFICES
 
 from .jwt import verify_jwt
 

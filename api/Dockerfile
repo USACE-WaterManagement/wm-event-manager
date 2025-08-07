@@ -22,8 +22,8 @@ WORKDIR /code
 
 COPY --from=builder /usr/local /usr/local
 
-COPY ./adhoc_api ./adhoc_api
+COPY ./events_api ./events_api
 
 EXPOSE 8000
 
-CMD ["uvicorn", "adhoc_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "events_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

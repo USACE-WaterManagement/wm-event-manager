@@ -1,7 +1,7 @@
 import os
 import requests
 
-from adhoc_api.schemas import CdaUserProfile
+from events_api.schemas import CdaUserProfile
 
 CDA_HOST = os.getenv("CDA_HOST")
 

@@ -4,39 +4,39 @@ services:
       context: .
       args:
         - REQ_FILE=requirements-dev.txt
-    container_name: wmes-adhoc-api
+    container_name: wm-events-api
     ports:
       - "8000:8000"
     environment:
       # Comment out MOCK_USER to test a "real" keycloak workflow
       - MOCK_USER=true
       - S3_ENDPOINT_URL=http://minio:9000
-      - AWS_ACCESS_KEY_ID=adhocadmin
-      - AWS_SECRET_ACCESS_KEY=adhocadmin
+      - AWS_ACCESS_KEY_ID=eventsadmin
+      - AWS_SECRET_ACCESS_KEY=eventsadmin
       - AUTH_HOST=http://traefik/auth
       - AUTH_REALM=cwms
       - CDA_HOST=http://traefik/cwms-data
     volumes:
-      - ./adhoc_api:/code/adhoc_api
+      - ./events_api:/code/events_api
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio
     command: >
-      uvicorn adhoc_api.main:app --host 0.0.0.0 --port 8000 --reload
+      uvicorn events_api.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - cwms
 
   minio:
     image: minio/minio
-    container_name: wmes-adhoc-minio
+    container_name: wm-events-minio
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
       - minio-data:/data
     environment:
-      - MINIO_ROOT_USER=adhocadmin
-      - MINIO_ROOT_PASSWORD=adhocadmin
+      - MINIO_ROOT_USER=eventsadmin
+      - MINIO_ROOT_PASSWORD=eventsadmin
     command: server /data --console-address ":9001"
     networks:
       - cwms
