@@ -13,14 +13,17 @@ services:
       - S3_ENDPOINT_URL=http://minio:9000
       - AWS_ACCESS_KEY_ID=eventsadmin
       - AWS_SECRET_ACCESS_KEY=eventsadmin
+      - REGION=eu-west-1
       - AUTH_HOST=http://traefik/auth
       - AUTH_REALM=cwms
       - CDA_HOST=http://traefik/cwms-data
+      - DYNAMODB_HOST=http://dynamodb:9010
     volumes:
       - ./events_api:/code/events_api
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio
+      - dynamodb
     command: >
       uvicorn events_api.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
@@ -38,6 +41,37 @@ services:
       - MINIO_ROOT_USER=eventsadmin
       - MINIO_ROOT_PASSWORD=eventsadmin
     command: server /data --console-address ":9001"
+    networks:
+      - cwms
+
+  dynamodb:
+    # command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory -port 9010"
+    image: "amazon/dynamodb-local:latest"
+    container_name: wm-events-dynamodb
+    ports:
+      - "9010:9010"
+    # volumes:
+    #   - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+    networks:
+      - cwms
+
+  dynamodb_bootstrap:
+    build:
+      context: ./docker/dynamodb_bootstrap
+    depends_on:
+      - dynamodb
+    volumes:
+      - ./docker/dynamodb_bootstrap/dynamodb_bootstrap.py:/app/dynamodb_bootstrap.py
+    working_dir: /app
+    environment:
+      - AWS_ACCESS_KEY_ID=eventsadmin
+      - AWS_SECRET_ACCESS_KEY=eventsadmin
+      - REGION=eu-west-1
+      - DYNAMODB_HOST=http://dynamodb:9010
+    command: sh -c "python dynamodb_bootstrap.py && echo 'Bootstrap complete -- exiting...'"
+    restart: "no"
     networks:
       - cwms
 
