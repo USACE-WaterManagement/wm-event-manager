@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from .auth.user import get_current_user, User
 from .catalog import get_scripts_catalog
 from .job_runner.local import LocalJobRunner
+from .jobs import create_job
 from .schemas import ScriptRunRequest
 
 runner = LocalJobRunner()
@@ -34,6 +35,7 @@ async def execute_script(
             detail=f"Script {payload.script_name} not found for office {payload.office_name}.",
         )
 
+    job_id = create_job(payload, user.username)
     return runner.run_job(payload.office_name, payload.script_name)
 
 
