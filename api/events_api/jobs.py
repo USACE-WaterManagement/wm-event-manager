@@ -1,4 +1,5 @@
 import boto3
+from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
 import os
 import uuid
@@ -32,3 +33,13 @@ def create_job(payload: ScriptRunRequest, user_id: str):
     }
     jobs_table.put_item(Item=item)
     return job_id
+
+
+def get_jobs_for_user(user_id: str):
+    user_jobs = jobs_table.query(
+        IndexName="UserIndex",
+        Select="ALL_ATTRIBUTES",
+        KeyConditionExpression=Key("User").eq(user_id),
+        ScanIndexForward=False,
+    )
+    return user_jobs["Items"]
