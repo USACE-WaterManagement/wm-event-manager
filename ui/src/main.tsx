@@ -1,13 +1,22 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   AuthProvider,
   createKeycloakAuthMethod,
 } from "@usace-watermanagement/groundwork-water";
 import createMockAuthMethod from "./features/auth/mockAuthMethod.ts";
+import { RouterProvider, createRouter } from "@tanstack/react-router";
+
+// TanStack Router setup
+import { routeTree } from "./routeTree.gen";
+const router = createRouter({ routeTree });
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
 
 const buildMode = import.meta.env.MODE;
 const authHost = import.meta.env.VITE_AUTH_HOST;
@@ -36,7 +45,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider method={authMethod}>
-        <App />
+        <RouterProvider router={router} />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>
