@@ -11,7 +11,9 @@ function RootComponent() {
   return (
     <SiteWrapper navRight={<AuthButton />}>
       <Container>
-        <Outlet />
+        <div className="my-6">
+          <Outlet />
+        </div>
       </Container>
     </SiteWrapper>
   );
