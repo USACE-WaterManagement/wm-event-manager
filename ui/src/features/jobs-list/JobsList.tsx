@@ -3,6 +3,10 @@ import { Accordion } from "@usace/groundwork";
 import useJobsList, { JobDetails } from "./useJobsList";
 import { Link } from "@tanstack/react-router";
 import { PropsWithChildren } from "react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 const jobFields: (keyof JobDetails)[] = [
   "Script",
@@ -35,34 +39,37 @@ const JobsList = () => {
     );
 
   return (
-    <div className="mx-auto lg:w-1/2">
-      {jobs.map((job) => (
-        <Accordion
-          key={job.JobId}
-          heading={
-            <span className="flex justify-between w-full gap-1">
-              <span>
-                {job.Script} - {job.CreatedTime}
+    <div className="mx-auto xl:w-1/2">
+      {jobs.map((job) => {
+        const dateAgo = dayjs(job.CreatedTime).fromNow();
+        return (
+          <Accordion
+            key={job.JobId}
+            heading={
+              <span className="flex justify-between w-full gap-1">
+                <span>
+                  {job.Script} ({dateAgo})
+                </span>
+                <span>{job.Status}</span>
               </span>
-              <span>{job.Status}</span>
-            </span>
-          }
-        >
-          <div className="grid grid-cols-2 py-3 px-5">
-            {jobFields.map((field) => {
-              const className =
-                field === "JobId" || field === "CreatedTime"
-                  ? "col-span-2"
-                  : "col-span-1";
-              return (
-                <JobDetail key={field} field={field} className={className}>
-                  {job[field]}
-                </JobDetail>
-              );
-            })}
-          </div>
-        </Accordion>
-      ))}
+            }
+          >
+            <div className="grid grid-cols-2 py-3 px-5">
+              {jobFields.map((field) => {
+                const className =
+                  field === "JobId" || field === "CreatedTime"
+                    ? "col-span-2"
+                    : "col-span-1";
+                return (
+                  <JobDetail key={field} field={field} className={className}>
+                    {job[field]}
+                  </JobDetail>
+                );
+              })}
+            </div>
+          </Accordion>
+        );
+      })}
     </div>
   );
 };
