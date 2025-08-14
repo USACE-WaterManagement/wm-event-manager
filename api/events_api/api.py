@@ -41,8 +41,10 @@ async def execute_script(
             detail=f"Script {payload.script_name} not found for office {payload.office_name}.",
         )
 
-    job_id = jobs.create_job(payload, user.username)
-    return runner.run_job(payload.office_name, payload.script_name)
+    job = jobs.create_job(payload, user.username)
+    runner.run_job(payload.office_name, payload.script_name, job.job_id)
+
+    return job.model_dump_json(by_alias=True)
 
 
 @router.get("/scripts/catalog")

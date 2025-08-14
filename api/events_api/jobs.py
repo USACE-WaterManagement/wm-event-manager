@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import os
 import uuid
 
-from .schemas import ScriptRunRequest
+from .schemas import JobRecord, JobStatus, ScriptRunRequest
 
 
 dynamodb_endpoint = os.getenv("DYNAMODB_HOST", "http://dynamodb:9010")
@@ -23,16 +23,16 @@ jobs_table = dynamodb.Table(table_name)
 
 def create_job(payload: ScriptRunRequest, user_id: str):
     job_id = str(uuid.uuid4())
-    item = {
-        "JobId": job_id,
-        "Script": payload.script_name,
-        "User": user_id,
-        "Office": payload.office_name,
-        "CreatedTime": datetime.now(timezone.utc).isoformat(),
-        "Status": "Pending",
-    }
-    jobs_table.put_item(Item=item)
-    return job_id
+    job = JobRecord(
+        job_id=job_id,
+        script=payload.script_name,
+        user=user_id,
+        office=payload.office_name,
+        created_time=datetime.now(timezone.utc).isoformat(),
+        status=JobStatus.PENDING,
+    )
+    jobs_table.put_item(Item=job.model_dump(by_alias=True))
+    return job
 
 
 def get_jobs_for_user(user_id: str):
@@ -43,3 +43,12 @@ def get_jobs_for_user(user_id: str):
         ScanIndexForward=False,
     )
     return user_jobs["Items"]
+
+
+def update_job_status(job_id: str, status: JobStatus):
+    jobs_table.update_item(
+        Key={"JobId": job_id},
+        UpdateExpression="set #S=:V",
+        ExpressionAttributeNames={"#S": "Status"},
+        ExpressionAttributeValues={":V": status},
+    )
