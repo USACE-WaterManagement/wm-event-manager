@@ -27,6 +27,8 @@ class LocalJobRunner(JobRunner):
             ],
         )
 
+        update_job_status(job_id, JobStatus.RUNNING)
+
         result = container.wait()
         status_code = result["StatusCode"]
 
