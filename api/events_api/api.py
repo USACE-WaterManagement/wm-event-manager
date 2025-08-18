@@ -12,15 +12,13 @@ router = APIRouter()
 
 
 @router.get("/jobs")
-async def get_jobs_for_user(user: User = Depends(get_current_user)):
+def get_jobs_for_user(user: User = Depends(get_current_user)):
     job_list = jobs.get_jobs_for_user(user.username)
     return job_list
 
 
 @router.post("/scripts/execute")
-async def execute_script(
-    payload: ScriptRunRequest, user: User = Depends(get_current_user)
-):
+def execute_script(payload: ScriptRunRequest, user: User = Depends(get_current_user)):
     if payload.office_name not in user.offices:
         raise HTTPException(
             status_code=403,
@@ -48,7 +46,7 @@ async def execute_script(
 
 
 @router.get("/scripts/catalog")
-async def get_user_scripts_catalog(user: User = Depends(get_current_user)):
+def get_user_scripts_catalog(user: User = Depends(get_current_user)):
     all_scripts = {}
     for office in user.offices:
         office_scripts = get_scripts_catalog(office)
