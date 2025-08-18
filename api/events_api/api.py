@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from .job_database.job_database import get_job_database, JobDatabase
+
 from .auth.user import get_current_user, User
 from .catalog import get_scripts_catalog
 from .job_runner.local import LocalJobRunner
-from . import jobs
 from .schemas import ScriptRunRequest
 
 runner = LocalJobRunner()
@@ -12,13 +13,20 @@ router = APIRouter()
 
 
 @router.get("/jobs")
-def get_jobs_for_user(user: User = Depends(get_current_user)):
-    job_list = jobs.get_jobs_for_user(user.username)
+def get_jobs_for_user(
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+):
+    job_list = job_db.get_jobs_for_user(user.username)
     return job_list
 
 
 @router.post("/scripts/execute")
-def execute_script(payload: ScriptRunRequest, user: User = Depends(get_current_user)):
+def execute_script(
+    payload: ScriptRunRequest,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+):
     if payload.office_name not in user.offices:
         raise HTTPException(
             status_code=403,
@@ -39,7 +47,7 @@ def execute_script(payload: ScriptRunRequest, user: User = Depends(get_current_u
             detail=f"Script {payload.script_name} not found for office {payload.office_name}.",
         )
 
-    job = jobs.create_job(payload, user.username)
+    job = job_db.create_job(payload, user.username)
     runner.run_job(payload.office_name, payload.script_name, job.job_id)
 
     return job.model_dump_json(by_alias=True)
