@@ -1,10 +1,26 @@
 import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
+from decimal import Decimal
 import os
+from typing import Any
 import uuid
 
 from .schemas import JobRecord, JobStatus, ScriptRunRequest
+
+
+def dynamodb_item_to_python(item: Any) -> Any:
+    if isinstance(item, dict):
+        return {k: dynamodb_item_to_python(v) for k, v in item.items()}
+    elif isinstance(item, list):
+        return [dynamodb_item_to_python(i) for i in item]
+    elif isinstance(item, Decimal):
+        if item % 1 == 0:
+            return int(item)
+        else:
+            return float(item)
+    else:
+        return item
 
 
 dynamodb_endpoint = os.getenv("DYNAMODB_HOST", "http://dynamodb:9010")
@@ -42,7 +58,8 @@ def get_jobs_for_user(user_id: str):
         KeyConditionExpression=Key("User").eq(user_id),
         ScanIndexForward=False,
     )
-    return user_jobs["Items"]
+    job_items = user_jobs.get("Items")
+    return [JobRecord(**dynamodb_item_to_python(item)) for item in job_items]
 
 
 def update_job_status(job_id: str, status: JobStatus):
