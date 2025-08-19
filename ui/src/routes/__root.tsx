@@ -4,7 +4,7 @@ import "@usace/groundwork/dist/style.css";
 import AuthButton from "../features/auth/AuthButton";
 
 const navLinks = [
-  { id: "list", text: "Jobs List", href: "/list" },
+  { id: "jobs", text: "Jobs List", href: "/jobs" },
   { id: "submit", text: "Submit Job", href: "/submit" },
 ];
 
