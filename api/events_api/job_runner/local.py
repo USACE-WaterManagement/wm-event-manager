@@ -33,6 +33,6 @@ class LocalJobRunner(JobRunner):
         status_code = result["StatusCode"]
 
         if status_code == 0:
-            update_job_status(job_id, JobStatus.SUCCESS)
+            update_job_status(job_id, JobStatus.COMPLETED)
         else:
-            update_job_status(job_id, JobStatus.FAILURE)
+            update_job_status(job_id, JobStatus.FAILED)

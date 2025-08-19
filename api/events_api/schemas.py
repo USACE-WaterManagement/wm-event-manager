@@ -4,10 +4,10 @@ from pydantic.alias_generators import to_camel, to_pascal
 
 
 class JobStatus(str, Enum):
-    FAILURE = "Failure"
+    FAILED = "Failed"
     PENDING = "Pending"
     RUNNING = "Running"
-    SUCCESS = "Success"
+    COMPLETED = "Completed"
 
 
 class CdaUserProfile(BaseModel):
