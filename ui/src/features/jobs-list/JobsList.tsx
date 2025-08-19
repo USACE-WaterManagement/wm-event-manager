@@ -1,21 +1,12 @@
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import { Accordion } from "@usace/groundwork";
-import useJobsList, { JobDetails } from "./useJobsList";
+import useJobsList from "./useJobsList";
 import { Link } from "@tanstack/react-router";
-import { PropsWithChildren } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import JobDetail from "./JobDetail";
 
 dayjs.extend(relativeTime);
-
-const jobFields: (keyof JobDetails)[] = [
-  "Script",
-  "User",
-  "Status",
-  "Office",
-  "CreatedTime",
-  "JobId",
-];
 
 const JobsList = () => {
   const auth = useAuth();
@@ -54,39 +45,12 @@ const JobsList = () => {
               </span>
             }
           >
-            <div className="grid grid-cols-2 py-3 px-5">
-              {jobFields.map((field) => {
-                const className =
-                  field === "JobId" || field === "CreatedTime"
-                    ? "col-span-2"
-                    : "col-span-1";
-                return (
-                  <JobDetail key={field} field={field} className={className}>
-                    {job[field]}
-                  </JobDetail>
-                );
-              })}
-            </div>
+            <JobDetail job={job} />
           </Accordion>
         );
       })}
     </div>
   );
 };
-
-interface JobDetailProps {
-  field: string;
-  className?: string;
-}
-
-const JobDetail = ({
-  field,
-  className,
-  children,
-}: PropsWithChildren<JobDetailProps>) => (
-  <span className={`px-3 py-1.5 ${className}`}>
-    <strong>{field}</strong>: {children}
-  </span>
-);
 
 export default JobsList;
