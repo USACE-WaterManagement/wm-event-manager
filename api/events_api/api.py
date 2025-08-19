@@ -21,6 +21,20 @@ def get_jobs_for_user(
     return job_list
 
 
+@router.get("/jobs/{job_id}")
+def get_job_by_id(
+    job_id: str,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+):
+    job = job_db.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=404, detail=f"No job found for jobId '{job_id}'"
+        )
+    return job
+
+
 @router.post("/scripts/execute")
 def execute_script(
     payload: ScriptRunRequest,

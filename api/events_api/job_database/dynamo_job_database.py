@@ -54,6 +54,15 @@ class DynamoJobDatabase:
         self.table.put_item(Item=job.model_dump(by_alias=True))
         return job
 
+    def get_job_by_id(self, job_id: str) -> JobRecord | None:
+        response = self.table.get_item(
+            Key={"JobId": job_id},
+        )
+        job = response.get("Item")
+        if not job:
+            return None
+        return JobRecord(**dynamodb_item_to_python(job))
+
     def get_jobs_for_user(self, user_id: str):
         user_jobs = self.table.query(
             IndexName="UserIndex",

@@ -1,15 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
-
-export interface JobDetails {
-  JobId: string;
-  Script: string;
-  User: string;
-  Office: string;
-  CreatedTime: string;
-  Status: string;
-}
+import { JobDetails } from "./useJobDetails";
 
 const useJobsList = () => {
   const auth = useAuth();

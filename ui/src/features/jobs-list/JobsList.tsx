@@ -45,7 +45,7 @@ const JobsList = () => {
               </span>
             }
           >
-            <JobDetail job={job} />
+            <JobDetail job={job} detailLink />
           </Accordion>
         );
       })}
