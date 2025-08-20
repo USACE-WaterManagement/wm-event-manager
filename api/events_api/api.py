@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from .job_database.job_database import get_job_database, JobDatabase
 
@@ -38,6 +38,7 @@ def get_job_by_id(
 @router.post("/scripts/execute")
 def execute_script(
     payload: ScriptRunRequest,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ):
@@ -62,9 +63,12 @@ def execute_script(
         )
 
     job = job_db.create_job(payload, user.username)
-    runner.run_job(payload.office_name, payload.script_name, job.job_id)
 
-    return job.model_dump_json(by_alias=True)
+    background_tasks.add_task(
+        runner.run_job, payload.office_name, payload.script_name, job.job_id
+    )
+
+    return job
 
 
 @router.get("/scripts/catalog")
