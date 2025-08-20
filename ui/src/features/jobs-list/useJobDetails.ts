@@ -17,6 +17,13 @@ const useJobDetails = (jobId: string) => {
   return useQuery({
     queryKey: ["job", jobId],
     queryFn: () => fetchJob(jobId, auth.token),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      console.log(data);
+      if (data && (data.Status === "Completed" || data.Status === "Failed"))
+        return false;
+      return 5000;
+    },
   });
 };
 
