@@ -3,7 +3,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from .auth.user import User
 from .catalog import get_scripts_catalog
 from .dependencies import get_current_user, get_job_database
-from .job_database.job_database import JobDatabase
+from .job_database.base import JobDatabase
 from .job_runner.base import JobRunner
 from .job_runner.local import LocalJobRunner
 from .schemas import ScriptRunRequest
