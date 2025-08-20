@@ -6,7 +6,7 @@ from .dependencies import get_current_user, get_job_database
 from .job_database.base import JobDatabase
 from .job_runner.base import JobRunner
 from .job_runner.local import LocalJobRunner
-from .schemas import ScriptRunRequest
+from .schemas import JobRecord, ScriptCatalog, ScriptRunRequest
 
 router = APIRouter()
 runner: JobRunner = LocalJobRunner()
@@ -16,7 +16,7 @@ runner: JobRunner = LocalJobRunner()
 def get_jobs_for_user(
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
-):
+) -> list[JobRecord]:
     job_list = job_db.get_jobs_for_user(user.username)
     return job_list
 
@@ -26,7 +26,7 @@ def get_job_by_id(
     job_id: str,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
-):
+) -> JobRecord:
     job = job_db.get_job_by_id(job_id)
     if not job:
         raise HTTPException(
@@ -41,7 +41,7 @@ def execute_script(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
-):
+) -> JobRecord:
     if payload.office_name not in user.offices:
         raise HTTPException(
             status_code=403,
@@ -72,8 +72,10 @@ def execute_script(
 
 
 @router.get("/scripts/catalog")
-def get_user_scripts_catalog(user: User = Depends(get_current_user)):
-    all_scripts = {}
+def get_user_scripts_catalog(
+    user: User = Depends(get_current_user),
+) -> dict[str, ScriptCatalog]:
+    all_scripts: dict[str, ScriptCatalog] = {}
     for office in user.offices:
         office_scripts = get_scripts_catalog(office)
         if office_scripts:
