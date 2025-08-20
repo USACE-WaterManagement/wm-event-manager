@@ -5,12 +5,10 @@ import os
 from ..jobs import update_job_status
 from ..schemas import JobStatus
 
-from .base import JobRunner
-
 CDA_HOST = os.getenv("CDA_HOST")
 
 
-class LocalJobRunner(JobRunner):
+class LocalJobRunner:
     def run_job(self, office: str, script: str, job_id: str):
         client: DockerClient = from_env()
 

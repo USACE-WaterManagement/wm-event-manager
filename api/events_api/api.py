@@ -4,10 +4,11 @@ from .job_database.job_database import get_job_database, JobDatabase
 
 from .auth.user import get_current_user, User
 from .catalog import get_scripts_catalog
+from .job_runner.base import JobRunner
 from .job_runner.local import LocalJobRunner
 from .schemas import ScriptRunRequest
 
-runner = LocalJobRunner()
+runner: JobRunner = LocalJobRunner()
 
 router = APIRouter()
 

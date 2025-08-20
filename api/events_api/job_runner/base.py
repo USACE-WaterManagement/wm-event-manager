@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 
-class JobRunner(ABC):
-    @abstractmethod
-    def run_job(self, office: str, script: str):
+class JobRunner(Protocol):
+    def run_job(self, office: str, script: str, job_id: str):
         pass
