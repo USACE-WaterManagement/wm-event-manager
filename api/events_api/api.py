@@ -1,16 +1,15 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
-from .job_database.job_database import get_job_database, JobDatabase
-
-from .auth.user import get_current_user, User
+from .auth.user import User
 from .catalog import get_scripts_catalog
+from .dependencies import get_current_user, get_job_database
+from .job_database.job_database import JobDatabase
 from .job_runner.base import JobRunner
 from .job_runner.local import LocalJobRunner
 from .schemas import ScriptRunRequest
 
-runner: JobRunner = LocalJobRunner()
-
 router = APIRouter()
+runner: JobRunner = LocalJobRunner()
 
 
 @router.get("/jobs")
