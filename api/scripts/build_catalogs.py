@@ -47,6 +47,9 @@ def push_catalog_to_s3(office: str, catalog: dict[str, list[str]]):
 def push_catalogs_from_config():
     with open("catalog_config.toml", "rb") as config_file:
         config = tomllib.load(config_file)
+        if not config["repos"]:
+            print("No repos found in catalog configuration!")
+            return
         for office, path in config["repos"].items():
             try:
                 catalog = build_catalog(office, path)
