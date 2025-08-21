@@ -2,12 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LinkProvider } from "@usace/groundwork";
 import {
   AuthProvider,
   createKeycloakAuthMethod,
 } from "@usace-watermanagement/groundwork-water";
 import createMockAuthMethod from "./features/auth/mockAuthMethod.ts";
-import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { Link, RouterProvider, createRouter } from "@tanstack/react-router";
 
 // TanStack Router setup
 import { routeTree } from "./routeTree.gen";
@@ -45,7 +46,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider method={authMethod}>
-        <RouterProvider router={router} />
+        <LinkProvider component={Link} hrefMap="to">
+          <RouterProvider router={router} />
+        </LinkProvider>
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>

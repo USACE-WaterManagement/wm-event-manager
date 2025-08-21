@@ -1,19 +1,61 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
-from .auth.user import get_current_user, User
+
+from .auth.user import User
 from .catalog import get_scripts_catalog
-from .job_runner.local import LocalJobRunner
-from .schemas import ScriptRunRequest
-
-runner = LocalJobRunner()
+from .dependencies import (
+    get_current_user,
+    get_job_database,
+    get_job_logger,
+    get_job_runner,
+)
+from .job_database.base import JobDatabase
+from .job_logger.base import JobLogger
+from .job_runner.base import JobRunner
+from .schemas import JobLogs, JobRecord, ScriptCatalog, ScriptRunRequest
 
 router = APIRouter()
 
 
+@router.get("/jobs")
+def get_jobs_for_user(
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+) -> list[JobRecord]:
+    job_list = job_db.get_jobs_for_user(user.username)
+    return job_list
+
+
+@router.get("/jobs/{job_id}")
+def get_job_by_id(
+    job_id: str,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+) -> JobRecord:
+    job = job_db.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=404, detail=f"No job found for jobId '{job_id}'"
+        )
+    return job
+
+
+@router.get("/jobs/{job_id}/logs")
+def get_logs_for_job(
+    job_id: str, job_logger: JobLogger = Depends(get_job_logger)
+) -> JobLogs:
+    logs = job_logger.get_logs_for_job(job_id)
+    return JobLogs(logs=logs)
+
+
 @router.post("/scripts/execute")
-async def execute_script(
-    payload: ScriptRunRequest, user: User = Depends(get_current_user)
-):
+def execute_script(
+    payload: ScriptRunRequest,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+    runner: JobRunner = Depends(get_job_runner),
+) -> JobRecord:
     if payload.office_name not in user.offices:
         raise HTTPException(
             status_code=403,
@@ -34,12 +76,20 @@ async def execute_script(
             detail=f"Script {payload.script_name} not found for office {payload.office_name}.",
         )
 
-    return runner.run_job(payload.office_name, payload.script_name)
+    job = job_db.create_job(payload, user.username)
+
+    background_tasks.add_task(
+        runner.run_job, payload.office_name, payload.script_name, job.job_id
+    )
+
+    return job
 
 
 @router.get("/scripts/catalog")
-async def get_user_scripts_catalog(user: User = Depends(get_current_user)):
-    all_scripts = {}
+def get_user_scripts_catalog(
+    user: User = Depends(get_current_user),
+) -> dict[str, ScriptCatalog]:
+    all_scripts: dict[str, ScriptCatalog] = {}
     for office in user.offices:
         office_scripts = get_scripts_catalog(office)
         if office_scripts:

@@ -2,6 +2,7 @@ import { useState } from "react";
 import useScriptsCatalog from "./useScriptCatalog";
 import { Dropdown } from "@usace/groundwork";
 import ScriptExecutor from "./ScriptExecutor";
+import { useAuth } from "@usace-watermanagement/groundwork-water";
 
 const OFFICE_PLACEHOLDER = "Office...";
 const SCRIPT_PLACEHOLDER = "Script...";
@@ -10,7 +11,10 @@ const ScriptPicker = () => {
   const [office, setOffice] = useState(OFFICE_PLACEHOLDER);
   const [script, setScript] = useState(SCRIPT_PLACEHOLDER);
 
+  const auth = useAuth();
   const { data, isLoading, isError } = useScriptsCatalog();
+
+  if (!auth.isAuth) return <span>You must log in to execute a script.</span>;
 
   if (isLoading) return <span>Loading...</span>;
 

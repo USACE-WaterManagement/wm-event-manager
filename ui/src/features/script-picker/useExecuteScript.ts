@@ -1,6 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import fetchWithAuth from "../../utils/fetchWithAuth";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
+import { JobDetails } from "../jobs-list/useJobDetails";
+import { useNavigate } from "@tanstack/react-router";
 
 interface ExecuteScriptPayload {
   officeName: string;
@@ -9,14 +11,21 @@ interface ExecuteScriptPayload {
 
 const useExecuteScript = () => {
   const auth = useAuth();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: (payload: ExecuteScriptPayload) =>
       executeScript(payload, auth.token),
+    onSuccess: (job: JobDetails) => {
+      navigate({ to: "/jobs/$jobId", params: { jobId: job.JobId } });
+    },
   });
 };
 
-const executeScript = async (payload: ExecuteScriptPayload, token?: string) => {
+const executeScript = async (
+  payload: ExecuteScriptPayload,
+  token?: string
+): Promise<JobDetails> => {
   const response = await fetchWithAuth(
     "http://localhost:8000/scripts/execute",
     {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import AdHocScriptsPage from "../pages/AdHocScriptsPage";
+import JobsList from "../features/jobs-list/JobsList";
 
 export const Route = createFileRoute("/")({
-  component: AdHocScriptsPage,
+  component: JobsList,
 });

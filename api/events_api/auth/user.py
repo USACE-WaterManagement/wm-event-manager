@@ -1,6 +1,5 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import os
 from pydantic import BaseModel
 
 from events_api.auth.roles import get_user_allowed_offices
@@ -35,11 +34,3 @@ async def get_current_user_keycloak(
 
 async def get_current_user_mock() -> User:
     return User(username="dev-user", offices=ALL_OFFICES_LOWER)
-
-
-MOCK_USER = os.getenv("MOCK_USER", "false")
-
-if MOCK_USER == "true":
-    get_current_user = get_current_user_mock
-else:
-    get_current_user = get_current_user_keycloak
