@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import JobDetailHandler from "../../features/jobs-list/JobDetailHandler";
+import JobDetailFull from "../../features/jobs-list/JobDetailFull";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   component: JobDetailPage,
@@ -8,5 +8,5 @@ export const Route = createFileRoute("/jobs/$jobId")({
 function JobDetailPage() {
   const { jobId } = Route.useParams();
 
-  return <JobDetailHandler jobId={jobId} />;
+  return <JobDetailFull jobId={jobId} />;
 }

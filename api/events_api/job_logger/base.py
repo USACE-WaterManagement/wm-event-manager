@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class JobLogger(Protocol):
+    def get_logs_for_job(self, job_id: str) -> str: ...
+    def push_logs_for_job(self, job_id: str, logs: str) -> None: ...

@@ -17,6 +17,10 @@ class CdaUserProfile(BaseModel):
     roles: dict[str, list[str]]
 
 
+class JobLogs(BaseModel):
+    logs: str
+
+
 class JobRecord(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_pascal, validate_by_name=True, validate_by_alias=True

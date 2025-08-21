@@ -1,15 +1,20 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
+
 from .auth.user import User
 from .catalog import get_scripts_catalog
-from .dependencies import get_current_user, get_job_database
+from .dependencies import (
+    get_current_user,
+    get_job_database,
+    get_job_logger,
+    get_job_runner,
+)
 from .job_database.base import JobDatabase
+from .job_logger.base import JobLogger
 from .job_runner.base import JobRunner
-from .job_runner.local import LocalJobRunner
-from .schemas import JobRecord, ScriptCatalog, ScriptRunRequest
+from .schemas import JobLogs, JobRecord, ScriptCatalog, ScriptRunRequest
 
 router = APIRouter()
-runner: JobRunner = LocalJobRunner()
 
 
 @router.get("/jobs")
@@ -35,12 +40,21 @@ def get_job_by_id(
     return job
 
 
+@router.get("/jobs/{job_id}/logs")
+def get_logs_for_job(
+    job_id: str, job_logger: JobLogger = Depends(get_job_logger)
+) -> JobLogs:
+    logs = job_logger.get_logs_for_job(job_id)
+    return JobLogs(logs=logs)
+
+
 @router.post("/scripts/execute")
 def execute_script(
     payload: ScriptRunRequest,
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
+    runner: JobRunner = Depends(get_job_runner),
 ) -> JobRecord:
     if payload.office_name not in user.offices:
         raise HTTPException(
