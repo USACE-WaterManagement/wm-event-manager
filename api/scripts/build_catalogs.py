@@ -23,6 +23,8 @@ s3 = boto3.client(
 def build_catalog(office: str, folder_path: str):
     path = Path(folder_path)
     python_folder = path / "python"
+    if not python_folder.exists():
+        raise FileNotFoundError(f"Could not find {python_folder}")
     scripts = python_folder.glob("*.py")
     return {"scripts": [f.name for f in scripts]}
 
@@ -46,8 +48,11 @@ def push_catalogs_from_config():
     with open("catalog_config.toml", "rb") as config_file:
         config = tomllib.load(config_file)
         for office, path in config["repos"].items():
-            catalog = build_catalog(office, path)
-            push_catalog_to_s3(office, catalog)
+            try:
+                catalog = build_catalog(office, path)
+                push_catalog_to_s3(office, catalog)
+            except FileNotFoundError:
+                print(f"No valid repo for {office} found at {path}")
 
 
 if __name__ == "__main__":
