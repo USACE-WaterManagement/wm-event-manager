@@ -1,5 +1,5 @@
 import { useAuth } from "@usace-watermanagement/groundwork-water";
-import { Accordion } from "@usace/groundwork";
+import { Accordion, Button } from "@usace/groundwork";
 import useJobsList from "./useJobsList";
 import { Link } from "@tanstack/react-router";
 import dayjs from "dayjs";
@@ -47,7 +47,16 @@ const JobsList = () => {
               </span>
             }
           >
-            <JobDetail job={job} detailLink />
+            <div className="flex">
+              <JobDetail job={job} />
+              <Link
+                to={`/jobs/$jobId`}
+                params={{ jobId: job.JobId }}
+                className="px-4 pb-4 content-end"
+              >
+                <Button>Details</Button>
+              </Link>
+            </div>
           </Accordion>
         );
       })}
