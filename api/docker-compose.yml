@@ -18,6 +18,9 @@ services:
       - AUTH_REALM=cwms
       - CDA_HOST=http://traefik/cwms-data
       - DYNAMODB_HOST=http://dynamodb:9010
+      - WM_EVENT_MANAGER_S3_BUCKET=wm-event-manager-local
+      - WM_WEB_INTERNAL_S3_BUCKET=wm-web-internal-local
+      - WM_WEB_PUBLIC_S3_BUCKET=wm-web-public-local
     volumes:
       - ./events_api:/code/events_api
       - /var/run/docker.sock:/var/run/docker.sock
