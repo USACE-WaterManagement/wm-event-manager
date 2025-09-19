@@ -30,8 +30,8 @@ def build_catalog(office: str, folder_path: str):
 
 
 def push_catalog_to_s3(office: str, catalog: dict[str, list[str]]):
-    bucket_name = "wm-web-internal-dev"
-    object_key = f"{office}/scripts_catalog.json"
+    bucket_name = "wm-event-manager-local"
+    object_key = f"catalogs/{office}/scripts_catalog.json"
     json_body = json.dumps(catalog, indent=2)
 
     s3.put_object(

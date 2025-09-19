@@ -5,9 +5,10 @@ import os
 
 from events_api.schemas import ScriptCatalog
 
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
+WM_EVENT_BUCKET = os.getenv("WM_EVENT_MANAGER_S3_BUCKET")
 
 
 def get_scripts_catalog(office: str):
@@ -20,7 +21,7 @@ def get_scripts_catalog(office: str):
 
     try:
         response = s3.get_object(
-            Bucket="wm-web-internal-dev", Key=f"{office}/scripts_catalog.json"
+            Bucket=WM_EVENT_BUCKET, Key=f"catalogs/{office}/scripts_catalog.json"
         )
         body = response["Body"].read().decode("utf-8")
         json_data = json.loads(body)
