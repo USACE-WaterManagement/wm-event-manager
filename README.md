@@ -29,7 +29,7 @@ By default, the local instance of the API uses a mock user account.  This accoun
 The API will reference district script docker images that exist locally by the name `[office-code]-jobs`, e.g. `lrh-jobs`.  These can be created by cloning the corresponding district jobs repo, e.g. [lrh-wm-cwbi-jobs](https://github.com/USACE-WaterManagement/lrh-wm-cwbi-jobs), and building the images from the local dockerfile with `docker build . -t [office-code]-jobs`.
 
 #### Script Catalogs
-After running the api's docker compose file, minio can be accessed at `http://localhost:9001`.  In the minio instance, create a bucket named `wm-web-internal-dev`.  Add the office code and repo path for any locally-available district job containers to `api/scripts/catalog_config.toml`. Then, run `api/scripts/build_catalogs.py`. This will generate a `scripts_catalog.json` object under each available district's prefix within minio.
+Add the office code and repo path for any locally-available district job containers to `api/scripts/catalog_config.toml`. Then, run `api/scripts/build_catalogs.py`. This will generate a `scripts_catalog.json` object under each available district's prefix within minio.
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.

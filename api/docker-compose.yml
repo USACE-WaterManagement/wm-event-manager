@@ -18,6 +18,9 @@ services:
       - AUTH_REALM=cwms
       - CDA_HOST=http://traefik/cwms-data
       - DYNAMODB_HOST=http://dynamodb:9010
+      - WM_EVENT_MANAGER_S3_BUCKET=wm-event-manager-local
+      - WM_WEB_INTERNAL_S3_BUCKET=wm-web-internal-local
+      - WM_WEB_PUBLIC_S3_BUCKET=wm-web-public-local
     volumes:
       - ./events_api:/code/events_api
       - /var/run/docker.sock:/var/run/docker.sock
@@ -41,6 +44,26 @@ services:
       - MINIO_ROOT_USER=eventsadmin
       - MINIO_ROOT_PASSWORD=eventsadmin
     command: server /data --console-address ":9001"
+    networks:
+      - cwms
+
+  minio_bootstrap:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to start...';
+      until /usr/bin/mc alias set minio http://minio:9000 eventsadmin eventsadmin; do
+        echo 'MinIO not ready yet, retrying in 2s...';
+        sleep 2;
+      done;
+      echo 'MinIO is ready. Creating buckets...';
+      /usr/bin/mc config host add minio http://minio:9000 eventsadmin eventsadmin;
+      /usr/bin/mc mb minio/wm-event-manager-local minio/wm-web-internal-local minio/wm-web-public-local;
+      /usr/bin/mc policy set public minio/wm-event-manager-local minio/wm-web-internal-local minio/wm-web-public-local;
+      exit 0;
+      "
     networks:
       - cwms
 
