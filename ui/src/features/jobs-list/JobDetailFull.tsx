@@ -13,7 +13,7 @@ const JobDetailFull = ({ jobId }: JobDetailFullProps) => {
   if (isError) return <span>Error!</span>;
   if (!data) return null;
 
-  const isFinished = data.Status === "Completed" || data.Status === "Failed";
+  const isFinished = data.status === "Completed" || data.status === "Failed";
 
   return (
     <>

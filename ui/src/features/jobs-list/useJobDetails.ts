@@ -3,12 +3,12 @@ import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
 
 export interface JobDetails {
-  JobId: string;
-  Script: string;
-  User: string;
-  Office: string;
-  CreatedTime: string;
-  Status: string;
+  jobId: string;
+  script: string;
+  user: string;
+  office: string;
+  createdTime: string;
+  status: string;
 }
 
 const useJobDetails = (jobId: string) => {
@@ -20,7 +20,7 @@ const useJobDetails = (jobId: string) => {
     refetchInterval: (query) => {
       const data = query.state.data;
       console.log(data);
-      if (data && (data.Status === "Completed" || data.Status === "Failed"))
+      if (data && (data.status === "Completed" || data.status === "Failed"))
         return false;
       return 5000;
     },

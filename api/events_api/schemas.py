@@ -1,6 +1,16 @@
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic.alias_generators import to_camel, to_pascal
+from pydantic.alias_generators import to_camel
+
+
+class CamelModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel, validate_by_name=True, validate_by_alias=True
+    )
+
+    def model_dump(self, **kwargs):
+        kwargs.setdefault("by_alias", True)
+        return super().model_dump(**kwargs)
 
 
 class JobStatus(str, Enum):
@@ -17,15 +27,11 @@ class CdaUserProfile(BaseModel):
     roles: dict[str, list[str]]
 
 
-class JobLogs(BaseModel):
+class JobLogs(CamelModel):
     logs: str
 
 
-class JobRecord(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_pascal, validate_by_name=True, validate_by_alias=True
-    )
-
+class JobRecord(CamelModel):
     job_id: str
     script: str
     user: str
@@ -34,13 +40,10 @@ class JobRecord(BaseModel):
     status: JobStatus
 
 
-class ScriptCatalog(BaseModel):
+class ScriptCatalog(CamelModel):
     scripts: list[str]
 
 
-class ScriptRunRequest(BaseModel):
+class ScriptRunRequest(CamelModel):
     office_name: str
     script_name: str
-
-    class Config:
-        alias_generator = to_camel

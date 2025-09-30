@@ -34,16 +34,16 @@ const JobsList = () => {
   return (
     <div className="mx-auto xl:w-1/2">
       {jobs.map((job) => {
-        const dateAgo = dayjs(job.CreatedTime).fromNow();
+        const dateAgo = dayjs(job.createdTime).fromNow();
         return (
           <Accordion
-            key={job.JobId}
+            key={job.jobId}
             heading={
               <span className="flex justify-between w-full gap-1">
                 <span>
-                  {job.Script} ({dateAgo})
+                  {job.script} ({dateAgo})
                 </span>
-                <span>{job.Status}</span>
+                <span>{job.status}</span>
               </span>
             }
           >
@@ -51,7 +51,7 @@ const JobsList = () => {
               <JobDetail job={job} />
               <Link
                 to={`/jobs/$jobId`}
-                params={{ jobId: job.JobId }}
+                params={{ jobId: job.jobId }}
                 className="px-4 pb-4 content-end"
               >
                 <Button>Details</Button>
