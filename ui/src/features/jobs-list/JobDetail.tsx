@@ -2,12 +2,12 @@ import { PropsWithChildren } from "react";
 import { JobDetails } from "./useJobDetails";
 
 const jobFields: (keyof JobDetails)[] = [
-  "Script",
-  "User",
-  "Status",
-  "Office",
-  "CreatedTime",
-  "JobId",
+  "script",
+  "user",
+  "status",
+  "office",
+  "createdTime",
+  "jobId",
 ];
 
 interface JobDetailProps {
@@ -20,7 +20,7 @@ function JobDetail({ job }: JobDetailProps) {
       <div className="grow grid grid-cols-2 py-3 px-5">
         {jobFields.map((field) => {
           const className =
-            field === "JobId" || field === "CreatedTime"
+            field === "jobId" || field === "createdTime"
               ? "col-span-2"
               : "col-span-1";
           return (

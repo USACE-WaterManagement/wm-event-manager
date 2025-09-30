@@ -17,7 +17,7 @@ const useExecuteScript = () => {
     mutationFn: (payload: ExecuteScriptPayload) =>
       executeScript(payload, auth.token),
     onSuccess: (job: JobDetails) => {
-      navigate({ to: "/jobs/$jobId", params: { jobId: job.JobId } });
+      navigate({ to: "/jobs/$jobId", params: { jobId: job.jobId } });
     },
   });
 };
