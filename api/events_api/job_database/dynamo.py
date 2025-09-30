@@ -51,12 +51,12 @@ class DynamoJobDatabase:
             created_time=datetime.now(timezone.utc).isoformat(),
             status=JobStatus.PENDING,
         )
-        self.table.put_item(Item=job.model_dump(by_alias=True))
+        self.table.put_item(Item=job.model_dump(by_alias=False))
         return job
 
     def get_job_by_id(self, job_id: str) -> JobRecord | None:
         response = self.table.get_item(
-            Key={"JobId": job_id},
+            Key={"job_id": job_id},
         )
         job = response.get("Item")
         if not job:
@@ -65,9 +65,9 @@ class DynamoJobDatabase:
 
     def get_jobs_for_user(self, user_id: str):
         user_jobs = self.table.query(
-            IndexName="UserIndex",
+            IndexName="user_index",
             Select="ALL_ATTRIBUTES",
-            KeyConditionExpression=Key("User").eq(user_id),
+            KeyConditionExpression=Key("user").eq(user_id),
             ScanIndexForward=False,
         )
         job_items = user_jobs.get("Items")
@@ -75,8 +75,8 @@ class DynamoJobDatabase:
 
     def update_job_status(self, job_id: str, status: JobStatus):
         self.table.update_item(
-            Key={"JobId": job_id},
+            Key={"job_id": job_id},
             UpdateExpression="set #S=:V",
-            ExpressionAttributeNames={"#S": "Status"},
+            ExpressionAttributeNames={"#S": "status"},
             ExpressionAttributeValues={":V": status},
         )

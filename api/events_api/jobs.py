@@ -53,9 +53,9 @@ def create_job(payload: ScriptRunRequest, user_id: str):
 
 def get_jobs_for_user(user_id: str):
     user_jobs = jobs_table.query(
-        IndexName="UserIndex",
+        IndexName="user_index",
         Select="ALL_ATTRIBUTES",
-        KeyConditionExpression=Key("User").eq(user_id),
+        KeyConditionExpression=Key("user").eq(user_id),
         ScanIndexForward=False,
     )
     job_items = user_jobs.get("Items")
@@ -64,8 +64,8 @@ def get_jobs_for_user(user_id: str):
 
 def update_job_status(job_id: str, status: JobStatus):
     jobs_table.update_item(
-        Key={"JobId": job_id},
+        Key={"job_id": job_id},
         UpdateExpression="set #S=:V",
-        ExpressionAttributeNames={"#S": "Status"},
+        ExpressionAttributeNames={"#S": "status"},
         ExpressionAttributeValues={":V": status},
     )
