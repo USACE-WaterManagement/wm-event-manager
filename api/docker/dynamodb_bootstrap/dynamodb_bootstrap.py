@@ -39,44 +39,40 @@ def create_table(name):
     dynamodb.create_table(
         TableName=table_name,
         BillingMode="PAY_PER_REQUEST",
-        KeySchema=[{"AttributeName": "JobId", "KeyType": "HASH"}],
+        KeySchema=[{"AttributeName": "job_id", "KeyType": "HASH"}],
         AttributeDefinitions=[
-            {"AttributeName": "JobId", "AttributeType": "S"},
-            {"AttributeName": "Script", "AttributeType": "S"},
-            {"AttributeName": "User", "AttributeType": "S"},
-            {"AttributeName": "Office", "AttributeType": "S"},
-            {"AttributeName": "CreatedTime", "AttributeType": "S"},
-            # {"AttributeName": "StartTime", "AttributeType": "S"},
-            # {"AttributeName": "EndTime", "AttributeType": "S"},
-            # {"AttributeName": "Status", "AttributeType": "S"},
-            # {"AttributeName": "LogsUrl", "AttributeType": "S"},
+            {"AttributeName": "job_id", "AttributeType": "S"},
+            {"AttributeName": "script", "AttributeType": "S"},
+            {"AttributeName": "user", "AttributeType": "S"},
+            {"AttributeName": "office", "AttributeType": "S"},
+            {"AttributeName": "created_time", "AttributeType": "S"},
         ],
         GlobalSecondaryIndexes=[
             {
-                "IndexName": "UserIndex",
+                "IndexName": "user_index",
                 "KeySchema": [
-                    {"AttributeName": "User", "KeyType": "HASH"},
-                    {"AttributeName": "CreatedTime", "KeyType": "RANGE"},
+                    {"AttributeName": "user", "KeyType": "HASH"},
+                    {"AttributeName": "created_time", "KeyType": "RANGE"},
                 ],
                 "Projection": {
                     "ProjectionType": "ALL",
                 },
             },
             {
-                "IndexName": "OfficeIndex",
+                "IndexName": "office_index",
                 "KeySchema": [
-                    {"AttributeName": "Office", "KeyType": "HASH"},
-                    {"AttributeName": "CreatedTime", "KeyType": "RANGE"},
+                    {"AttributeName": "office", "KeyType": "HASH"},
+                    {"AttributeName": "created_time", "KeyType": "RANGE"},
                 ],
                 "Projection": {
                     "ProjectionType": "ALL",
                 },
             },
             {
-                "IndexName": "ScriptIndex",
+                "IndexName": "script_index",
                 "KeySchema": [
-                    {"AttributeName": "Script", "KeyType": "HASH"},
-                    {"AttributeName": "CreatedTime", "KeyType": "RANGE"},
+                    {"AttributeName": "script", "KeyType": "HASH"},
+                    {"AttributeName": "created_time", "KeyType": "RANGE"},
                 ],
                 "Projection": {
                     "ProjectionType": "ALL",
