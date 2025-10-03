@@ -40,8 +40,12 @@ class JobRecord(CamelModel):
     status: JobStatus
 
 
-class ScriptCatalog(CamelModel):
+class OfficeCatalog(CamelModel):
     scripts: list[str]
+
+
+class OfficeCatalogs(CamelModel):
+    catalogs: dict[str, OfficeCatalog]
 
 
 class ScriptRunRequest(CamelModel):

@@ -12,7 +12,7 @@ from .dependencies import (
 from .job_database.base import JobDatabase
 from .job_logger.base import JobLogger
 from .job_runner.base import JobRunner
-from .schemas import JobLogs, JobRecord, ScriptCatalog, ScriptRunRequest
+from .schemas import JobLogs, JobRecord, ScriptRunRequest, OfficeCatalogs
 
 router = APIRouter()
 
@@ -88,10 +88,10 @@ def execute_script(
 @router.get("/scripts/catalog")
 def get_user_scripts_catalog(
     user: User = Depends(get_current_user),
-) -> dict[str, ScriptCatalog]:
-    all_scripts: dict[str, ScriptCatalog] = {}
+) -> OfficeCatalogs:
+    all_scripts = OfficeCatalogs(catalogs={})
     for office in user.offices:
         office_scripts = get_scripts_catalog(office)
         if office_scripts:
-            all_scripts[office] = office_scripts
+            all_scripts.catalogs[office] = office_scripts
     return all_scripts
