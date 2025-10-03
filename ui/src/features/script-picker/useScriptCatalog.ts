@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
+import { components } from "../../generated/api-types";
 
-interface ScriptsCatalog {
-  [office: string]: { scripts: string[] };
-}
+export type ScriptsCatalog = components["schemas"]["OfficeCatalogs"];
 
 const useScriptsCatalog = () => {
   const auth = useAuth();

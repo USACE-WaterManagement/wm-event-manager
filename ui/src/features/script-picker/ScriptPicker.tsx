@@ -20,10 +20,10 @@ const ScriptPicker = () => {
 
   if (isError || !data) return <span>Error occurred!</span>;
 
-  const officeOptions = [OFFICE_PLACEHOLDER, ...Object.keys(data)];
+  const officeOptions = [OFFICE_PLACEHOLDER, ...Object.keys(data.catalogs)];
   const scriptOptions = [SCRIPT_PLACEHOLDER];
-  if (data?.[office]?.scripts.length > 0)
-    scriptOptions.push(...data[office].scripts);
+  if (data?.catalogs[office]?.scripts.length > 0)
+    scriptOptions.push(...data.catalogs[office].scripts);
 
   return (
     <div className="flex flex-col">

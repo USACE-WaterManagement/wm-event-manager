@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
+import { components } from "../../generated/api-types";
 
-interface JobLogs {
-  logs: string;
-}
+export type JobLogs = components["schemas"]["JobLogs"];
 
 const useJobLogs = (jobId: string, enabled: boolean) => {
   const auth = useAuth();
