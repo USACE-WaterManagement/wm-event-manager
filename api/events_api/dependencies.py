@@ -26,5 +26,8 @@ def get_job_logger() -> JobLogger:
     return S3JobLogger()
 
 
-def get_job_runner(logger: JobLogger = Depends(get_job_logger)) -> JobRunner:
-    return LocalJobRunner(logger=logger)
+def get_job_runner(
+    db: JobDatabase = Depends(get_job_database),
+    logger: JobLogger = Depends(get_job_logger),
+) -> JobRunner:
+    return LocalJobRunner(db=db, logger=logger)
