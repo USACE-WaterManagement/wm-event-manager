@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev-cda-compose": "vite --mode dev-cda-compose",
+    "generate:types": "openapi-typescript http://localhost:8000/openapi.json -o src/generated/api-types.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
