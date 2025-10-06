@@ -3,11 +3,9 @@ import fetchWithAuth from "../../utils/fetchWithAuth";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import { JobDetails } from "../jobs-list/useJobDetails";
 import { useNavigate } from "@tanstack/react-router";
+import { components } from "../../generated/api-types";
 
-interface ExecuteScriptPayload {
-  officeName: string;
-  scriptName: string;
-}
+export type ExecuteScriptPayload = components["schemas"]["ScriptRunRequest"];
 
 const useExecuteScript = () => {
   const auth = useAuth();

@@ -3,7 +3,7 @@ import botocore.exceptions
 import json
 import os
 
-from events_api.schemas import ScriptCatalog
+from events_api.schemas import OfficeCatalog
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -25,6 +25,6 @@ def get_scripts_catalog(office: str):
         )
         body = response["Body"].read().decode("utf-8")
         json_data = json.loads(body)
-        return ScriptCatalog(**json_data)
+        return OfficeCatalog(**json_data)
     except botocore.exceptions.ClientError:
         return None

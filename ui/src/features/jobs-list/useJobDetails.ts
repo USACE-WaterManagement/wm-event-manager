@@ -1,15 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
+import { components } from "../../generated/api-types";
 
-export interface JobDetails {
-  jobId: string;
-  script: string;
-  user: string;
-  office: string;
-  createdTime: string;
-  status: string;
-}
+export type JobDetails = components["schemas"]["JobRecord"];
 
 const useJobDetails = (jobId: string) => {
   const auth = useAuth();

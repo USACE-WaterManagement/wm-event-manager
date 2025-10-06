@@ -29,3 +29,7 @@
     2. Install Packages (NodeJS required): `npm install`
     3. Run the local development vite server: `npm run dev`
 
+## Notes
+* Type Standardization
+  * TypeScript types are generated from the API for use in the frontend using [OpenAPI TypeScript](https://openapi-ts.dev/). 
+  * If API types are updated or modified, run `npm run generate:types` to update the type definitions.
