@@ -116,6 +116,10 @@ export interface components {
             /** Createdtime */
             createdTime: string;
             status: components["schemas"]["JobStatus"];
+            /** Runtime */
+            runTime?: string | null;
+            /** Endtime */
+            endTime?: string | null;
         };
         /**
          * JobStatus
