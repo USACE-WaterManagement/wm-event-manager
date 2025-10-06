@@ -73,10 +73,25 @@ class DynamoJobDatabase:
         job_items = user_jobs.get("Items")
         return [JobRecord(**dynamodb_item_to_python(item)) for item in job_items]
 
+    def update_job_field(self, job_id: str, key: str, value: Any):
+        self.table.update_item(
+            Key={"job_id": job_id},
+            UpdateExpression="set #S=:V",
+            ExpressionAttributeNames={"#S": key},
+            ExpressionAttributeValues={":V": value},
+        )
+
     def update_job_status(self, job_id: str, status: JobStatus):
+        now = datetime.now(timezone.utc).isoformat()
+
         self.table.update_item(
             Key={"job_id": job_id},
             UpdateExpression="set #S=:V",
             ExpressionAttributeNames={"#S": "status"},
             ExpressionAttributeValues={":V": status},
         )
+
+        if status == JobStatus.RUNNING:
+            self.update_job_field(job_id, "run_time", now)
+        elif status == JobStatus.COMPLETED or status == JobStatus.FAILED:
+            self.update_job_field(job_id, "end_time", now)

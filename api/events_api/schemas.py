@@ -38,6 +38,8 @@ class JobRecord(CamelModel):
     office: str
     created_time: str
     status: JobStatus
+    run_time: str | None = None
+    end_time: str | None = None
 
 
 class OfficeCatalog(CamelModel):
