@@ -7,6 +7,15 @@ const jobFields: (keyof JobDetails)[] = [
   "status",
   "office",
   "createdTime",
+  "runTime",
+  "endTime",
+  "jobId",
+];
+
+const wideFields: (keyof JobDetails)[] = [
+  "createdTime",
+  "runTime",
+  "endTime",
   "jobId",
 ];
 
@@ -19,10 +28,9 @@ function JobDetail({ job }: JobDetailProps) {
     <>
       <div className="grow grid grid-cols-2 py-3 px-5">
         {jobFields.map((field) => {
-          const className =
-            field === "jobId" || field === "createdTime"
-              ? "col-span-2"
-              : "col-span-1";
+          const className = wideFields.includes(field)
+            ? "col-span-2"
+            : "col-span-1";
           return (
             <JobDetailField key={field} field={field} className={className}>
               {job[field]}
