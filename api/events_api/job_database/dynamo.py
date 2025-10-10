@@ -2,11 +2,11 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
 from decimal import Decimal
-import os
 from typing import Any
 import uuid
 
 from ..schemas import JobRecord, JobStatus, ScriptRunRequest
+from ..settings import settings
 
 
 def dynamodb_item_to_python(item: Any) -> Any:
@@ -23,7 +23,7 @@ def dynamodb_item_to_python(item: Any) -> Any:
         return item
 
 
-dynamodb_endpoint = os.getenv("DYNAMODB_HOST", "http://dynamodb:9010")
+dynamodb_endpoint = settings.dynamodb_host
 table_name = "WM-Event-Manager-Jobs"
 
 dynamodb = boto3.resource(
