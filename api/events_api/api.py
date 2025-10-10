@@ -26,28 +26,6 @@ def get_jobs_for_user(
     return job_list
 
 
-@router.get("/jobs/{job_id}")
-def get_job_by_id(
-    job_id: str,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> JobRecord:
-    job = job_db.get_job_by_id(job_id)
-    if not job:
-        raise HTTPException(
-            status_code=404, detail=f"No job found for jobId '{job_id}'"
-        )
-    return job
-
-
-@router.get("/jobs/{job_id}/logs")
-def get_logs_for_job(
-    job_id: str, job_logger: JobLogger = Depends(get_job_logger)
-) -> JobLogs:
-    logs = job_logger.get_logs_for_job(job_id)
-    return JobLogs(logs=logs)
-
-
 @router.post("/jobs")
 def post_job(
     payload: ScriptRunRequest,
@@ -83,6 +61,28 @@ def post_job(
     )
 
     return job
+
+
+@router.get("/jobs/{job_id}")
+def get_job_by_id(
+    job_id: str,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+) -> JobRecord:
+    job = job_db.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=404, detail=f"No job found for jobId '{job_id}'"
+        )
+    return job
+
+
+@router.get("/jobs/{job_id}/logs")
+def get_logs_for_job(
+    job_id: str, job_logger: JobLogger = Depends(get_job_logger)
+) -> JobLogs:
+    logs = job_logger.get_logs_for_job(job_id)
+    return JobLogs(logs=logs)
 
 
 @router.get("/scripts/catalog")
