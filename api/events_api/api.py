@@ -48,8 +48,8 @@ def get_logs_for_job(
     return JobLogs(logs=logs)
 
 
-@router.post("/scripts/execute")
-def execute_script(
+@router.post("/jobs")
+def post_job(
     payload: ScriptRunRequest,
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
