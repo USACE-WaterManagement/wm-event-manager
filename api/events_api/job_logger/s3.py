@@ -1,10 +1,11 @@
 import boto3
-import os
 
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
-WM_EVENT_BUCKET = os.getenv("WM_EVENT_MANAGER_S3_BUCKET")
+from ..settings import settings
+
+AWS_ACCESS_KEY_ID = settings.aws_access_key_id
+AWS_SECRET_ACCESS_KEY = settings.aws_secret_access_key
+S3_ENDPOINT_URL = settings.s3_endpoint_url
+WM_EVENT_BUCKET = settings.wm_event_manager_s3_bucket
 
 
 class S3JobLogger:

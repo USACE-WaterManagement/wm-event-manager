@@ -1,6 +1,7 @@
 boto3
 fastapi
 pydantic
+pydantic-settings
 gunicorn
 uvicorn[standard]
 pyjwt[crypto]

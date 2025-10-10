@@ -1,12 +1,12 @@
 from docker import DockerClient
 from docker.client import from_env
-import os
 
 from ..job_database.base import JobDatabase
 from ..job_logger.base import JobLogger
 from ..schemas import JobStatus
+from ..settings import settings
 
-CDA_HOST = os.getenv("CDA_HOST")
+CDA_HOST = settings.cda_host
 
 
 class LocalJobRunner:

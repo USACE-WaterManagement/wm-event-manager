@@ -1,9 +1,9 @@
-import os
 import requests
 
 from events_api.schemas import CdaUserProfile
+from ..settings import settings
 
-CDA_HOST = os.getenv("CDA_HOST")
+CDA_HOST = settings.cda_host
 
 
 def get_user_allowed_offices(token: str):

@@ -1,9 +1,10 @@
 import jwt
 from jwt import PyJWKClient
-import os
 
-AUTH_HOST = os.getenv("AUTH_HOST")
-AUTH_REALM = os.getenv("AUTH_REALM")
+from ..settings import settings
+
+AUTH_HOST = settings.auth_host
+AUTH_REALM = settings.auth_realm
 
 KEYCLOAK_ISSUER = f"{AUTH_HOST}/realms/{AUTH_REALM}"
 KEYCLOAK_JWKS = f"{KEYCLOAK_ISSUER}/protocol/openid-connect/certs"
