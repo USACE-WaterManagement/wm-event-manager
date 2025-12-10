@@ -1,0 +1,18 @@
+ARG BUILDER=ghcr.io/cwbi-apps/flyway
+ARG BUILDER_TAG=latest
+
+# *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+# FROM builder
+# *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+FROM ${BUILDER}:${BUILDER_TAG} AS builder
+
+# env vars for FLYWAY
+ENV FLYWAY_EDITION=community
+ENV FLYWAY_LOCATIONS=filesystem:/flyway/sql
+
+# get the main migration files
+COPY ./main /flyway/sql/main
+
+ENTRYPOINT [ "flyway" ]
+
+CMD [ "-connectRetries=60", "migrate" ]

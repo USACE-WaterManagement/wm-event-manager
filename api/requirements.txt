@@ -1,7 +1,9 @@
 boto3
 fastapi
+psycopg2-binary
 pydantic
 pydantic-settings
+SQLAlchemy
 gunicorn
 uvicorn[standard]
 pyjwt[crypto]
