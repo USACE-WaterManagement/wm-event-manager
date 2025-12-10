@@ -4,11 +4,11 @@ from .api import router
 
 app = FastAPI()
 
-origins = ["http://localhost:5173"]
+origins = "http://localhost(:[0-9]+)?"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
