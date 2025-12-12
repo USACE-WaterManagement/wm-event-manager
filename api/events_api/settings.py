@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     cda_host: str = "http://traefik/cwms-data"
+    default_job_runner: str = "batch"
     dynamodb_host: str = "http://dynamodb:9010"
     pguser: str = ""
     pgpassword: str = ""
