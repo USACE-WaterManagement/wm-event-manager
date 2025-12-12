@@ -37,13 +37,13 @@ const JobsList = () => {
         const dateAgo = dayjs(job.createdTime).fromNow();
         return (
           <Accordion
-            key={job.jobId}
+            key={job.id}
             heading={
               <span className="flex justify-between w-full gap-1">
                 <span>
-                  {job.script} ({dateAgo})
+                  {job.scriptName} ({dateAgo})
                 </span>
-                <span>{job.status}</span>
+                <span>{job.jobStatus}</span>
               </span>
             }
           >
@@ -51,7 +51,7 @@ const JobsList = () => {
               <JobDetail job={job} />
               <Link
                 to={`/jobs/$jobId`}
-                params={{ jobId: job.jobId }}
+                params={{ jobId: job.id }}
                 className="px-4 pb-4 content-end"
               >
                 <Button>Details</Button>

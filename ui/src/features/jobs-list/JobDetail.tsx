@@ -2,21 +2,21 @@ import { PropsWithChildren } from "react";
 import { JobDetails } from "./useJobDetails";
 
 const jobFields: (keyof JobDetails)[] = [
-  "script",
-  "user",
-  "status",
+  "scriptName",
+  "username",
+  "jobStatus",
   "office",
   "createdTime",
   "runTime",
   "endTime",
-  "jobId",
+  "id",
 ];
 
 const wideFields: (keyof JobDetails)[] = [
   "createdTime",
   "runTime",
   "endTime",
-  "jobId",
+  "id",
 ];
 
 interface JobDetailProps {

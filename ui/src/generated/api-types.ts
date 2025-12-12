@@ -14,7 +14,8 @@ export interface paths {
         /** Get Jobs For User */
         get: operations["get_jobs_for_user_jobs_get"];
         put?: never;
-        post?: never;
+        /** Post Job */
+        post: operations["post_job_jobs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -55,23 +56,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scripts/execute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Execute Script */
-        post: operations["execute_script_scripts_execute_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/scripts/catalog": {
         parameters: {
             query?: never;
@@ -105,21 +89,34 @@ export interface components {
         };
         /** JobRecord */
         JobRecord: {
-            /** Jobid */
-            jobId: string;
-            /** Script */
-            script: string;
-            /** User */
-            user: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scriptname */
+            scriptName: string;
+            jobStatus: components["schemas"]["JobStatus"];
+            /** Username */
+            username: string;
             /** Office */
             office: string;
-            /** Createdtime */
+            /**
+             * Createdtime
+             * Format: date-time
+             */
             createdTime: string;
-            status: components["schemas"]["JobStatus"];
             /** Runtime */
             runTime?: string | null;
             /** Endtime */
             endTime?: string | null;
+            /**
+             * Jobrunnerid
+             * Format: uuid
+             */
+            jobRunnerId: string;
+            /** Externaljobid */
+            externalJobId?: string | null;
         };
         /**
          * JobStatus
@@ -183,6 +180,39 @@ export interface operations {
             };
         };
     };
+    post_job_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_job_by_id_jobs__job_id__get: {
         parameters: {
             query?: never;
@@ -232,39 +262,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobLogs"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    execute_script_scripts_execute_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScriptRunRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JobRecord"];
                 };
             };
             /** @description Validation Error */
