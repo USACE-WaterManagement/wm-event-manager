@@ -2,7 +2,8 @@ from fastapi import Depends
 
 from .auth.user import get_current_user_keycloak, get_current_user_mock
 from .job_database.base import JobDatabase
-from .job_database.dynamo import DynamoJobDatabase
+from .job_database.postgres.postgres import PostgresJobDatabase
+from .job_database.postgres.session import get_db_session
 from .job_logger.base import JobLogger
 from .job_logger.s3 import S3JobLogger
 from .job_runner.base import JobRunner
@@ -16,8 +17,8 @@ else:
     get_current_user = get_current_user_keycloak
 
 
-def get_job_database() -> JobDatabase:
-    return DynamoJobDatabase()
+def get_job_database(db_session=Depends(get_db_session)) -> JobDatabase:
+    return PostgresJobDatabase(db=db_session)
 
 
 def get_job_logger() -> JobLogger:

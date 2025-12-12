@@ -1,6 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+from uuid import UUID
 
 
 class CamelModel(BaseModel):
@@ -32,14 +34,25 @@ class JobLogs(CamelModel):
 
 
 class JobRecord(CamelModel):
-    job_id: str
-    script: str
-    user: str
+    id: UUID
+    script_name: str
+    job_status: JobStatus
+    username: str
     office: str
-    created_time: str
-    status: JobStatus
-    run_time: str | None = None
-    end_time: str | None = None
+    created_time: datetime
+    run_time: datetime | None = None
+    end_time: datetime | None = None
+    job_runner_id: UUID
+    external_job_id: str | None = None
+
+
+class JobRunner(CamelModel):
+    id: UUID
+    slug: str
+    label: str
+    description: str
+    active: bool
+    created_time: datetime
 
 
 class OfficeCatalog(CamelModel):

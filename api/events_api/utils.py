@@ -1,3 +1,19 @@
+import uuid
+
+from .settings import settings
+
+BATCH_RUNNER_ID = "58600a09-f18e-42c5-9d3c-df52ebe409f9"
+LOCAL_RUNNER_ID = "13f391ef-7597-4b4b-a0ef-0926c09d4649"
+
+
+def get_runner_id() -> uuid.UUID:
+    return (
+        uuid.UUID(LOCAL_RUNNER_ID)
+        if settings.default_job_runner == "docker-local"
+        else uuid.UUID(BATCH_RUNNER_ID)
+    )
+
+
 ALL_OFFICES = [
     "MVS",
     "LRDO",

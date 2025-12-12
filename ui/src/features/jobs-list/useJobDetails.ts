@@ -14,7 +14,10 @@ const useJobDetails = (jobId: string) => {
     refetchInterval: (query) => {
       const data = query.state.data;
       console.log(data);
-      if (data && (data.status === "Completed" || data.status === "Failed"))
+      if (
+        data &&
+        (data.jobStatus === "Completed" || data.jobStatus === "Failed")
+      )
         return false;
       return 5000;
     },

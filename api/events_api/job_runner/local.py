@@ -1,5 +1,6 @@
 from docker import DockerClient
 from docker.client import from_env
+from uuid import UUID
 
 from ..job_database.base import JobDatabase
 from ..job_logger.base import JobLogger
@@ -14,7 +15,7 @@ class LocalJobRunner:
         self.db = db
         self.logger = logger
 
-    def run_job(self, office: str, script: str, job_id: str):
+    def run_job(self, office: str, script: str, job_id: UUID):
         client: DockerClient = from_env()
         container = None
 

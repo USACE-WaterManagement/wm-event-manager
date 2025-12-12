@@ -7,6 +7,7 @@ import uuid
 
 from ..schemas import JobRecord, JobStatus, ScriptRunRequest
 from ..settings import settings
+from ..utils import get_runner_id
 
 
 def dynamodb_item_to_python(item: Any) -> Any:
@@ -42,21 +43,23 @@ class DynamoJobDatabase:
         self.table = job_table
 
     def create_job(self, payload: ScriptRunRequest, user_id: str):
-        job_id = str(uuid.uuid4())
+        job_id = uuid.uuid4()
+
         job = JobRecord(
-            job_id=job_id,
-            script=payload.script_name,
-            user=user_id,
+            id=job_id,
+            script_name=payload.script_name,
+            username=user_id,
             office=payload.office_name,
-            created_time=datetime.now(timezone.utc).isoformat(),
-            status=JobStatus.PENDING,
+            created_time=datetime.now(timezone.utc),
+            job_status=JobStatus.PENDING,
+            job_runner_id=get_runner_id(),
         )
         self.table.put_item(Item=job.model_dump(by_alias=False))
         return job
 
-    def get_job_by_id(self, job_id: str) -> JobRecord | None:
+    def get_job_by_id(self, job_id: uuid.UUID) -> JobRecord | None:
         response = self.table.get_item(
-            Key={"job_id": job_id},
+            Key={"job_id": str(job_id)},
         )
         job = response.get("Item")
         if not job:
@@ -73,19 +76,19 @@ class DynamoJobDatabase:
         job_items = user_jobs.get("Items")
         return [JobRecord(**dynamodb_item_to_python(item)) for item in job_items]
 
-    def update_job_field(self, job_id: str, key: str, value: Any):
+    def update_job_field(self, job_id: uuid.UUID, key: str, value: Any):
         self.table.update_item(
-            Key={"job_id": job_id},
+            Key={"job_id": str(job_id)},
             UpdateExpression="set #S=:V",
             ExpressionAttributeNames={"#S": key},
             ExpressionAttributeValues={":V": value},
         )
 
-    def update_job_status(self, job_id: str, status: JobStatus):
+    def update_job_status(self, job_id: uuid.UUID, status: JobStatus):
         now = datetime.now(timezone.utc).isoformat()
 
         self.table.update_item(
-            Key={"job_id": job_id},
+            Key={"job_id": str(job_id)},
             UpdateExpression="set #S=:V",
             ExpressionAttributeNames={"#S": "status"},
             ExpressionAttributeValues={":V": status},

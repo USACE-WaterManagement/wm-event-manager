@@ -8,7 +8,12 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     cda_host: str = "http://traefik/cwms-data"
+    default_job_runner: str = "batch"
     dynamodb_host: str = "http://dynamodb:9010"
+    pguser: str = ""
+    pgpassword: str = ""
+    pgdatabase: str = "postgres"
+    pghost: str = "db"
     mock_user: bool = False
     s3_endpoint_url: str = "http://minio:9000"
     wm_event_manager_s3_bucket: str = "wm-event-manager-local"
