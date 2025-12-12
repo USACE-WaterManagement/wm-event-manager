@@ -57,9 +57,9 @@ class DynamoJobDatabase:
         self.table.put_item(Item=job.model_dump(by_alias=False))
         return job
 
-    def get_job_by_id(self, job_id: str) -> JobRecord | None:
+    def get_job_by_id(self, job_id: uuid.UUID) -> JobRecord | None:
         response = self.table.get_item(
-            Key={"job_id": job_id},
+            Key={"job_id": str(job_id)},
         )
         job = response.get("Item")
         if not job:
@@ -76,19 +76,19 @@ class DynamoJobDatabase:
         job_items = user_jobs.get("Items")
         return [JobRecord(**dynamodb_item_to_python(item)) for item in job_items]
 
-    def update_job_field(self, job_id: str, key: str, value: Any):
+    def update_job_field(self, job_id: uuid.UUID, key: str, value: Any):
         self.table.update_item(
-            Key={"job_id": job_id},
+            Key={"job_id": str(job_id)},
             UpdateExpression="set #S=:V",
             ExpressionAttributeNames={"#S": key},
             ExpressionAttributeValues={":V": value},
         )
 
-    def update_job_status(self, job_id: str, status: JobStatus):
+    def update_job_status(self, job_id: uuid.UUID, status: JobStatus):
         now = datetime.now(timezone.utc).isoformat()
 
         self.table.update_item(
-            Key={"job_id": job_id},
+            Key={"job_id": str(job_id)},
             UpdateExpression="set #S=:V",
             ExpressionAttributeNames={"#S": "status"},
             ExpressionAttributeValues={":V": status},

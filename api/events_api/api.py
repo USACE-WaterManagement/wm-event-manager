@@ -1,4 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from uuid import UUID
 
 
 from .auth.user import User
@@ -57,7 +58,7 @@ def post_job(
     job = job_db.create_job(payload, user.username)
 
     background_tasks.add_task(
-        runner.run_job, payload.office_name, payload.script_name, job.job_id
+        runner.run_job, payload.office_name, payload.script_name, job.id
     )
 
     return job
@@ -65,7 +66,7 @@ def post_job(
 
 @router.get("/jobs/{job_id}")
 def get_job_by_id(
-    job_id: str,
+    job_id: UUID,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> JobRecord:
@@ -79,7 +80,7 @@ def get_job_by_id(
 
 @router.get("/jobs/{job_id}/logs")
 def get_logs_for_job(
-    job_id: str, job_logger: JobLogger = Depends(get_job_logger)
+    job_id: UUID, job_logger: JobLogger = Depends(get_job_logger)
 ) -> JobLogs:
     logs = job_logger.get_logs_for_job(job_id)
     return JobLogs(logs=logs)

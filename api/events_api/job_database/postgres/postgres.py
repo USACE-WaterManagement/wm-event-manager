@@ -30,7 +30,7 @@ class PostgresJobDatabase:
         self.db.refresh(job)
         return to_job_record(job)
 
-    def get_job_by_id(self, job_id: str) -> JobRecord | None:
+    def get_job_by_id(self, job_id: uuid.UUID) -> JobRecord | None:
         job_model = self.db.get(JobModel, job_id)
         if job_model is None:
             return None
@@ -42,7 +42,7 @@ class PostgresJobDatabase:
         ).all()
         return [to_job_record(model) for model in job_models]
 
-    def update_job_field(self, job_id: str, key: str, value: Any) -> None:
+    def update_job_field(self, job_id: uuid.UUID, key: str, value: Any) -> None:
         job = self.db.get(JobModel, job_id)
 
         if not job:
@@ -54,7 +54,7 @@ class PostgresJobDatabase:
         setattr(job, key, value)
         self.db.commit()
 
-    def update_job_status(self, job_id: str, status: JobStatus) -> None:
+    def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
         job = self.db.get(JobModel, job_id)
 
         if not job:
