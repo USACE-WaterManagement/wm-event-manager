@@ -7,6 +7,7 @@ import uuid
 
 from ..schemas import JobRecord, JobStatus, ScriptRunRequest
 from ..settings import settings
+from ..utils import get_runner_id
 
 
 def dynamodb_item_to_python(item: Any) -> Any:
@@ -42,14 +43,16 @@ class DynamoJobDatabase:
         self.table = job_table
 
     def create_job(self, payload: ScriptRunRequest, user_id: str):
-        job_id = str(uuid.uuid4())
+        job_id = uuid.uuid4()
+
         job = JobRecord(
-            job_id=job_id,
-            script=payload.script_name,
-            user=user_id,
+            id=job_id,
+            script_name=payload.script_name,
+            username=user_id,
             office=payload.office_name,
-            created_time=datetime.now(timezone.utc).isoformat(),
-            status=JobStatus.PENDING,
+            created_time=datetime.now(timezone.utc),
+            job_status=JobStatus.PENDING,
+            job_runner_id=get_runner_id(),
         )
         self.table.put_item(Item=job.model_dump(by_alias=False))
         return job
