@@ -31,7 +31,7 @@ services:
       WM_WEB_INTERNAL_S3_BUCKET: wm-web-internal-local
       WM_WEB_PUBLIC_S3_BUCKET: wm-web-public-local
     volumes:
-      - ./events_api:/code/events_api
+      - ./api/events_api:/code/events_api
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio
@@ -93,7 +93,7 @@ services:
   flyway:
     platform: linux/amd64
     build:
-      context: ./migration
+      context: ./api/migration
     restart: on-failure
     environment:
       FLYWAY_CLEAN_DISABLED: true
@@ -105,7 +105,7 @@ services:
       FLYWAY_PLACEHOLDERS_APP_USER: *application_user
       FLYWAY_PLACEHOLDERS_APP_PASSWORD: *application_password
     volumes:
-      - ./migration/local:/flyway/sql/local
+      - ./api/migration/local:/flyway/sql/local
     depends_on:
       db:
         condition: service_healthy

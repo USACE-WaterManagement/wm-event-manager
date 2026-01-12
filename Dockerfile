@@ -22,7 +22,7 @@ WORKDIR /code
 
 COPY --from=builder /usr/local /usr/local
 
-COPY ./events_api ./events_api
+COPY ./api/events_api ./events_api
 
 EXPOSE 8000
 
