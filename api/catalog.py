@@ -2,7 +2,7 @@ import boto3
 import botocore.exceptions
 import json
 
-from events_api.schemas import OfficeCatalog
+from api.schemas import OfficeCatalog
 from .settings import settings
 
 AWS_ACCESS_KEY_ID = settings.aws_access_key_id

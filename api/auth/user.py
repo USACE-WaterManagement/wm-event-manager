@@ -2,8 +2,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
-from events_api.auth.roles import get_user_allowed_offices
-from events_api.utils import ALL_OFFICES
+from api.auth.roles import get_user_allowed_offices
+from api.utils import ALL_OFFICES
 
 from .jwt import verify_jwt
 

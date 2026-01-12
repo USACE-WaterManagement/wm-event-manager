@@ -1,6 +1,6 @@
 import requests
 
-from events_api.schemas import CdaUserProfile
+from api.schemas import CdaUserProfile
 from ..settings import settings
 
 CDA_HOST = settings.cda_host
