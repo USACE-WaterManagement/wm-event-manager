@@ -93,7 +93,7 @@ services:
   flyway:
     platform: linux/amd64
     build:
-      context: ./api/migration
+      context: ./infra/migration
     restart: on-failure
     environment:
       FLYWAY_CLEAN_DISABLED: true
@@ -105,7 +105,7 @@ services:
       FLYWAY_PLACEHOLDERS_APP_USER: *application_user
       FLYWAY_PLACEHOLDERS_APP_PASSWORD: *application_password
     volumes:
-      - ./api/migration/local:/flyway/sql/local
+      - ./infra/migration/local:/flyway/sql/local
     depends_on:
       db:
         condition: service_healthy
