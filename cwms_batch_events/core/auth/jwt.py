@@ -1,7 +1,7 @@
 import jwt
 from jwt import PyJWKClient
 
-from cwms_batch_events.api.settings import settings
+from cwms_batch_events.core.settings import settings
 
 AUTH_HOST = settings.auth_host
 AUTH_REALM = settings.auth_realm

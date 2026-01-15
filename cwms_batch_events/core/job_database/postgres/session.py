@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
 
-from cwms_batch_events.api.settings import settings
+from cwms_batch_events.core.settings import settings
 
 db_url = URL.create(
     drivername="postgresql+psycopg2",

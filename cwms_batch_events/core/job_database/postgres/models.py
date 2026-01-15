@@ -4,7 +4,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from typing import Optional
 import uuid
 
-from cwms_batch_events.api.schemas import JobStatus
+from cwms_batch_events.core.models import JobStatus
 
 
 class Base(DeclarativeBase):

@@ -1,7 +1,7 @@
 from typing import Any, Protocol
 from uuid import UUID
 
-from cwms_batch_events.api.schemas import JobRecord, JobStatus, ScriptRunRequest
+from cwms_batch_events.core.models import JobRecord, JobStatus, ScriptRunRequest
 
 
 class JobDatabase(Protocol):

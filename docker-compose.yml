@@ -31,7 +31,7 @@ services:
       WM_WEB_INTERNAL_S3_BUCKET: wm-web-internal-local
       WM_WEB_PUBLIC_S3_BUCKET: wm-web-public-local
     volumes:
-      - ./cwms_batch_events/api:/code/api
+      - ./cwms_batch_events:/code/cwms_batch_events
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio

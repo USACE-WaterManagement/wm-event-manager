@@ -2,10 +2,10 @@ from docker import DockerClient
 from docker.client import from_env
 from uuid import UUID
 
-from cwms_batch_events.api.job_database.base import JobDatabase
-from cwms_batch_events.api.job_logger.base import JobLogger
-from cwms_batch_events.api.schemas import JobStatus
-from cwms_batch_events.api.settings import settings
+from cwms_batch_events.core.job_database.base import JobDatabase
+from cwms_batch_events.core.job_logger.base import JobLogger
+from cwms_batch_events.core.models import JobStatus
+from cwms_batch_events.core.settings import settings
 
 CDA_HOST = settings.cda_host
 
