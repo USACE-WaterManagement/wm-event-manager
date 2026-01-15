@@ -22,14 +22,14 @@ WORKDIR /code
 
 COPY --from=builder /usr/local /usr/local
 
-COPY ./api ./api
+COPY ./cwms_batch_events/api ./cwms_batch_events/api
 
 EXPOSE 8000
 
 CMD ["gunicorn", \
     "-w", "2", \
     "-k", "uvicorn.workers.UvicornWorker", \
-    "api.main:app", \
+    "cwms_batch_events.api.main:app", \
     "--bind", "0.0.0.0:8000", \
     "--access-logfile", "-", \
     "--error-logfile", "-"]

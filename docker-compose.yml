@@ -31,13 +31,13 @@ services:
       WM_WEB_INTERNAL_S3_BUCKET: wm-web-internal-local
       WM_WEB_PUBLIC_S3_BUCKET: wm-web-public-local
     volumes:
-      - ./api:/code/api
+      - ./cwms_batch_events/api:/code/api
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - minio
       - db
     command: >
-      uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+      uvicorn cwms_batch_events.api.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - cwms
 

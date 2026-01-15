@@ -33,7 +33,7 @@ def wait_for_dynamodb(max_attempts=10, delay=2):
 def create_table(name):
     tables = dynamodb.list_tables()
     if name in tables.get("TableNames", []):
-        print(f"ℹ️ Table '{name}' already exists.")
+        print(f"Table '{name}' already exists.")
         return
 
     dynamodb.create_table(
