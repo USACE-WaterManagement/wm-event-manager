@@ -1,7 +1,7 @@
 import requests
 
 from cwms_batch_events.api.schemas import CdaUserProfile
-from ..settings import settings
+from cwms_batch_events.api.settings import settings
 
 CDA_HOST = settings.cda_host
 

@@ -1,7 +1,7 @@
 import boto3
 from uuid import UUID
 
-from ..settings import settings
+from cwms_batch_events.api.settings import settings
 
 AWS_ACCESS_KEY_ID = settings.aws_access_key_id
 AWS_SECRET_ACCESS_KEY = settings.aws_secret_access_key

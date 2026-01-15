@@ -1,6 +1,6 @@
 import uuid
 
-from .settings import settings
+from cwms_batch_events.api.settings import settings
 
 BATCH_RUNNER_ID = "58600a09-f18e-42c5-9d3c-df52ebe409f9"
 LOCAL_RUNNER_ID = "13f391ef-7597-4b4b-a0ef-0926c09d4649"

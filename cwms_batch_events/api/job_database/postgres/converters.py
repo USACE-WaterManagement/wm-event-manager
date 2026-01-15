@@ -1,5 +1,5 @@
-from .models import JobModel, JobRunnerModel
-from ...schemas import JobRecord, JobRunner
+from cwms_batch_events.api.job_database.postgres.models import JobModel, JobRunnerModel
+from cwms_batch_events.api.schemas import JobRecord, JobRunner
 
 
 def to_job_record(model: JobModel):
