@@ -66,3 +66,21 @@ class OfficeCatalogs(CamelModel):
 class ScriptRunRequest(CamelModel):
     office_name: str
     script_name: str
+
+
+class JobSource(str, Enum):
+    API = "api"
+
+
+class JobRequestedBy(BaseModel):
+    username: str
+    source: JobSource
+
+
+class JobMessage(BaseModel):
+    version: str
+    job_id: UUID
+    runner_type: str
+    requested_by: JobRequestedBy
+    created_at: datetime
+    payload: ScriptRunRequest
