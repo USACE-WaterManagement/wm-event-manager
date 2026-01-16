@@ -36,8 +36,20 @@ services:
     depends_on:
       - minio
       - db
+      - elasticmq
     command: >
       uvicorn cwms_batch_events.api.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - cwms
+
+  elasticmq:
+    image: softwaremill/elasticmq-native
+    ports:
+      - '9324:9324'
+      - '9325:9325'
+    restart: always
+    volumes:
+      - ./infra/elasticmq/elasticmq.conf:/opt/elasticmq.conf
     networks:
       - cwms
 
