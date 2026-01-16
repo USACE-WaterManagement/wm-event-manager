@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 from typing import Any
 import uuid
 
-from .converters import to_job_record
-from .models import JobModel
-from ...schemas import JobRecord, JobStatus, ScriptRunRequest
-from ...utils import get_runner_id
+from cwms_batch_events.core.job_database.postgres.converters import to_job_record
+from cwms_batch_events.core.job_database.postgres.models import JobModel
+from cwms_batch_events.core.models import JobRecord, JobStatus, ScriptRunRequest
+from cwms_batch_events.core.utils import get_runner_id
 
 
 class PostgresJobDatabase:

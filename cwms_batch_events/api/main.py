@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .api import router
+from cwms_batch_events.api.api import router
 
 app = FastAPI()
 

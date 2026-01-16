@@ -2,8 +2,8 @@ import boto3
 import botocore.exceptions
 import json
 
-from events_api.schemas import OfficeCatalog
-from .settings import settings
+from cwms_batch_events.core.models import OfficeCatalog
+from cwms_batch_events.core.settings import settings
 
 AWS_ACCESS_KEY_ID = settings.aws_access_key_id
 AWS_SECRET_ACCESS_KEY = settings.aws_secret_access_key
