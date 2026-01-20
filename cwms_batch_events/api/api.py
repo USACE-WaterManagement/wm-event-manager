@@ -8,17 +8,18 @@ from cwms_batch_events.api.dependencies import (
     get_current_user,
     get_job_database,
     get_job_logger,
-    get_job_runner,
+    get_job_queue,
 )
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_logger.base import JobLogger
-from cwms_batch_events.core.job_runner.base import JobRunner
 from cwms_batch_events.core.models import (
     JobLogs,
     JobRecord,
+    JobSource,
     ScriptRunRequest,
     OfficeCatalogs,
 )
+from cwms_batch_events.core.queue import JobQueue
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ def post_job(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
-    runner: JobRunner = Depends(get_job_runner),
+    queue: JobQueue = Depends(get_job_queue),
 ) -> JobRecord:
     if payload.office_name not in user.offices:
         raise HTTPException(
@@ -62,9 +63,8 @@ def post_job(
 
     job = job_db.create_job(payload, user.username)
 
-    background_tasks.add_task(
-        runner.run_job, payload.office_name, payload.script_name, job.id
-    )
+    message = queue.create_job_message(job.id, user.username, JobSource.API, payload)
+    background_tasks.add_task(queue.send_job_message, message)
 
     return job
 
