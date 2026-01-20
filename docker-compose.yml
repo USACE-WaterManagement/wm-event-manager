@@ -43,6 +43,28 @@ services:
     networks:
       - cwms
 
+  dispatcher:
+    build:
+      context: .
+      dockerfile: infra/dispatcher/Dockerfile
+    depends_on:
+      - elasticmq
+      - db
+    environment:
+      SQS_ENDPOINT_URL: http://elasticmq:9324
+      AWS_ACCESS_KEY_ID: eventsadmin
+      AWS_SECRET_ACCESS_KEY: eventsadmin
+      AWS_REGION: us-gov-west-1
+      PGUSER: *application_user
+      PGPASSWORD: *application_password
+      PGDATABASE: postgres
+      PGHOST: db
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cwms
+
+
   elasticmq:
     image: softwaremill/elasticmq-native
     ports:
