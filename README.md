@@ -4,19 +4,18 @@ The Water Management Event Manager provides users an API and user interface to e
 
 ## Contributions
 
-To get your local environment setup and/or make contributions please see the contributions documentation:
+To get your local environment setup and/or make contributions please see the contributions documentation: [CONTRIBUTING.md](https://github.com/USACE-WaterManagement/cwms-batch-events/blob/cwbi-dev/CONTRIBUTING.md)
 
 
 ### Local Development Setup
 
-For a detailed rundown see the [CONTRIBUTING.md](https://github.com/usace-watermanagement/wm-event-manager/CONTRIBUTING.md)
-
 #### Critical URLs
 page | url
 ---- | ---
+ElasticMQ Web Interface | http://localhost:9325
 Minio Web Interface | http://localhost:9001
-Swagger Docs | http://localhost:8000/docs
 Web Dev Server | http://localhost:5173
+Swagger Docs | http://localhost:8000/docs
 Redoc | http://localhost:8000/redoc
 
 #### Python
@@ -29,7 +28,7 @@ By default, the local instance of the API uses a mock user account.  This accoun
 The API will reference district script docker images that exist locally by the name `[office-code]-jobs`, e.g. `lrh-jobs`.  These can be created by cloning the corresponding district jobs repo, e.g. [lrh-wm-cwbi-jobs](https://github.com/USACE-WaterManagement/lrh-wm-cwbi-jobs), and building the images from the local dockerfile with `docker build . -t [office-code]-jobs`.
 
 #### Script Catalogs
-Add the office code and repo path for any locally-available district job containers to `api/scripts/catalog_config.toml`. Then, run `api/scripts/build_catalogs.py`. This will generate a `scripts_catalog.json` object under each available district's prefix within minio.
+Add the office code and repo path for any locally-available district job containers to `scripts/catalogs/catalog_config.toml`. Then, run `scripts/catalogs/build_catalogs.py`. This will generate a `scripts_catalog.json` object under each available district's prefix within minio.
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.

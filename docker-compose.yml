@@ -16,9 +16,10 @@ services:
       # Comment out MOCK_USER to test a "real" keycloak workflow
       MOCK_USER: true
       S3_ENDPOINT_URL: http://minio:9000
+      SQS_ENDPOINT_URL: http://elasticmq:9324
       AWS_ACCESS_KEY_ID: eventsadmin
       AWS_SECRET_ACCESS_KEY: eventsadmin
-      REGION: eu-west-1
+      AWS_REGION: us-gov-west-1
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
       CDA_HOST: http://traefik/cwms-data
@@ -36,8 +37,42 @@ services:
     depends_on:
       - minio
       - db
+      - elasticmq
     command: >
       uvicorn cwms_batch_events.api.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - cwms
+
+  dispatcher:
+    build:
+      context: .
+      dockerfile: infra/dispatcher/Dockerfile
+    depends_on:
+      - elasticmq
+      - db
+    environment:
+      SQS_ENDPOINT_URL: http://elasticmq:9324
+      AWS_ACCESS_KEY_ID: eventsadmin
+      AWS_SECRET_ACCESS_KEY: eventsadmin
+      AWS_REGION: us-gov-west-1
+      PGUSER: *application_user
+      PGPASSWORD: *application_password
+      PGDATABASE: postgres
+      PGHOST: db
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cwms
+
+
+  elasticmq:
+    image: softwaremill/elasticmq-native
+    ports:
+      - '9324:9324'
+      - '9325:9325'
+    restart: always
+    volumes:
+      - ./infra/elasticmq/elasticmq.conf:/opt/elasticmq.conf
     networks:
       - cwms
 

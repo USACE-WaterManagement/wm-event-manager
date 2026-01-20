@@ -6,11 +6,12 @@ from cwms_batch_events.core.auth.user import (
 )
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_database.postgres.postgres import PostgresJobDatabase
-from cwms_batch_events.core.job_database.postgres.session import get_db_session
+from cwms_batch_events.core.job_database.postgres.session import create_session
 from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.job_logger.s3 import S3JobLogger
 from cwms_batch_events.core.job_runner.base import JobRunner
 from cwms_batch_events.core.job_runner.local import LocalJobRunner
+from cwms_batch_events.core.queue import JobQueue
 from cwms_batch_events.core.settings import settings
 
 MOCK_USER = settings.mock_user
@@ -20,12 +21,24 @@ else:
     get_current_user = get_current_user_keycloak
 
 
+def get_db_session():
+    db = create_session()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def get_job_database(db_session=Depends(get_db_session)) -> JobDatabase:
     return PostgresJobDatabase(db=db_session)
 
 
 def get_job_logger() -> JobLogger:
     return S3JobLogger()
+
+
+def get_job_queue() -> JobQueue:
+    return JobQueue()
 
 
 def get_job_runner(

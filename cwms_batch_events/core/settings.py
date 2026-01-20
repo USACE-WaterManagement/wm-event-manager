@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     auth_realm: str = "cwms"
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
+    aws_region: str = "us-gov-west-1"
     cda_host: str = "http://traefik/cwms-data"
     default_job_runner: str = "batch"
     dynamodb_host: str = "http://dynamodb:9010"
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     pghost: str = "db"
     mock_user: bool = False
     s3_endpoint_url: str = "http://minio:9000"
+    sqs_endpoint_url: str = "http://elasticmq:9324"
     wm_event_manager_s3_bucket: str = "wm-event-manager-local"
 
 

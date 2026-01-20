@@ -1,7 +1,8 @@
 from typing import Protocol
-from uuid import UUID
+
+from cwms_batch_events.core.models import JobMessage
 
 
 class JobRunner(Protocol):
-    def run_job(self, office: str, script: str, job_id: UUID):
+    def run_job(self, message: JobMessage):
         pass
