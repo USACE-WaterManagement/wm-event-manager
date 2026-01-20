@@ -15,14 +15,13 @@
     2. Change directory into the cloned repo
     3. Build the local container for jobs after cloning with: `docker build . -t swt-jobs`
 3. Start the API Server **(From the project root)**
-    1. Run `cd api`
-    2. Create the `cwms` docker network with: `docker network create cwms`
+    1. Create the `cwms` docker network with: `docker network create cwms`
     2. Start the API server environment with `docker compose up`   
 4. Populate the script catalogs from step #2
     1. Enter the local repositories you have cloned from step #2 into this file:   
-    `/home/rocky/projects/wm-event-manager/api/scripts/catalog_config.toml`  
+    `/home/rocky/projects/cwms-batch-events/scripts/catalogs/catalog_config.toml`  
     *NOTE:* Absolute paths are recommended!
-    2. Jump to the catalog directory: `cd api/scripts`
+    2. Jump to the catalog directory: `cd scripts/catalogs`
     3. Run the catalog script: `python3 build_catalogs.py`
 5. Start the Web Interface **(From the project root)**
     1. `cd ui`
