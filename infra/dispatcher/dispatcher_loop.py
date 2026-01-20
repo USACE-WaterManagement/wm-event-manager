@@ -1,10 +1,10 @@
 import boto3
 import json
 import logging
-from cwms_batch_events.core.dispatcher import JobDispatcher
-from cwms_batch_events.core.job_database.postgres import postgres, session
+from cwms_batch_events.core.job_database.postgres import session
 from cwms_batch_events.core.job_logger.s3 import S3JobLogger
 from cwms_batch_events.core.models import JobMessage
+from cwms_batch_events.core.processing import process_job_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger()
@@ -35,21 +35,12 @@ while True:
 
     for msg in resp.get("Messages", []):
         logger.info(f"Handling message: {msg}")
-        db_session = session.create_session()
+        body = json.loads(msg["Body"])
+        message = JobMessage(**body)
 
-        try:
-            db = postgres.PostgresJobDatabase(db=db_session)
-            dispatcher = JobDispatcher(db, job_logger)
+        process_job_message(message, session.create_session, job_logger)
 
-            body = json.loads(msg["Body"])
-            message = JobMessage(**body)
-
-            dispatcher.dispatch_job(message)
-
-            sqs.delete_message(
-                QueueUrl=QUEUE_URL,
-                ReceiptHandle=msg["ReceiptHandle"],
-            )
-
-        finally:
-            db_session.close()
+        sqs.delete_message(
+            QueueUrl=QUEUE_URL,
+            ReceiptHandle=msg["ReceiptHandle"],
+        )
