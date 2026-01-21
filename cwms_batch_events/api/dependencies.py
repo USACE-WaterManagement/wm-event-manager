@@ -8,6 +8,7 @@ from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_database.postgres.postgres import PostgresJobDatabase
 from cwms_batch_events.core.job_database.postgres.session import create_session
 from cwms_batch_events.core.job_logger.base import JobLogger
+from cwms_batch_events.core.job_logger.cloudwatch import CloudWatchJobLogger
 from cwms_batch_events.core.job_logger.s3 import S3JobLogger
 from cwms_batch_events.core.job_runner.base import JobRunner
 from cwms_batch_events.core.job_runner.local import LocalJobRunner
@@ -32,8 +33,11 @@ def get_job_database(db_session=Depends(get_db_session)) -> JobDatabase:
     return PostgresJobDatabase(db=db_session)
 
 
-def get_job_logger() -> JobLogger:
-    return S3JobLogger()
+def get_job_logger(db=Depends(get_db_session)) -> JobLogger:
+    if settings.default_job_runner == "docker-local":
+        return S3JobLogger()
+    else:
+        return CloudWatchJobLogger(db)
 
 
 def get_job_queue() -> JobQueue:
