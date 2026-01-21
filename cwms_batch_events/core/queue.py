@@ -23,7 +23,7 @@ class JobQueue:
             region_name=settings.aws_region,
         )
         self.queue = self.sqs.get_queue_by_name(QueueName="cwms-batch-events")
-        self.runner_type = "docker-local"
+        self.runner_type = settings.default_job_runner
 
     def create_job_message(
         self, job_id: UUID, username: str, source: JobSource, payload: ScriptRunRequest

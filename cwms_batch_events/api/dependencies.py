@@ -14,8 +14,7 @@ from cwms_batch_events.core.job_runner.local import LocalJobRunner
 from cwms_batch_events.core.queue import JobQueue
 from cwms_batch_events.core.settings import settings
 
-MOCK_USER = settings.mock_user
-if MOCK_USER:
+if settings.mock_user:
     get_current_user = get_current_user_mock
 else:
     get_current_user = get_current_user_keycloak
