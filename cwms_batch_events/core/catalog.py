@@ -5,8 +5,6 @@ import json
 from cwms_batch_events.core.models import OfficeCatalog
 from cwms_batch_events.core.settings import settings
 
-AWS_ACCESS_KEY_ID = settings.aws_access_key_id
-AWS_SECRET_ACCESS_KEY = settings.aws_secret_access_key
 S3_ENDPOINT_URL = settings.s3_endpoint_url
 WM_EVENT_BUCKET = settings.wm_event_manager_s3_bucket
 
@@ -15,8 +13,6 @@ def get_scripts_catalog(office: str):
     s3 = boto3.client(
         "s3",
         endpoint_url=S3_ENDPOINT_URL,
-        aws_access_key_id=AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
 
     try:

@@ -36,6 +36,14 @@ class PostgresJobDatabase:
             return None
         return to_job_record(job_model)
 
+    def get_job_by_external_id(self, ext_job_id: str) -> JobRecord | None:
+        job_model = self.db.scalars(
+            select(JobModel).where(JobModel.external_job_id == ext_job_id)
+        ).one_or_none()
+        if job_model is None:
+            return None
+        return to_job_record(job_model)
+
     def get_jobs_for_user(self, user_id: str) -> list[JobRecord]:
         job_models = self.db.scalars(
             select(JobModel).where(JobModel.username == user_id)

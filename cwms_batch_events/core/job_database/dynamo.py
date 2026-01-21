@@ -30,9 +30,6 @@ table_name = "WM-Event-Manager-Jobs"
 dynamodb = boto3.resource(
     "dynamodb",
     endpoint_url=dynamodb_endpoint,
-    region_name="us-west-1",
-    aws_access_key_id="eventsadmin",
-    aws_secret_access_key="eventsadmin",
 )
 
 job_table = dynamodb.Table(table_name)
