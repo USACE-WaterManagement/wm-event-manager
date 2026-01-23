@@ -39,7 +39,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/submit': typeof SubmitRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
-  '/jobs': typeof JobsIndexRoute
+  '/jobs/': typeof JobsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -56,7 +56,7 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/submit' | '/jobs/$jobId' | '/jobs'
+  fullPaths: '/' | '/submit' | '/jobs/$jobId' | '/jobs/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/submit' | '/jobs/$jobId' | '/jobs'
   id: '__root__' | '/' | '/submit' | '/jobs/$jobId' | '/jobs/'
@@ -88,7 +88,7 @@ declare module '@tanstack/react-router' {
     '/jobs/': {
       id: '/jobs/'
       path: '/jobs'
-      fullPath: '/jobs'
+      fullPath: '/jobs/'
       preLoaderRoute: typeof JobsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }

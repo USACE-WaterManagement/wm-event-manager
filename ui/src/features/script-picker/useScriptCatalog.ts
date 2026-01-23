@@ -15,11 +15,7 @@ const useScriptsCatalog = () => {
 };
 
 const fetchCatalog = async (token?: string): Promise<ScriptsCatalog> => {
-  const response = await fetchWithAuth(
-    "http://localhost:8000/scripts/catalog",
-    {},
-    token
-  );
+  const response = await fetchWithAuth("/api/scripts/catalog", {}, token);
   if (!response.ok) {
     throw new Error("Failed to fetch the scripts catalog");
   }

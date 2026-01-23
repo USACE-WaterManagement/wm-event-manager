@@ -31,5 +31,6 @@ CMD ["gunicorn", \
     "-k", "uvicorn.workers.UvicornWorker", \
     "cwms_batch_events.api.main:app", \
     "--bind", "0.0.0.0:8000", \
+    "--env ROOT_PATH=/api", \
     "--access-logfile", "-", \
     "--error-logfile", "-"]
