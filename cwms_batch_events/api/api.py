@@ -24,6 +24,11 @@ from cwms_batch_events.core.queue import JobQueue
 router = APIRouter()
 
 
+@router.get("/health")
+def report_health():
+    return {"status": "ok"}
+
+
 @router.get("/jobs")
 def get_jobs_for_user(
     user: User = Depends(get_current_user),
