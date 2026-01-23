@@ -25,7 +25,7 @@ const executeScript = async (
   token?: string
 ): Promise<JobDetails> => {
   const response = await fetchWithAuth(
-    "http://localhost:8000/jobs",
+    "/api/jobs",
     {
       method: "POST",
       headers: {

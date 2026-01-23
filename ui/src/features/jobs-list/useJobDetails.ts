@@ -25,11 +25,7 @@ const useJobDetails = (jobId: string) => {
 };
 
 const fetchJob = async (jobId: string, token?: string): Promise<JobDetails> => {
-  const response = await fetchWithAuth(
-    `http://localhost:8000/jobs/${jobId}`,
-    {},
-    token
-  );
+  const response = await fetchWithAuth(`/api/jobs/${jobId}`, {}, token);
   if (!response.ok) {
     throw new Error(`Failed to fetch job ${jobId}`);
   }
