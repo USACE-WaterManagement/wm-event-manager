@@ -114,7 +114,7 @@ def get_user_scripts_catalog(
 
 
 @router.post(
-    "internal/batch-jobs/{batch_job_id}/status",
+    "/internal/batch-jobs/{batch_job_id}/status",
     status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=False,
 )
@@ -139,7 +139,7 @@ def update_batch_job_status_endpoint(
 
 
 @router.post(
-    "internal/jobs/dispatch",
+    "/internal/jobs/dispatch",
     status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=False,
 )
