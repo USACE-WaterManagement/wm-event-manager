@@ -1,20 +1,15 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
 
-from cwms_batch_events.core.auth.roles import get_user_allowed_offices
+from cwms_batch_events.core.auth.user.jwt import verify_jwt
+from cwms_batch_events.core.auth.user.models import User
+from cwms_batch_events.core.auth.user.roles import get_user_allowed_offices
 from cwms_batch_events.core.utils import ALL_OFFICES
 
-from .jwt import verify_jwt
 
 ALL_OFFICES_LOWER = [office.lower() for office in ALL_OFFICES]
 
 oauth2_scheme = HTTPBearer()
-
-
-class User(BaseModel):
-    username: str
-    offices: list[str]
 
 
 async def get_current_user_keycloak(

@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from uuid import UUID
 
 
-from cwms_batch_events.core.auth.user import User
+from cwms_batch_events.core.auth.user.dependencies import User
 from cwms_batch_events.core.catalog import get_scripts_catalog
 from cwms_batch_events.api.dependencies import (
     get_current_user,

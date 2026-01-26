@@ -5,4 +5,4 @@
 
 pyenv install -s 3.13.5
 pyenv virtualenv -f 3.13.5 wm-event-manager
-pip install -r api/requirements-dev.txt
+pip install -r requirements-dev.txt

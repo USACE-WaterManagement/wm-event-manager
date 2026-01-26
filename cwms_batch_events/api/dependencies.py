@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from cwms_batch_events.core.auth.user import (
+from cwms_batch_events.core.auth.user.dependencies import (
     get_current_user_keycloak,
     get_current_user_mock,
 )
