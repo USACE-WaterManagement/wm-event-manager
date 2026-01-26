@@ -84,3 +84,8 @@ class JobMessage(BaseModel):
     requested_by: JobRequestedBy
     created_at: datetime
     payload: ScriptRunRequest
+
+
+class BatchJobStatusUpdateRequest(BaseModel):
+    status: JobStatus
+    event_time: datetime
