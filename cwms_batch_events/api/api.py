@@ -1,7 +1,8 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from uuid import UUID
 
 
+from cwms_batch_events.core.auth.service.dependencies import require_internal_auth
 from cwms_batch_events.core.auth.user.dependencies import User
 from cwms_batch_events.core.catalog import get_scripts_catalog
 from cwms_batch_events.api.dependencies import (
@@ -13,12 +14,14 @@ from cwms_batch_events.api.dependencies import (
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.models import (
+    BatchJobStatusUpdateRequest,
     JobLogs,
     JobRecord,
     JobSource,
     ScriptRunRequest,
     OfficeCatalogs,
 )
+from cwms_batch_events.core.processing import update_batch_job_status
 from cwms_batch_events.core.queue import JobQueue
 
 router = APIRouter()
@@ -106,3 +109,28 @@ def get_user_scripts_catalog(
         if office_scripts:
             all_scripts.catalogs[office] = office_scripts
     return all_scripts
+
+
+@router.post(
+    "internal/batch-jobs/{batch_job_id}/status",
+    status_code=status.HTTP_204_NO_CONTENT,
+    include_in_schema=False,
+)
+def update_batch_job_status_endpoint(
+    batch_job_id: str,
+    payload: BatchJobStatusUpdateRequest,
+    _=Depends(require_internal_auth),
+    job_db: JobDatabase = Depends(get_job_database),
+):
+    try:
+        update_batch_job_status(
+            batch_job_id, payload.status, payload.event_time, job_db
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
