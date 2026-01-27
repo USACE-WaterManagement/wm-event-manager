@@ -12,6 +12,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: "/events/",
   server: {
     proxy: {
       "/api": {
