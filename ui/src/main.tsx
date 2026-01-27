@@ -12,7 +12,7 @@ import { Link, RouterProvider, createRouter } from "@tanstack/react-router";
 
 // TanStack Router setup
 import { routeTree } from "./routeTree.gen";
-const router = createRouter({ routeTree });
+const router = createRouter({ routeTree, basepath: "/events" });
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
