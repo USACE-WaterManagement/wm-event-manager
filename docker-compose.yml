@@ -20,6 +20,7 @@ services:
       AWS_ACCESS_KEY_ID: eventsadmin
       AWS_SECRET_ACCESS_KEY: eventsadmin
       AWS_REGION: us-gov-west-1
+      APP_KEY: localdevtoken
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
       CDA_HOST: http://traefik/cwms-data
@@ -48,19 +49,11 @@ services:
       context: .
       dockerfile: infra/dispatcher/Dockerfile
     depends_on:
-      - elasticmq
-      - db
+      - api
     environment:
-      SQS_ENDPOINT_URL: http://elasticmq:9324
-      AWS_ACCESS_KEY_ID: eventsadmin
-      AWS_SECRET_ACCESS_KEY: eventsadmin
-      AWS_REGION: us-gov-west-1
-      PGUSER: *application_user
-      PGPASSWORD: *application_password
-      PGDATABASE: postgres
-      PGHOST: db
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      API_URL: http://api:8000
+      APP_KEY: localdevtoken
+      QUEUE_URL: http://elasticmq:9324/000000000000/cwms-batch-events
     networks:
       - cwms
 
