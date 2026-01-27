@@ -18,17 +18,11 @@ RUN pip install --no-cache-dir -r ${REQ_FILE}
 
 FROM python:3.13-slim
 
-RUN addgroup --system appuser \
- && adduser  --system --ingroup appuser --uid 10001 appuser
-
 WORKDIR /code
 
 COPY --from=builder /usr/local /usr/local
 
 COPY ./cwms_batch_events/api ./cwms_batch_events/api
-
-RUN chown -R appuser:appuser /code
-USER appuser
 
 EXPOSE 8000
 
