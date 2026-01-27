@@ -1,0 +1,80 @@
+#This is a basic workflow to help you get started with Actions
+name: Build/Push API to Dev, Test, or Prod
+
+# Controls when the action will run. Invokes the workflow on push events but only for the main branch
+on:
+  push:
+    branches: [cwbi-dev] #, cwbi-test, cwbi-prod]
+    paths:
+      - "cwms_batch_events/api/**"
+      - "cwms_batch_events/core/**"
+  # Allow the workflow to be triggered manually from the GitHub UI
+  workflow_dispatch:
+
+# variables for steps (shells)
+env:
+  AWS_REGION: us-gov-west-1 #Change to reflect your Region
+  PATH_TO_DOCKERFILE: .
+
+# Permission can be added at job level or workflow level
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  Build-Push-to-Env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+
+      - name: Set Branch attributes
+        id: set-attributes
+        run: |
+          case "${GITHUB_REF##*/}" in
+            "cwbi-dev")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::718787032875:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
+              echo "ECR_REPOSITORY=cwms-batch-events-api" >> $GITHUB_ENV
+              echo "IMAGE_TAG=dev" >> $GITHUB_ENV
+              ;;
+            "cwbi-test")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::276847049069:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
+              echo "ECR_REPOSITORY=cwms-batch-events-api" >> $GITHUB_ENV
+              echo "IMAGE_TAG=test" >> $GITHUB_ENV
+              ;;
+            "cwbi-prod")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::648157167324:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
+              echo "ECR_REPOSITORY=cwms-batch-events-api" >> $GITHUB_ENV
+              echo "IMAGE_TAG=prod" >> $GITHUB_ENV
+              ;;
+          esac
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          output-credentials: true
+
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: "true"
+
+      - name: Build Image; Push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build --push \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          $PATH_TO_DOCKERFILE
+
+      - name: ECR Logout
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
