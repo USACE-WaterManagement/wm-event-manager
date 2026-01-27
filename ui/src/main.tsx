@@ -35,6 +35,13 @@ const authMethod = (() => {
       username: authUser,
       password: authPassword,
     });
+  } else if (["dev", "test", "prod"].includes(buildMode)) {
+    return createKeycloakAuthMethod({
+      host: authHost,
+      realm: authRealm,
+      client: "cwms",
+      flow: "direct-grant",
+    });
   } else {
     return createMockAuthMethod();
   }
