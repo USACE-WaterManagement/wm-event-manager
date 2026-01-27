@@ -8,8 +8,9 @@ services:
   api:
     build:
       context: .
+      dockerfile: Dockerfile.dev
       args:
-        - REQ_FILE=requirements-dev.txt
+        REQ_FILE: requirements-dev.txt
     ports:
       - "8000:8000"
     environment:
