@@ -16,6 +16,7 @@ services:
     environment:
       # Comment out MOCK_USER to test a "real" keycloak workflow
       MOCK_USER: true
+      APP_ENV: local
       S3_ENDPOINT_URL: http://minio:9000
       SQS_ENDPOINT_URL: http://elasticmq:9324
       AWS_ACCESS_KEY_ID: eventsadmin
