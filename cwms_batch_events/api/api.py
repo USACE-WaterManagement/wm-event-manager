@@ -114,7 +114,7 @@ def get_user_scripts_catalog(
 
 
 @router.post(
-    "internal/batch-jobs/{batch_job_id}/status",
+    "/internal/batch-jobs/{batch_job_id}/status",
     status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=False,
 )
@@ -139,19 +139,20 @@ def update_batch_job_status_endpoint(
 
 
 @router.post(
-    "internal/jobs/dispatch",
+    "/internal/jobs/dispatch",
     status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=False,
 )
 def dispatch_job(
     message: JobMessage,
+    background_tasks: BackgroundTasks,
     _=Depends(require_internal_auth),
     job_db: JobDatabase = Depends(get_job_database),
     job_logger: JobLogger = Depends(get_job_logger),
 ):
     try:
         dispatcher = JobDispatcher(job_db, job_logger)
-        dispatcher.dispatch_job(message)
+        background_tasks.add_task(dispatcher.dispatch_job, message)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

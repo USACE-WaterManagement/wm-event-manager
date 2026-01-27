@@ -1,10 +1,8 @@
+import os
 import boto3
 import json
 import logging
-from cwms_batch_events.core.job_database.postgres import session
-from cwms_batch_events.core.job_logger.s3 import S3JobLogger
-from cwms_batch_events.core.models import JobMessage
-from cwms_batch_events.core.processing import process_job_message
+import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger()
@@ -19,11 +17,14 @@ sqs = boto3.client(
     aws_secret_access_key="x",
 )
 
-QUEUE_URL = "http://elasticmq:9324/000000000000/cwms-batch-events"
+API_URL = os.environ.get("API_URL", "")
+INTERNAL_TOKEN = os.environ.get("APP_KEY", "")
+QUEUE_URL = os.environ.get("QUEUE_URL", "")
 
-
-job_logger = S3JobLogger()
-
+headers = {
+    "Content-Type": "application/json",
+    "X-Internal-Token": INTERNAL_TOKEN,
+}
 
 while True:
     logger.info("Waiting for messages...")
@@ -34,13 +35,30 @@ while True:
     )
 
     for msg in resp.get("Messages", []):
-        logger.info(f"Handling message: {msg}")
-        body = json.loads(msg["Body"])
-        message = JobMessage(**body)
+        try:
+            logger.info(f"Handling message: {msg}")
+            body = json.loads(msg["Body"])
 
-        process_job_message(message, session.create_session, job_logger)
+            r = requests.post(
+                f"{API_URL}/internal/jobs/dispatch",
+                headers=headers,
+                json=body,
+                timeout=10,
+            )
 
-        sqs.delete_message(
-            QueueUrl=QUEUE_URL,
-            ReceiptHandle=msg["ReceiptHandle"],
-        )
+            if 200 <= r.status_code < 300:
+                logger.info("Message accepted by API, deleting from SQS")
+                sqs.delete_message(
+                    QueueUrl=QUEUE_URL,
+                    ReceiptHandle=msg["ReceiptHandle"],
+                )
+            else:
+                logger.error(
+                    "Jobs API rejected message: %s %s",
+                    r.status_code,
+                    r.text,
+                )
+
+        except Exception as e:
+            logger.exception("Failed to forward message to Jobs API")
+            logger.exception(str(e))
