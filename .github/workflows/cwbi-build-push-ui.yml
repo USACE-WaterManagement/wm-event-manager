@@ -1,0 +1,92 @@
+#This is a basic workflow to help you get started with Actions
+name: Build/Push UI to Dev, Test, or Prod
+
+# Controls when the action will run. Invokes the workflow on push events but only for the main branch
+on:
+  push:
+    branches: [cwbi-dev] #, cwbi-test] # cwbi-prod
+    paths:
+      - "ui/**"
+  # Allow the workflow to be triggered manually from the GitHub UI
+  workflow_dispatch:
+
+# variables for steps (shells)
+env:
+  AWS_REGION: us-gov-west-1 #Change to reflect your Region
+
+# Permission can be added at job level or workflow level
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  Build-Push-UI-to-Env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+
+      - name: Set Branch attributes
+        id: set-attributes
+        run: |
+          case "${GITHUB_REF##*/}" in
+            "cwbi-dev")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::718787032875:role/github-actions-s3-cwms-batch-events" >> $GITHUB_ENV
+              echo "BUILD_MODE=dev" >> $GITHUB_ENV
+              echo "S3_BUCKET=cwms-batch-dev" >> $GITHUB_ENV
+              echo "S3_BUCKET_PREFIX=ui" >> $GITHUB_ENV
+              ;;
+            "cwbi-test")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::276847049069:role/github-actions-s3-cwms-batch-events" >> $GITHUB_ENV
+              echo "BUILD_MODE=test" >> $GITHUB_ENV
+              echo "S3_BUCKET=cwms-batch-test" >> $GITHUB_ENV
+              echo "S3_BUCKET_PREFIX=ui" >> $GITHUB_ENV
+              ;;
+            "cwbi-prod")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::648157167324:role/github-actions-s3-cwms-batch-events" >> $GITHUB_ENV
+              echo "BUILD_MODE=prod" >> $GITHUB_ENV
+              echo "S3_BUCKET=cwms-batch-prod" >> $GITHUB_ENV
+              echo "S3_BUCKET_PREFIX=ui" >> $GITHUB_ENV
+              ;;
+          esac
+
+      # Step 2: Set up Node.js (React app requires Node.js)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "node" # Use the latest version of Node.js
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: |
+          cd ui
+          echo "Installing dependencies..."
+          npm install
+
+      # Step 3.5: Audit packages for vulnerabilities
+      - name: Audit packages for vulnerabilities (fail on high/critical)
+        run: |
+          cd ui
+          echo "Running npm audit..."
+          npm audit --audit-level=high  # Fail if high or critical vulnerabilities are found
+
+      # Step 4: Build the React app for production
+      - name: Build React App with Vite
+        run: |
+          cd ui
+          npx vite build --mode $BUILD_MODE
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          output-credentials: true
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: aws sts get-caller-identity
+
+      - name: Deploy to S3
+        run: |
+          cd ui
+          aws s3 rm s3://$S3_BUCKET/$S3_BUCKET_PREFIX --recursive && aws s3 cp ./dist/ s3://$S3_BUCKET/$S3_BUCKET_PREFIX --recursive
