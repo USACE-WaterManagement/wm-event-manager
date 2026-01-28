@@ -3,14 +3,14 @@ import requests
 from cwms_batch_events.core.models import CdaUserProfile
 from cwms_batch_events.core.settings import settings
 
-CDA_HOST = settings.cda_host
+CDA_API_ROOT = settings.cda_api_root
 
 
 def get_user_allowed_offices(token: str):
-    if not CDA_HOST:
-        raise ValueError("No CDA_HOST has been provided.")
+    if not CDA_API_ROOT:
+        raise ValueError("No CDA_API_ROOT has been provided")
     headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
-    url = f"{CDA_HOST}/user/profile"
+    url = f"{CDA_API_ROOT}user/profile"
     response = requests.get(url, headers=headers)
     profile = CdaUserProfile(**response.json())
     allowed_offices: list[str] = []

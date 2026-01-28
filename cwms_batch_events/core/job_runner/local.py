@@ -3,7 +3,7 @@ from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.models import JobMessage, JobStatus
 from cwms_batch_events.core.settings import settings
 
-CDA_HOST = settings.cda_host
+CDA_API_ROOT = settings.cda_api_root
 
 
 class LocalJobRunner:
@@ -27,7 +27,7 @@ class LocalJobRunner:
                 environment=[
                     f"OFFICE={message.payload.office_name}",
                     "GITHUB_BRANCH=cwbi-dev",
-                    f"CDA_API_ROOT={CDA_HOST}/",
+                    f"CDA_API_ROOT={CDA_API_ROOT}",
                 ],
             )
 

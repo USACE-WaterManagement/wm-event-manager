@@ -17,7 +17,10 @@ async def get_current_user_keycloak(
 ) -> User:
     token = credentials.credentials
     try:
-        verify_jwt(token)
+        claims = verify_jwt(token)
+        azp = claims.get("azp", "")
+        if claims["azp"] != "cwms":
+            raise Exception(f"Client '{azp}' is not authorized for this API")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
