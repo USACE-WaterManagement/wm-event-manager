@@ -9,6 +9,7 @@ const useJobsList = () => {
   return useQuery({
     queryKey: ["jobs"],
     queryFn: () => fetchJobs(auth.token),
+    enabled: auth.isAuth,
   });
 };
 
