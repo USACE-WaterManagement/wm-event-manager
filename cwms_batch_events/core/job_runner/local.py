@@ -1,6 +1,3 @@
-from docker import DockerClient
-from docker.client import from_env
-
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.models import JobMessage, JobStatus
@@ -15,6 +12,9 @@ class LocalJobRunner:
         self.logger = logger
 
     def run_job(self, message: JobMessage):
+        from docker import DockerClient
+        from docker.client import from_env
+
         client: DockerClient = from_env()
         container = None
 
