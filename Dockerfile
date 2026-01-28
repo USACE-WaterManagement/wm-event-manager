@@ -25,7 +25,7 @@ WORKDIR /code
 
 COPY --from=builder /usr/local /usr/local
 
-COPY ./cwms_batch_events/api ./cwms_batch_events/api
+COPY ./cwms_batch_events ./cwms_batch_events
 
 RUN chown -R appuser:appuser /code
 USER appuser
