@@ -14,6 +14,11 @@ PUBLIC_KEY = {
     "TEST": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArYxyX6mFWXEEpi8GhEs8GbUjZwYLIJ7ixEIoIZN1f4C7LoNMxz5mrDZcojNi91xSXqtFLlXfYTc/sI4JLYUEzKE0fNUxY9jldzI36ZLvIMqGg7KqaFukI3WO1AVejkJ77Lox+V20nJoZTrO577uElfIsqlJc11HHojME4f/Q7OOYoTPE4yYOGP8WbLPg4CSiSNR+ZYA4JdDLMZxD+FduhHkE7QbPZGsZqXCnr1UDzgNUaXFbufsmGo1N2h9eQOTNu6aV9zI7DdMZkVCbApwEov+p2n8EMp3xAZ5tAviXNzP8z3oifsw8XQLFFCyUUEr8e3kCmLW97lV7ys5iWnNhMQIDAQAB",
 }
 
+ISSUER = {
+    "PROD": "https://identityc.sec.usace.army.mil/auth/realms/cwbi",
+    "TEST": "https://identityc-test.cwbi.us/auth/realms/cwbi",
+}
+
 
 def get_public_pem():
     try:
@@ -49,5 +54,11 @@ def verify_jwt_by_api(token: str) -> dict:
 
 def verify_jwt_by_saved_key(token: str) -> dict:
     key = get_public_pem()
-    payload = jwt.decode(token, key, algorithms=["RS256"])
+    payload = jwt.decode(
+        token,
+        key,
+        algorithms=["RS256"],
+        issuer=ISSUER[settings.auth_environment],
+        options={"verify_aud": False},
+    )
     return payload
