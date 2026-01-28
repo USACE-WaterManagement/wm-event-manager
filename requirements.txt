@@ -3,6 +3,7 @@ fastapi
 psycopg2-binary
 pydantic
 pydantic-settings
+requests
 SQLAlchemy
 gunicorn
 uvicorn[standard]
