@@ -3,8 +3,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    app_env: str = ""
     app_key: str = ""
+    auth_environment: str = ""
     auth_host: str = "http://traefik/auth"
     auth_realm: str = "cwms"
     aws_access_key_id: str = ""
