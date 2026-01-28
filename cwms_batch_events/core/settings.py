@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     pgdatabase: str = "postgres"
     pghost: str = "db"
     mock_user: bool = False
+    root_path: str = ""
     s3_endpoint_url: str = "http://minio:9000"
     sqs_endpoint_url: str = "http://elasticmq:9324"
     wm_event_manager_s3_bucket: str = "wm-event-manager-local"
