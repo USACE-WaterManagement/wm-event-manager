@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     aws_region: str = "us-gov-west-1"
-    cda_host: str = "http://traefik/cwms-data"
+    cda_api_root: str = "http://traefik/cwms-data/"
     default_job_runner: str = "batch"
     dynamodb_host: str = "http://dynamodb:9010"
     pguser: str = ""

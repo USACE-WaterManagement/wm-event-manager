@@ -25,7 +25,7 @@ services:
       APP_KEY: localdevtoken
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
-      CDA_HOST: http://traefik/cwms-data
+      CDA_API_ROOT: http://traefik/cwms-data/
       DEFAULT_JOB_RUNNER: docker-local
       PGUSER: *application_user
       PGPASSWORD: *application_password

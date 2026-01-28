@@ -1,12 +1,9 @@
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.models import JobMessage, JobStatus
-from cwms_batch_events.core.settings import settings
 from ..utils import OFFICES
 
 import boto3
 from datetime import datetime
-
-CDA_HOST = settings.cda_host
 
 
 class BatchJobRunner:
