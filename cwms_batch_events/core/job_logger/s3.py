@@ -4,7 +4,7 @@ from uuid import UUID
 from cwms_batch_events.core.settings import settings
 
 S3_ENDPOINT_URL = settings.s3_endpoint_url
-WM_EVENT_BUCKET = settings.wm_event_manager_s3_bucket
+S3_BUCKET = settings.s3_bucket
 
 
 class S3JobLogger:
@@ -16,10 +16,10 @@ class S3JobLogger:
 
     def get_logs_for_job(self, job_id: UUID) -> str:
         key = f"logs/{job_id}.log"
-        response = self.s3.get_object(Bucket=WM_EVENT_BUCKET, Key=key)
+        response = self.s3.get_object(Bucket=S3_BUCKET, Key=key)
         body: str = response["Body"].read().decode("utf-8")
         return body
 
     def push_logs_for_job(self, job_id: UUID, logs: str) -> None:
         key = f"logs/{job_id}.log"
-        self.s3.put_object(Bucket=WM_EVENT_BUCKET, Key=key, Body=logs.encode("utf-8"))
+        self.s3.put_object(Bucket=S3_BUCKET, Key=key, Body=logs.encode("utf-8"))
