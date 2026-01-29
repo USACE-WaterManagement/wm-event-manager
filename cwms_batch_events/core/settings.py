@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     mock_user: bool = False
     root_path: str = ""
     s3_bucket: str = ""
-    s3_endpoint_url: str = "http://minio:9000"
+    s3_endpoint_url: str | None = None
     sqs_endpoint_url: str = "http://elasticmq:9324"
 
 
