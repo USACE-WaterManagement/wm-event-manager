@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     auth_realm: str = "cwms"
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
-    aws_region: str | None = None
+    aws_default_region: str | None = None
     cda_api_root: str = "http://traefik/cwms-data/"
     default_job_runner: str = "batch"
     dynamodb_host: str = "http://dynamodb:9010"
