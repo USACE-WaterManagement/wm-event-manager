@@ -25,7 +25,7 @@ def get_public_pem():
         public_key = PUBLIC_KEY[settings.auth_environment]
     except KeyError as e:
         print(
-            f"Cannot find PUBLIC_KEY for APP_ENV setting of '{settings.auth_environment}'"
+            f"Cannot find PUBLIC_KEY for AUTH_ENVIRONMENT setting of '{settings.auth_environment}'"
         )
         raise e
     return raw_key_to_pem(public_key)
