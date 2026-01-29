@@ -18,9 +18,6 @@ class JobQueue:
         self.sqs = boto3.resource(
             "sqs",
             endpoint_url=settings.sqs_endpoint_url,
-            aws_access_key_id=settings.aws_access_key_id,
-            aws_secret_access_key=settings.aws_secret_access_key,
-            region_name=settings.aws_default_region,
         )
         self.queue = self.sqs.get_queue_by_name(QueueName="cwms-batch-events")
         self.runner_type = settings.default_job_runner
