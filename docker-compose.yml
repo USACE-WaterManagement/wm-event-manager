@@ -21,7 +21,7 @@ services:
       SQS_ENDPOINT_URL: http://elasticmq:9324
       AWS_ACCESS_KEY_ID: eventsadmin
       AWS_SECRET_ACCESS_KEY: eventsadmin
-      AWS_REGION: us-gov-west-1
+      AWS_DEFAULT_REGION: us-gov-west-1
       APP_KEY: localdevtoken
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
