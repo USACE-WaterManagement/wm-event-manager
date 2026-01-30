@@ -84,6 +84,7 @@ def lambda_handler(event, context):
         status = STATUS_MAP[raw_status]
     except KeyError:
         logger.info("Ignoring unsupported Batch status: %s", raw_status)
+        return
 
     payload = {"status": status, "event_time": time_iso}
     try:
