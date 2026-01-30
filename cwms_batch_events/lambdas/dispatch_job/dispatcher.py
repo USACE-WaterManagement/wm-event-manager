@@ -13,8 +13,8 @@ import boto3
 from botocore.exceptions import ClientError
 import requests
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 API_BASE_URL = os.environ["ALB_DNS_NAME"] + "/api"
 APP_SECRETS_ARN = os.environ["APP_SECRETS_ARN"]
