@@ -3,7 +3,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from cwms_batch_events.core.auth.user.jwt import verify_jwt
 from cwms_batch_events.core.auth.user.models import User
-from cwms_batch_events.core.auth.user.roles import get_user_allowed_offices
+from cwms_batch_events.core.auth.user.roles import (
+    get_user_allowed_offices,
+    get_user_profile,
+)
 from cwms_batch_events.core.utils import ALL_OFFICES
 
 
@@ -26,8 +29,9 @@ async def get_current_user_keycloak(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
         )
 
-    allowed_offices = get_user_allowed_offices(token)
-    return User(username="not-implemented", offices=allowed_offices)
+    cda_user = get_user_profile(token)
+    allowed_offices = get_user_allowed_offices(cda_user)
+    return User(username=cda_user.user_name, offices=allowed_offices)
 
 
 async def get_current_user_mock() -> User:
