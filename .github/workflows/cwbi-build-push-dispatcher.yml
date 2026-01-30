@@ -1,0 +1,79 @@
+name: Build/Push Dispatcher Lambda to Dev, Test, or Prod
+
+# Controls when the action will run. Invokes the workflow on push events but only for the main branch
+on:
+  push:
+    branches: [cwbi-dev] #, cwbi-test] # cwbi-prod
+    paths:
+      - "cwms_batch_events/lambdas/dispatch_job/**"
+  # Allow the workflow to be triggered manually from the GitHub UI
+  workflow_dispatch:
+
+# variables for steps (shells)
+env:
+  AWS_REGION: us-gov-west-1 #Change to reflect your Region
+
+# Permission can be added at job level or workflow level
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  Build-Push-UI-to-Env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+
+      - name: Set Branch attributes
+        id: set-attributes
+        run: |
+          case "${GITHUB_REF##*/}" in
+            "cwbi-dev")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::718787032875:role/github-actions-lambda-cwms-batch-events" >> $GITHUB_ENV
+              echo "BUILD_MODE=dev" >> $GITHUB_ENV
+              ;;
+            "cwbi-test")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::276847049069:role/github-actions-lambda-cwms-batch-events" >> $GITHUB_ENV
+              echo "BUILD_MODE=test" >> $GITHUB_ENV
+              ;;
+            "cwbi-prod")
+              echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::648157167324:role/github-actions-lambda-cwms-batch-events" >> $GITHUB_ENV
+              echo "BUILD_MODE=prod" >> $GITHUB_ENV
+              ;;
+          esac
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Step 3: Build lambda package
+      - name: Build Job Dispatcher Lambda
+        run: |
+          cd cwms_batch_events/lambdas/dispatch_job
+          pip install -r requirements.txt -t package
+          cp dispatcher.py package/
+          cd package
+          zip -r ../dispatch-job.zip .
+          cd ../../../..
+
+      # Step 4: Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          output-credentials: true
+
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: aws sts get-caller-identity
+
+      # Step 5: Deploy to AWS
+      - name: Deploy Job Dispatcher
+        run: |
+          aws lambda update-function-code \
+            --function-name CWMS-Batch-Events-Job-Dispatcher \
+            --zip-file fileb://cwms_batch_events/lambdas/dispatch-job/dispatch-job.zip
