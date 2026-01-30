@@ -1,7 +1,15 @@
+import logging
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from cwms_batch_events.api.api import router
 from cwms_batch_events.core.settings import settings
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stdout,
+)
 
 app = FastAPI(root_path=settings.root_path)
 
