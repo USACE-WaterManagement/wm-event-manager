@@ -66,6 +66,7 @@ def lambda_handler(event, context):
 
     try:
         detail = event["detail"]
+        job_name: str = detail["jobName"]
         batch_job_id = detail["jobId"]
         raw_status = detail["status"]
         time_iso = event["time"]
@@ -73,9 +74,13 @@ def lambda_handler(event, context):
         logger.error("Unexpected format -- could not parse job state change event")
         raise
 
+    if not job_name.startswith("wm-event"):
+        logger.info("Skipping non-event job status change for %s", job_name)
+
     logger.info(
-        "Event details: job_id=%s status=%s time=%s",
+        "Event details: job_id=%s job_name=%s status=%s time=%s",
         batch_job_id,
+        job_name,
         raw_status,
         time_iso,
     )
