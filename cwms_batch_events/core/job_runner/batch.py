@@ -1,9 +1,12 @@
+import logging
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.models import JobMessage, JobStatus
 from ..utils import OFFICES
 
 import boto3
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class BatchJobRunner:
@@ -38,5 +41,12 @@ class BatchJobRunner:
             batch_job_id: str = response["jobId"]
             self.db.update_job_field(message.job_id, "external_job_id", batch_job_id)
 
+            logger.info(
+                "Succesfully submitted %s to Batch with external job id %s",
+                job_name,
+                batch_job_id,
+            )
+
         except Exception:
+            logger.exception("Unexpected error for job %s", message.job_id)
             self.db.update_job_status(message.job_id, JobStatus.FAILED)
