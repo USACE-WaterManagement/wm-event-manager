@@ -76,6 +76,7 @@ def lambda_handler(event, context):
 
     if not job_name.startswith("wm-event"):
         logger.info("Skipping non-event job status change for %s", job_name)
+        return
 
     logger.info(
         "Event details: job_id=%s job_name=%s status=%s time=%s",
