@@ -56,7 +56,7 @@ jobs:
           pip install -r requirements.txt -t package
           cp dispatcher.py package/
           cd package
-          zip -r ../dispatch-job.zip .
+          zip -r ../lambda.zip .
           cd ../../../..
 
       # Step 4: Configure AWS credentials
@@ -76,4 +76,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name CWMS-Batch-Events-Job-Dispatcher \
-            --zip-file fileb://cwms_batch_events/lambdas/dispatch-job/dispatch-job.zip
+            --zip-file fileb://cwms_batch_events/lambdas/dispatch_job/lambda.zip
