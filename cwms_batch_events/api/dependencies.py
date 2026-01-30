@@ -31,7 +31,7 @@ def get_job_database(db_session=Depends(get_db_session)) -> JobDatabase:
     return PostgresJobDatabase(db=db_session)
 
 
-def get_job_logger(db=Depends(get_db_session)) -> JobLogger:
+def get_job_logger(db=Depends(get_job_database)) -> JobLogger:
     if settings.default_job_runner == "docker-local":
         return S3JobLogger()
     else:
