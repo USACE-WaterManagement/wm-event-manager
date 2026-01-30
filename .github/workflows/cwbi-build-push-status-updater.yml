@@ -56,7 +56,7 @@ jobs:
           pip install -r requirements.txt -t package
           cp status_updater.py package/
           cd package
-          zip -r ../update-batch-job-status.zip .
+          zip -r ../lambda.zip .
           cd ../../../..
 
       # Step 4: Configure AWS credentials
@@ -76,4 +76,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name CWMS-Batch-Events-Job-Status-Updater \
-            --zip-file fileb://cwms_batch_events/lambdas/update-batch-job-status/update-batch-job-status.zip
+            --zip-file fileb://cwms_batch_events/lambdas/update_batch_job_status/lambda.zip
