@@ -44,7 +44,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.CWBI_DEV_ROLE }}
-          output-credentials: true
+          output-credentials: false
 
       # Hello from AWS: WhoAmI
       - name: Sts GetCallerIdentity
