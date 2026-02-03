@@ -49,7 +49,7 @@ class PostgresJobDatabase:
         ).all()
         return [to_job_record(model) for model in job_models]
 
-    def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
+    def _load_job_for_update(self, job_id: uuid.UUID):
         job = (
             self.db.query(JobModel)
             .filter(JobModel.id == job_id)
@@ -59,6 +59,11 @@ class PostgresJobDatabase:
 
         if not job:
             raise ValueError(f"Job {job_id} does not exist")
+
+        return job
+
+    def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
+        job = self._load_job_for_update(job_id)
 
         now = datetime.now(timezone.utc)
 
