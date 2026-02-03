@@ -39,7 +39,7 @@ class BatchJobRunner:
             )
 
             batch_job_id: str = response["jobId"]
-            self.db.update_job_field(message.job_id, "external_job_id", batch_job_id)
+            self.db.bind_external_job_id(message.job_id, batch_job_id)
 
             logger.info(
                 "Succesfully submitted %s to Batch with external job id %s",

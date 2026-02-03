@@ -13,6 +13,26 @@ class PostgresJobDatabase:
     def __init__(self, db: Session):
         self.db = db
 
+    def bind_external_job_id(
+        self,
+        job_id: uuid.UUID,
+        external_job_id: str,
+    ) -> None:
+        job = self._load_job_for_update(job_id)
+
+        if job.external_job_id is None:
+            job.external_job_id = external_job_id
+            self.db.commit()
+            return
+
+        if job.external_job_id == external_job_id:
+            return
+
+        raise ValueError(
+            f"Job {job_id} already bound to {job.external_job_id}, "
+            f"cannot bind to {external_job_id}"
+        )
+
     def create_job(self, payload: ScriptRunRequest, user_id: str) -> JobRecord:
         job_id = uuid.uuid4()
 
