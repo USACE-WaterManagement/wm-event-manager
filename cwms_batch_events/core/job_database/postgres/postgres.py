@@ -63,16 +63,21 @@ class PostgresJobDatabase:
         self.db.commit()
 
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
-        job = self.db.get(JobModel, job_id)
+        job = (
+            self.db.query(JobModel)
+            .filter(JobModel.id == job_id)
+            .with_for_update()
+            .one_or_none()
+        )
 
         if not job:
             raise ValueError(f"Job {job_id} does not exist")
 
         now = datetime.now(timezone.utc)
-        job.job_status = status
-        self.db.commit()
 
+        job.job_status = status
         if status == JobStatus.RUNNING:
-            self.update_job_field(job_id, "run_time", now)
-        elif status == JobStatus.COMPLETED or status == JobStatus.FAILED:
-            self.update_job_field(job_id, "end_time", now)
+            job.run_time = now
+        elif status in (JobStatus.COMPLETED, JobStatus.FAILED):
+            job.end_time = now
+        self.db.commit()
