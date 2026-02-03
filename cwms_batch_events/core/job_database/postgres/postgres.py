@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing import Any
 import uuid
 
 from cwms_batch_events.core.job_database.postgres.converters import to_job_record
@@ -13,6 +12,26 @@ from cwms_batch_events.core.utils import get_runner_id
 class PostgresJobDatabase:
     def __init__(self, db: Session):
         self.db = db
+
+    def bind_external_job_id(
+        self,
+        job_id: uuid.UUID,
+        external_job_id: str,
+    ) -> None:
+        job = self._load_job_for_update(job_id)
+
+        if job.external_job_id is None:
+            job.external_job_id = external_job_id
+            self.db.commit()
+            return
+
+        if job.external_job_id == external_job_id:
+            return
+
+        raise ValueError(
+            f"Job {job_id} already bound to {job.external_job_id}, "
+            f"cannot bind to {external_job_id}"
+        )
 
     def create_job(self, payload: ScriptRunRequest, user_id: str) -> JobRecord:
         job_id = uuid.uuid4()
@@ -50,29 +69,27 @@ class PostgresJobDatabase:
         ).all()
         return [to_job_record(model) for model in job_models]
 
-    def update_job_field(self, job_id: uuid.UUID, key: str, value: Any) -> None:
-        job = self.db.get(JobModel, job_id)
+    def _load_job_for_update(self, job_id: uuid.UUID):
+        job = (
+            self.db.query(JobModel)
+            .filter(JobModel.id == job_id)
+            .with_for_update()
+            .one_or_none()
+        )
 
         if not job:
             raise ValueError(f"Job {job_id} does not exist")
 
-        if key not in JobModel.__mapper__.columns:
-            raise ValueError(f"{key} is not a valid Job column")
-
-        setattr(job, key, value)
-        self.db.commit()
+        return job
 
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
-        job = self.db.get(JobModel, job_id)
-
-        if not job:
-            raise ValueError(f"Job {job_id} does not exist")
+        job = self._load_job_for_update(job_id)
 
         now = datetime.now(timezone.utc)
-        job.job_status = status
-        self.db.commit()
 
+        job.job_status = status
         if status == JobStatus.RUNNING:
-            self.update_job_field(job_id, "run_time", now)
-        elif status == JobStatus.COMPLETED or status == JobStatus.FAILED:
-            self.update_job_field(job_id, "end_time", now)
+            job.run_time = now
+        elif status in (JobStatus.COMPLETED, JobStatus.FAILED):
+            job.end_time = now
+        self.db.commit()

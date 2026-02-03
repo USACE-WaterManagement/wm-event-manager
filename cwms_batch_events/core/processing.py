@@ -27,13 +27,4 @@ def update_batch_job_status(
 
     print(f"Updating wm-event job `{job_id}` status to `{status}` at {time_iso}")
 
-    if status == JobStatus.RUNNING:
-        time_field = "run_time"
-    elif status == JobStatus.COMPLETED or status == JobStatus.FAILED:
-        time_field = "end_time"
-    else:
-        time_field = None
-
-    db.update_job_field(job_id, "job_status", status)
-    if time_field:
-        db.update_job_field(job_id, time_field, time_iso)
+    db.update_job_status(job_id, status)

@@ -13,6 +13,9 @@ import boto3
 from botocore.exceptions import ClientError
 import requests
 
+from cwms_batch_events.core.job_runner.batch import BatchJobRunner
+from cwms_batch_events.core.models import BindExternalJobIdRequest, JobMessage
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -21,6 +24,24 @@ APP_SECRETS_ARN = os.environ["APP_SECRETS_ARN"]
 
 secrets_client = boto3.client("secretsmanager")
 _cached_internal_token: str | None = None
+
+
+class MissingJobRunner(Exception):
+    pass
+
+
+def dispatch_job(message: JobMessage):
+    runner = None
+    if message.runner_type == "batch":
+        runner = BatchJobRunner()
+
+    if not runner:
+        raise MissingJobRunner(
+            f"JobRunner for runner_type {message.runner_type} not found"
+        )
+
+    external_job_id = runner.run_job(message)
+    return external_job_id
 
 
 def get_internal_token() -> str:
@@ -67,16 +88,18 @@ def lambda_handler(event, context):
         body_raw = record["body"]
 
         try:
-            body = json.loads(body_raw)
+            message = JobMessage.model_validate_json(body_raw)
         except json.JSONDecodeError:
             logger.error("Invalid JSON in SQS message body: %s", body_raw)
             raise
 
         try:
+            external_job_id = dispatch_job(message)
+            bind_request = BindExternalJobIdRequest(external_job_id=external_job_id)
             r = requests.post(
-                f"{API_BASE_URL}/internal/jobs/dispatch",
+                f"{API_BASE_URL}/internal/jobs/{message.job_id}/external-job-id",
                 headers=headers,
-                json=body,
+                json=bind_request.model_dump_json(),
                 timeout=10,
             )
         except requests.RequestException:
