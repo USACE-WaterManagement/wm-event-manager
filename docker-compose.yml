@@ -51,11 +51,21 @@ services:
       context: .
       dockerfile: infra/dispatcher/Dockerfile
     depends_on:
-      - api
+      - elasticmq
+      - db
     environment:
-      API_URL: http://api:8000
-      APP_KEY: localdevtoken
+      AWS_ACCESS_KEY_ID: eventsadmin
+      AWS_SECRET_ACCESS_KEY: eventsadmin
+      AWS_REGION: us-gov-west-1
+      PGUSER: *application_user
+      PGPASSWORD: *application_password
+      PGDATABASE: postgres
+      PGHOST: db
       QUEUE_URL: http://elasticmq:9324/000000000000/cwms-batch-events
+      S3_BUCKET: wm-event-manager-local
+      S3_ENDPOINT_URL: http://minio:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - cwms
 

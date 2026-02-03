@@ -6,7 +6,7 @@ from cwms_batch_events.core.settings import settings
 CDA_API_ROOT = settings.cda_api_root
 
 
-class LocalJobRunner:
+class LocalExecutor:
     def __init__(self, db: JobDatabase, logger: JobLogger):
         self.db = db
         self.logger = logger
@@ -46,6 +46,7 @@ class LocalJobRunner:
 
         except Exception:
             self.db.update_job_status(message.job_id, JobStatus.FAILED)
+            raise
 
         finally:
             if container:

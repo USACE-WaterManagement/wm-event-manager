@@ -2,7 +2,12 @@ import os
 import boto3
 import json
 import logging
-import requests
+
+from cwms_batch_events.core.job_database.postgres import session
+from cwms_batch_events.core.job_database.postgres.postgres import PostgresJobDatabase
+from cwms_batch_events.core.job_logger.s3 import S3JobLogger
+from cwms_batch_events.core.models import JobMessage
+from cwms_batch_events.local.dispatcher import LocalJobDispatcher
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger()
@@ -17,14 +22,9 @@ sqs = boto3.client(
     aws_secret_access_key="x",
 )
 
-API_URL = os.environ.get("API_URL", "")
-INTERNAL_TOKEN = os.environ.get("APP_KEY", "")
 QUEUE_URL = os.environ.get("QUEUE_URL", "")
 
-headers = {
-    "Content-Type": "application/json",
-    "X-Internal-Token": INTERNAL_TOKEN,
-}
+job_logger = S3JobLogger()
 
 while True:
     logger.info("Waiting for messages...")
@@ -35,30 +35,25 @@ while True:
     )
 
     for msg in resp.get("Messages", []):
-        try:
-            logger.info(f"Handling message: {msg}")
-            body = json.loads(msg["Body"])
+        logger.info(f"Handling message: {msg}")
+        body_raw = msg["Body"]
 
-            r = requests.post(
-                f"{API_URL}/internal/jobs/dispatch",
-                headers=headers,
-                json=body,
-                timeout=10,
+        try:
+            message = JobMessage.model_validate_json(body_raw)
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in SQS message body: %s", body_raw)
+            raise
+
+        try:
+            db_session = session.create_session()
+            db = PostgresJobDatabase(db=db_session)
+            dispatcher = LocalJobDispatcher(db, job_logger)
+            dispatcher.dispatch_job(message)
+
+            sqs.delete_message(
+                QueueUrl=QUEUE_URL,
+                ReceiptHandle=msg["ReceiptHandle"],
             )
 
-            if 200 <= r.status_code < 300:
-                logger.info("Message accepted by API, deleting from SQS")
-                sqs.delete_message(
-                    QueueUrl=QUEUE_URL,
-                    ReceiptHandle=msg["ReceiptHandle"],
-                )
-            else:
-                logger.error(
-                    "Jobs API rejected message: %s %s",
-                    r.status_code,
-                    r.text,
-                )
-
-        except Exception as e:
-            logger.exception("Failed to forward message to Jobs API")
-            logger.exception(str(e))
+        finally:
+            db_session.close()
