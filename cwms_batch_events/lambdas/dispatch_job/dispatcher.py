@@ -2,7 +2,8 @@
 Lambda function: dispatch_job
 
 This Lambda will receive messages from the events SQS queue through an event source
-mapping and submit them to the events API's job dispatch endpoint.
+mapping. It submits the job to the appropriate runner and makes an API request to bind
+the internal job record to the external_job_id provided by the runner.
 """
 
 import json
