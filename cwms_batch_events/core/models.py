@@ -89,3 +89,7 @@ class JobMessage(BaseModel):
 class BatchJobStatusUpdateRequest(BaseModel):
     status: JobStatus
     event_time: datetime
+
+
+class BindExternalJobIdRequest(BaseModel):
+    external_job_id: str
