@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from unittest.mock import ANY, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -21,8 +21,7 @@ def test_update_running_status():
         db=mock_db,
     )
 
-    mock_db.update_job_field.assert_any_call(123, "job_status", JobStatus.RUNNING)
-    mock_db.update_job_field.assert_any_call(123, "run_time", ANY)
+    mock_db.update_job_status.assert_any_call(123, JobStatus.RUNNING)
 
 
 def test_update_completed_status():
@@ -39,8 +38,7 @@ def test_update_completed_status():
         db=mock_db,
     )
 
-    mock_db.update_job_field.assert_any_call(123, "job_status", JobStatus.COMPLETED)
-    mock_db.update_job_field.assert_any_call(123, "end_time", ANY)
+    mock_db.update_job_status.assert_any_call(123, JobStatus.COMPLETED)
 
 
 def test_update_failed_status():
@@ -57,8 +55,7 @@ def test_update_failed_status():
         db=mock_db,
     )
 
-    mock_db.update_job_field.assert_any_call(123, "job_status", JobStatus.FAILED)
-    mock_db.update_job_field.assert_any_call(123, "end_time", ANY)
+    mock_db.update_job_status.assert_any_call(123, JobStatus.FAILED)
 
 
 def test_update_duplicate_status():
@@ -75,7 +72,7 @@ def test_update_duplicate_status():
         db=mock_db,
     )
 
-    mock_db.update_job_field.assert_not_called()
+    mock_db.update_job_status.assert_not_called()
 
 
 def test_update_lower_priority_status():
@@ -92,7 +89,7 @@ def test_update_lower_priority_status():
         db=mock_db,
     )
 
-    mock_db.update_job_field.assert_not_called()
+    mock_db.update_job_status.assert_not_called()
 
 
 def test_update_status_missing_batch_job():

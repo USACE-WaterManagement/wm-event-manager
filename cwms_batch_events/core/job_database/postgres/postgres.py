@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing import Any
 import uuid
 
 from cwms_batch_events.core.job_database.postgres.converters import to_job_record
@@ -49,18 +48,6 @@ class PostgresJobDatabase:
             select(JobModel).where(JobModel.username == user_id)
         ).all()
         return [to_job_record(model) for model in job_models]
-
-    def update_job_field(self, job_id: uuid.UUID, key: str, value: Any) -> None:
-        job = self.db.get(JobModel, job_id)
-
-        if not job:
-            raise ValueError(f"Job {job_id} does not exist")
-
-        if key not in JobModel.__mapper__.columns:
-            raise ValueError(f"{key} is not a valid Job column")
-
-        setattr(job, key, value)
-        self.db.commit()
 
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
         job = (
