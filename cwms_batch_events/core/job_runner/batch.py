@@ -22,8 +22,8 @@ class BatchJobRunner:
 
         response = self.batch.submit_job(
             jobName=job_name,
-            jobQueue=f"wmes-{OFFICES[office]['office-group']}-jq",
-            jobDefinition=f"wmes-{office}-jobs-jobdef",
+            jobQueue=f"cwms-{OFFICES[office]['office-group']}-jq",
+            jobDefinition=f"cwms-{office}-jobs-jobdef",
             containerOverrides={
                 "environment": [
                     {"name": "OFFICE", "value": office},
