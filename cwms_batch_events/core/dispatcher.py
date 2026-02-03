@@ -19,7 +19,7 @@ class JobDispatcher:
         if message.runner_type == "docker-local":
             runner = LocalJobRunner(self.db, self.logger)
         elif message.runner_type == "batch":
-            runner = BatchJobRunner(self.db)
+            runner = BatchJobRunner()
 
         if not runner:
             raise MissingJobRunner(

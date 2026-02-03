@@ -1,6 +1,5 @@
 import logging
-from cwms_batch_events.core.job_database.base import JobDatabase
-from cwms_batch_events.core.models import JobMessage, JobStatus
+from cwms_batch_events.core.models import JobMessage
 from ..utils import OFFICES
 
 import boto3
@@ -10,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class BatchJobRunner:
-    def __init__(self, db: JobDatabase):
-        self.db = db
+    def __init__(self):
         self.batch = boto3.client("batch")
 
     def run_job(self, message: JobMessage):
@@ -22,31 +20,27 @@ class BatchJobRunner:
             f"wm-event-{office}-{script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
         )
 
-        try:
-            response = self.batch.submit_job(
-                jobName=job_name,
-                jobQueue=f"wmes-{OFFICES[office]['office-group']}-jq",
-                jobDefinition=f"wmes-{office}-jobs-jobdef",
-                containerOverrides={
-                    "environment": [
-                        {"name": "OFFICE", "value": office},
-                    ],
-                    "command": [f"python /jobs/python/{script}"],
-                },
-                tags={
-                    "Office": office,
-                },
-            )
+        response = self.batch.submit_job(
+            jobName=job_name,
+            jobQueue=f"wmes-{OFFICES[office]['office-group']}-jq",
+            jobDefinition=f"wmes-{office}-jobs-jobdef",
+            containerOverrides={
+                "environment": [
+                    {"name": "OFFICE", "value": office},
+                ],
+                "command": [f"python /jobs/python/{script}"],
+            },
+            tags={
+                "Office": office,
+            },
+        )
 
-            batch_job_id: str = response["jobId"]
-            self.db.bind_external_job_id(message.job_id, batch_job_id)
+        batch_job_id: str = response["jobId"]
 
-            logger.info(
-                "Succesfully submitted %s to Batch with external job id %s",
-                job_name,
-                batch_job_id,
-            )
+        logger.info(
+            "Succesfully submitted %s to Batch with external job id %s",
+            job_name,
+            batch_job_id,
+        )
 
-        except Exception:
-            logger.exception("Unexpected error for job %s", message.job_id)
-            self.db.update_job_status(message.job_id, JobStatus.FAILED)
+        return batch_job_id

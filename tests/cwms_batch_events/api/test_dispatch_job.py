@@ -50,7 +50,7 @@ def test_dispatcher_fires_batch_runner():
         dispatcher = JobDispatcher(mock_db, mock_logger)
         dispatcher.dispatch_job(message)
 
-        MockBatchRunner.assert_called_once_with(mock_db)
+        MockBatchRunner.assert_called_once_with()
         instance.run_job.assert_called_once_with(message)
 
 
