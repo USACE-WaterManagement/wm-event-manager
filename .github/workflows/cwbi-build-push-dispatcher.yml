@@ -53,7 +53,7 @@ jobs:
       - name: Build Job Dispatcher Lambda
         run: |
           pip install -r cwms_batch_events/lambdas/dispatch_job/requirements.txt -t package
-          cp cwms_batch_events package/
+          cp -r cwms_batch_events package/
           cp cwms_batch_events/lambdas/dispatch_job/dispatcher.py package/
           cd package
           zip -r ../lambda.zip .
