@@ -28,7 +28,7 @@ class BatchJobRunner:
                 "environment": [
                     {"name": "OFFICE", "value": office},
                 ],
-                "command": [f"python /jobs/python/{script}"],
+                "command": ["python", f"/jobs/python/{script}"],
             },
             tags={
                 "Office": office,
