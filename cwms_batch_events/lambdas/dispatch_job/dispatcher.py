@@ -90,12 +90,17 @@ def lambda_handler(event, context):
 
         try:
             message = JobMessage.model_validate_json(body_raw)
+            logger.info("Processing message: %s", message)
         except json.JSONDecodeError:
             logger.error("Invalid JSON in SQS message body: %s", body_raw)
             raise
 
         try:
             external_job_id = dispatch_job(message)
+        except ClientError:
+            logger.exception("Failed to submit batch job for message: %s", message)
+
+        try:
             bind_request = BindExternalJobIdRequest(external_job_id=external_job_id)
             r = requests.post(
                 f"{API_BASE_URL}/internal/jobs/{message.job_id}/external-job-id",
