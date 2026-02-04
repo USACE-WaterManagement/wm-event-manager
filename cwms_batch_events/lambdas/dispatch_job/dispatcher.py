@@ -106,7 +106,7 @@ def lambda_handler(event, context):
             r = requests.post(
                 f"{API_BASE_URL}/internal/jobs/{message.job_id}/external-job-id",
                 headers=headers,
-                json=bind_request.model_dump_json(),
+                json=bind_request.model_dump(),
                 timeout=10,
             )
         except requests.RequestException:
