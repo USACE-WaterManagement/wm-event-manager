@@ -1,6 +1,6 @@
 import logging
 from cwms_batch_events.core.models import JobMessage
-from cwms_batch_events.core.utils import OFFICES
+from cwms_batch_events.lambdas.dispatch_job.utils import OFFICES
 
 import boto3
 from datetime import datetime
@@ -14,15 +14,15 @@ class BatchJobRunner:
 
     def run_job(self, message: JobMessage):
         office = message.payload.office_name
-        script = message.payload.script_name.replace(".", "_")
+        script = message.payload.script_name
 
         job_name = (
             f"wm-event-{office}-{script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
-        )
+        ).replace(".", "_")
 
         response = self.batch.submit_job(
             jobName=job_name,
-            jobQueue=f"cwms-{OFFICES[office]['office-group']}-jq",
+            jobQueue=f"cwms-{OFFICES[office]['division']}-jq",
             jobDefinition=f"cwms-{office}-jobs-jobdef",
             containerOverrides={
                 "environment": [
