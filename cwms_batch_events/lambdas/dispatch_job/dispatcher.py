@@ -14,6 +14,7 @@ import boto3
 from botocore.exceptions import ClientError
 import requests
 
+from cwms_batch_events.core.job_runner.base import JobRunner
 from cwms_batch_events.core.job_runner.batch import BatchJobRunner
 from cwms_batch_events.core.models import BindExternalJobIdRequest, JobMessage
 
@@ -32,7 +33,7 @@ class MissingJobRunner(Exception):
 
 
 def dispatch_job(message: JobMessage):
-    runner = None
+    runner: JobRunner | None = None
     if message.runner_type == "batch":
         runner = BatchJobRunner()
 
