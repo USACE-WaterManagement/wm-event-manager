@@ -14,11 +14,11 @@ class BatchJobRunner:
 
     def run_job(self, message: JobMessage):
         office = message.payload.office_name
-        script = message.payload.script_name.replace(".", "_")
+        script = message.payload.script_name
 
         job_name = (
             f"wm-event-{office}-{script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
-        )
+        ).replace(".", "_")
 
         response = self.batch.submit_job(
             jobName=job_name,
