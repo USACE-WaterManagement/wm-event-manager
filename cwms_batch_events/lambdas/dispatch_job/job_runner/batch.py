@@ -1,6 +1,6 @@
 import logging
 from cwms_batch_events.core.models import JobMessage
-from cwms_batch_events.core.utils import OFFICES
+from cwms_batch_events.lambdas.dispatch_job.utils import OFFICES
 
 import boto3
 from datetime import datetime
