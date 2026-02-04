@@ -22,7 +22,7 @@ class BatchJobRunner:
 
         response = self.batch.submit_job(
             jobName=job_name,
-            jobQueue=f"cwms-{OFFICES[office]['office-group']}-jq",
+            jobQueue=f"cwms-{OFFICES[office]['division']}-jq",
             jobDefinition=f"cwms-{office}-jobs-jobdef",
             containerOverrides={
                 "environment": [
