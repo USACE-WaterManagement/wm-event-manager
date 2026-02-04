@@ -1,3 +1,2 @@
 pydantic
-pydantic-settings
 requests
