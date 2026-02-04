@@ -6,7 +6,7 @@ import pytest
 from cwms_batch_events.api.dependencies import get_job_database, get_job_logger
 from cwms_batch_events.api.main import app
 from cwms_batch_events.core.auth.service.dependencies import require_internal_auth
-from cwms_batch_events.local.dispatcher import LocalJobDispatcher, MissingJobRunner
+from cwms_batch_events.local.dispatcher import LocalJobDispatcher
 
 client = TestClient(app)
 
