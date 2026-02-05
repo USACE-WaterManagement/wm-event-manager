@@ -1,6 +1,6 @@
-# wm-event-manager
+# cwms-batch-events
 
-The Water Management Event Manager provides users an API and user interface to execute water management jobs on a manual or event-driven basis.
+CWMS Batch Events provides users an API and user interface to execute water management jobs on a manual or event-driven basis.
 
 ## Contributions
 
