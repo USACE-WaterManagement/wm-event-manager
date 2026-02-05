@@ -17,7 +17,7 @@ class BatchJobRunner:
         script = message.payload.script_name
 
         job_name = (
-            f"wm-event-{office}-{script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
+            f"cwms-{office}-event-{script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
         ).replace(".", "_")
 
         response = self.batch.submit_job(
