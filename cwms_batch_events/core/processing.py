@@ -25,6 +25,6 @@ def update_batch_job_status(
 
     job_id = job.id
 
-    print(f"Updating wm-event job `{job_id}` status to `{status}` at {time_iso}")
+    print(f"Updating job `{job_id}` status to `{status}` at {time_iso}")
 
     db.update_job_status(job_id, status)

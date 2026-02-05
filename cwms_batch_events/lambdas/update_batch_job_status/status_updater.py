@@ -74,7 +74,7 @@ def lambda_handler(event, context):
         logger.error("Unexpected format -- could not parse job state change event")
         raise
 
-    if not job_name.startswith("wm-event"):
+    if "-event-" not in job_name:
         logger.info("Skipping non-event job status change for %s", job_name)
         return
 
