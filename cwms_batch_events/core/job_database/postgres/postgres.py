@@ -4,8 +4,19 @@ from sqlalchemy.orm import Session
 import uuid
 
 from cwms_batch_events.core.job_database.postgres.converters import to_job_record
-from cwms_batch_events.core.job_database.postgres.models import JobModel
-from cwms_batch_events.core.models import JobRecord, JobStatus, ScriptRunRequest
+from cwms_batch_events.core.job_database.postgres.models import (
+    JobModel,
+    JobRunnerModel,
+    ScriptModel,
+)
+from cwms_batch_events.core.models import (
+    JobRecord,
+    JobStatus,
+    ScriptCreate,
+    ScriptRead,
+    ScriptRunRequest,
+    ScriptUpdate,
+)
 from cwms_batch_events.core.utils import get_runner_id
 
 
@@ -69,6 +80,14 @@ class PostgresJobDatabase:
         ).all()
         return [to_job_record(model) for model in job_models]
 
+    def get_scripts_for_office(self, office: str):
+        script_models = self.db.scalars(
+            select(ScriptModel).where(ScriptModel.office == office)
+        ).all()
+        return [
+            ScriptRead.model_validate(script_model) for script_model in script_models
+        ]
+
     def _load_job_for_update(self, job_id: uuid.UUID):
         job = (
             self.db.query(JobModel)
@@ -82,6 +101,42 @@ class PostgresJobDatabase:
 
         return job
 
+    def remove_script_if_allowed(
+        self, script_id: uuid.UUID, admin_offices: list[str]
+    ) -> None:
+        with self.db.begin():
+            script = self.db.get_one(ScriptModel, script_id)
+            if script.office not in admin_offices:
+                raise PermissionError(
+                    f"User does not have script admin access for office '{script.office}'"
+                )
+            self.db.delete(script)
+
+    def store_script(self, payload: ScriptCreate) -> ScriptRead:
+        with self.db.begin():
+            script = ScriptModel()
+            script.office = payload.office
+            script.name = payload.name
+            script.slug = payload.slug
+            script.description = payload.description
+            script.repo_path = payload.repo_path
+            script.execution_type = payload.execution_type
+            script.active = payload.active
+            script.roles = payload.roles
+
+            job_runners = self.db.scalars(
+                select(JobRunnerModel).where(JobRunnerModel.id.in_(payload.job_runners))
+            ).all()
+            if len(job_runners) != len(payload.job_runners):
+                raise ValueError("Invalid job runner ID provided")
+            script.job_runners = list(job_runners)
+
+            self.db.add(script)
+            self.db.flush()
+            self.db.refresh(script)
+
+        return ScriptRead.model_validate(script)
+
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
         job = self._load_job_for_update(job_id)
 
@@ -93,3 +148,31 @@ class PostgresJobDatabase:
         elif status in (JobStatus.COMPLETED, JobStatus.FAILED):
             job.end_time = now
         self.db.commit()
+
+    def update_script(
+        self, script_id: uuid.UUID, payload: ScriptUpdate, admin_offices: list[str]
+    ) -> ScriptRead:
+        with self.db.begin():
+            script = self.db.get_one(ScriptModel, script_id)
+            if script.office not in admin_offices:
+                raise PermissionError(
+                    f"User does not have script admin access for office '{script.office}'"
+                )
+            for field, value in payload.model_dump(by_alias=False).items():
+                if field == "job_runners":
+                    job_runners = self.db.scalars(
+                        select(JobRunnerModel).where(
+                            JobRunnerModel.id.in_(payload.job_runners)
+                        )
+                    ).all()
+                    if len(job_runners) != len(payload.job_runners):
+                        raise ValueError("Invalid job runner ID provided")
+                    script.job_runners = list(job_runners)
+                else:
+                    setattr(script, field, value)
+
+            script.updated_time = datetime.now()
+            self.db.flush()
+            self.db.refresh(script)
+
+        return ScriptRead.model_validate(script)

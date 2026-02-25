@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/jobs": {
+    "/jobs/": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,10 +12,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Jobs For User */
-        get: operations["get_jobs_for_user_jobs_get"];
+        get: operations["get_jobs_for_user_jobs__get"];
         put?: never;
         /** Post Job */
-        post: operations["post_job_jobs_post"];
+        post: operations["post_job_jobs__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -56,6 +56,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/scripts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Scripts For Office Endpoint */
+        get: operations["get_scripts_for_office_endpoint_scripts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scripts/catalog": {
         parameters: {
             query?: never;
@@ -65,6 +82,23 @@ export interface paths {
         };
         /** Get User Scripts Catalog */
         get: operations["get_user_scripts_catalog_scripts_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/me/admin-offices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Offices */
+        get: operations["get_admin_offices_users_me_admin_offices_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -160,7 +194,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_jobs_for_user_jobs_get: {
+    get_jobs_for_user_jobs__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -180,7 +214,7 @@ export interface operations {
             };
         };
     };
-    post_job_jobs_post: {
+    post_job_jobs__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -275,6 +309,37 @@ export interface operations {
             };
         };
     };
+    get_scripts_for_office_endpoint_scripts__get: {
+        parameters: {
+            query: {
+                office: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_user_scripts_catalog_scripts_catalog_get: {
         parameters: {
             query?: never;
@@ -291,6 +356,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OfficeCatalogs"];
+                };
+            };
+        };
+    };
+    get_admin_offices_users_me_admin_offices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };

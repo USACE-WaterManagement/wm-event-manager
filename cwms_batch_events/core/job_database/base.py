@@ -1,7 +1,14 @@
 from typing import Protocol
 from uuid import UUID
 
-from cwms_batch_events.core.models import JobRecord, JobStatus, ScriptRunRequest
+from cwms_batch_events.core.models import (
+    JobRecord,
+    JobStatus,
+    ScriptCreate,
+    ScriptRead,
+    ScriptRunRequest,
+    ScriptUpdate,
+)
 
 
 class JobDatabase(Protocol):
@@ -14,4 +21,12 @@ class JobDatabase(Protocol):
     def get_job_by_external_id(self, ext_job_id: str) -> JobRecord | None: ...
     def get_job_by_id(self, job_id: UUID) -> JobRecord | None: ...
     def get_jobs_for_user(self, user_id: str) -> list[JobRecord]: ...
+    def get_scripts_for_office(self, office: str) -> list[ScriptRead]: ...
+    def remove_script_if_allowed(
+        self, script_id: UUID, admin_offices: list[str]
+    ) -> None: ...
+    def store_script(self, payload: ScriptCreate) -> ScriptRead: ...
     def update_job_status(self, job_id: UUID, status: JobStatus) -> None: ...
+    def update_script(
+        self, script_id: UUID, payload: ScriptUpdate, admin_offices: list[str]
+    ) -> ScriptRead: ...

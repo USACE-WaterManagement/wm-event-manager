@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
 
@@ -93,3 +93,36 @@ class BatchJobStatusUpdateRequest(BaseModel):
 
 class BindExternalJobIdRequest(BaseModel):
     external_job_id: str
+
+
+class ScriptBase(CamelModel):
+    name: str
+    slug: str
+    description: str
+    repo_path: str
+    execution_type: str
+    active: bool = True
+    roles: list[str] = []
+    job_runners: list[UUID] = []
+
+
+class ScriptCreate(ScriptBase):
+    office: str
+
+
+class ScriptRead(ScriptBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    office: str
+    created_time: datetime
+    updated_time: datetime
+    job_runners: list[UUID] = []
+
+    @field_validator("job_runners", mode="before")
+    def extract_job_runner_ids(cls, v):
+        return [jr.id if hasattr(jr, "id") else jr for jr in v]
+
+
+class ScriptUpdate(ScriptBase):
+    pass
