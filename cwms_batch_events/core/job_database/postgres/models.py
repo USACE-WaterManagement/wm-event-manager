@@ -1,6 +1,16 @@
 import datetime
-from sqlalchemy import DateTime, ForeignKey, func, UUID, VARCHAR
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    String,
+    func,
+    Table,
+    UUID,
+    VARCHAR,
+)
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
 import uuid
 
@@ -9,6 +19,14 @@ from cwms_batch_events.core.models import JobStatus
 
 class Base(DeclarativeBase):
     type_annotation_map = {datetime.datetime: DateTime(timezone=True), str: VARCHAR}
+
+
+scripts_job_runners = Table(
+    "scripts_job_runners",
+    Base.metadata,
+    Column("script_id", ForeignKey("scripts.id"), primary_key=True),
+    Column("job_runner_id", ForeignKey("job_runners.id"), primary_key=True),
+)
 
 
 class JobModel(Base):
@@ -43,3 +61,33 @@ class JobRunnerModel(Base):
     description: Mapped[str]
     active: Mapped[bool]
     created_time: Mapped[datetime.datetime]
+
+    scripts: Mapped[list["ScriptModel"]] = relationship(
+        secondary=scripts_job_runners, back_populates="job_runners"
+    )
+
+
+class ScriptModel(Base):
+    __tablename__ = "scripts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    office: Mapped[str]
+    name: Mapped[str]
+    slug: Mapped[str]
+    description: Mapped[str]
+    repo_path: Mapped[str]
+    execution_type: Mapped[str]
+    active: Mapped[bool]
+    roles: Mapped[list[str]] = mapped_column(ARRAY(String))
+    created_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+    updated_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+
+    job_runners: Mapped[list["JobRunnerModel"]] = relationship(
+        secondary=scripts_job_runners, lazy="selectin", back_populates="scripts"
+    )
