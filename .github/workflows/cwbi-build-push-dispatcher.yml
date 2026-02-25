@@ -3,7 +3,7 @@ name: Build/Push Dispatcher Lambda to Dev, Test, or Prod
 # Controls when the action will run. Invokes the workflow on push events but only for the main branch
 on:
   push:
-    branches: [cwbi-dev] #, cwbi-test] # cwbi-prod
+    branches: [cwbi-dev, cwbi-test, cwbi-prod]
     paths:
       - "cwms_batch_events/lambdas/dispatch_job/**"
   # Allow the workflow to be triggered manually from the GitHub UI

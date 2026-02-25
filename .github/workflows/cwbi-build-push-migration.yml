@@ -4,7 +4,7 @@ name: Build/Push DB Migration to Dev, Test, or Prod
 # Controls when the action will run. Invokes the workflow on push events but only for the main branch
 on:
   push:
-    branches: [cwbi-dev] #, cwbi-test, cwbi-prod]
+    branches: [cwbi-dev, cwbi-test, cwbi-prod]
     paths:
       - "infra/migration/**"
   schedule:

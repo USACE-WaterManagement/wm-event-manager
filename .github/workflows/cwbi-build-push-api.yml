@@ -4,7 +4,7 @@ name: Build/Push API to Dev, Test, or Prod
 # Controls when the action will run. Invokes the workflow on push events but only for the main branch
 on:
   push:
-    branches: [cwbi-dev] #, cwbi-test, cwbi-prod]
+    branches: [cwbi-dev, cwbi-test, cwbi-prod]
     paths:
       - "cwms_batch_events/api/**"
       - "cwms_batch_events/core/**"
