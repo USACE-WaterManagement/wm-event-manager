@@ -70,87 +70,87 @@ jobs:
         run: docker logout ${{ steps.login-ecr.outputs.registry }}
 
   #~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
-  # build-push-test:
-  #   if: >-
-  #     github.event_name == 'schedule' ||
-  #     github.ref == 'refs/heads/cwbi-test'
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     ECR_REPOSITORY: cwms-batch-events-migration
-  #     IMAGE_TAG: test
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         ref: cwbi-test
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-region: ${{ env.AWS_REGION }}
-  #         role-to-assume: ${{ env.CWBI_TEST_ROLE }}
-  #         output-credentials: true
+  build-push-test:
+    if: >-
+      github.event_name == 'schedule' ||
+      github.ref == 'refs/heads/cwbi-test'
+    runs-on: ubuntu-latest
+    env:
+      ECR_REPOSITORY: cwms-batch-events-migration
+      IMAGE_TAG: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cwbi-test
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.CWBI_TEST_ROLE }}
+          output-credentials: true
 
-  #     # Hello from AWS: WhoAmI
-  #     - name: Sts GetCallerIdentity
-  #       run: aws sts get-caller-identity
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: aws sts get-caller-identity
 
-  #     - name: Login to Amazon ECR
-  #       id: login-ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
-  #       with:
-  #         mask-password: "true"
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: "true"
 
-  #     - name: Build Image; Push to ECR
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #       run: |
-  #         docker build --push \
-  #        --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-  #        --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-  #        $PATH_TO_DOCKERFILE
+      - name: Build Image; Push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build --push \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          $PATH_TO_DOCKERFILE
 
-  #     - name: ECR Logout
-  #       if: always()
-  #       run: docker logout ${{ steps.login-ecr.outputs.registry }}
+      - name: ECR Logout
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
 
   #~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
-  # build-push-prod:
-  #   if: >-
-  #     github.event_name == 'schedule' ||
-  #     github.ref == 'refs/heads/cwbi-prod'
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     ECR_REPOSITORY: cwms-batch-events-migration
-  #     IMAGE_TAG: prod
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         ref: cwbi-prod
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-region: ${{ env.AWS_REGION }}
-  #         role-to-assume: ${{ env.CWBI_PROD_ROLE }}
-  #         output-credentials: true
+  build-push-prod:
+    if: >-
+      github.event_name == 'schedule' ||
+      github.ref == 'refs/heads/cwbi-prod'
+    runs-on: ubuntu-latest
+    env:
+      ECR_REPOSITORY: cwms-batch-events-migration
+      IMAGE_TAG: prod
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cwbi-prod
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.CWBI_PROD_ROLE }}
+          output-credentials: true
 
-  #     # Hello from AWS: WhoAmI
-  #     - name: Sts GetCallerIdentity
-  #       run: aws sts get-caller-identity
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: aws sts get-caller-identity
 
-  #     - name: Login to Amazon ECR
-  #       id: login-ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
-  #       with:
-  #         mask-password: "true"
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: "true"
 
-  #     - name: Build Image; Push to ECR
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #       run: |
-  #         docker build --push \
-  #        --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-  #        --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-  #        $PATH_TO_DOCKERFILE
+      - name: Build Image; Push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build --push \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          $PATH_TO_DOCKERFILE
 
-  #     - name: ECR Logout
-  #       if: always()
-  #       run: docker logout ${{ steps.login-ecr.outputs.registry }}
+      - name: ECR Logout
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
