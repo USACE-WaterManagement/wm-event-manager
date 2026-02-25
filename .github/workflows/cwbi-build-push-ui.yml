@@ -4,7 +4,7 @@ name: Build/Push UI to Dev, Test, or Prod
 # Controls when the action will run. Invokes the workflow on push events but only for the main branch
 on:
   push:
-    branches: [cwbi-dev] #, cwbi-test] # cwbi-prod
+    branches: [cwbi-dev, cwbi-test, cwbi-prod]
     paths:
       - "ui/**"
   # Allow the workflow to be triggered manually from the GitHub UI
@@ -82,7 +82,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.ROLE_TO_ASSUME }}
           output-credentials: false
-          
+
       # Hello from AWS: WhoAmI
       - name: Sts GetCallerIdentity
         run: aws sts get-caller-identity
