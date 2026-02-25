@@ -2,7 +2,7 @@ import logging
 import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from cwms_batch_events.api.routers import health, internal, jobs, scripts
+from cwms_batch_events.api.routers import health, internal, jobs, scripts, users
 from cwms_batch_events.core.settings import settings
 
 logging.basicConfig(
@@ -28,3 +28,4 @@ app.include_router(health.router)
 app.include_router(internal.router)
 app.include_router(jobs.router)
 app.include_router(scripts.router)
+app.include_router(users.router)

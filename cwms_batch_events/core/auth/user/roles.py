@@ -22,3 +22,13 @@ def get_user_allowed_offices(cda_user: CdaUserProfile):
         if "CWMS Users" in roles:
             allowed_offices.append(office.lower())
     return allowed_offices
+
+
+def get_user_admin_offices(cda_user: CdaUserProfile):
+    admin_roles = ["Data Acquisition Mgr", "Data Exchange Mgr"]
+    admin_offices: list[str] = []
+    for office, roles in cda_user.roles.items():
+        office_admin = [role for role in roles if role in admin_roles]
+        if len(office_admin) > 0:
+            admin_offices.append(office.lower())
+    return admin_offices
