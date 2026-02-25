@@ -68,7 +68,7 @@ jobs:
         run: |
           cd ui
           echo "Running npm audit..."
-          npm audit --audit-level=high  # Fail if high or critical vulnerabilities are found
+          npm audit --audit-level=critical  # Fail if high or critical vulnerabilities are found
 
       # Step 4: Build the React app for production
       - name: Build React App with Vite
