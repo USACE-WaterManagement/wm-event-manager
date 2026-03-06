@@ -56,6 +56,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/scripts/{script_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Script */
+        put: operations["put_script_scripts__script_id__put"];
+        post?: never;
+        /** Delete Script */
+        delete: operations["delete_script_scripts__script_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scripts/": {
         parameters: {
             query?: never;
@@ -66,7 +84,8 @@ export interface paths {
         /** Get Scripts For Office Endpoint */
         get: operations["get_scripts_for_office_endpoint_scripts__get"];
         put?: never;
-        post?: never;
+        /** Post Script */
+        post: operations["post_script_scripts__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -128,13 +147,21 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Scriptid */
+            scriptId: string | null;
             /** Scriptname */
             scriptName: string;
+            /** Scriptslug */
+            scriptSlug: string | null;
             jobStatus: components["schemas"]["JobStatus"];
             /** Username */
             username: string;
             /** Office */
             office: string;
+            /** Repopath */
+            repoPath: string;
+            /** Executiontype */
+            executionType: string | null;
             /**
              * Createdtime
              * Format: date-time
@@ -157,24 +184,116 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "Failed" | "Pending" | "Running" | "Completed";
-        /** OfficeCatalog */
-        OfficeCatalog: {
-            /** Scripts */
-            scripts: string[];
+        /** ScriptCreate */
+        ScriptCreate: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Description */
+            description: string;
+            /** Repopath */
+            repoPath: string;
+            /** Executiontype */
+            executionType: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: string[];
+            /**
+             * Jobrunners
+             * @default []
+             */
+            jobRunners: string[];
+            /** Office */
+            office: string;
         };
-        /** OfficeCatalogs */
-        OfficeCatalogs: {
-            /** Catalogs */
-            catalogs: {
-                [key: string]: components["schemas"]["OfficeCatalog"];
-            };
+        /** ScriptRead */
+        ScriptRead: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Description */
+            description: string;
+            /** Repopath */
+            repoPath: string;
+            /** Executiontype */
+            executionType: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: string[];
+            /**
+             * Jobrunners
+             * @default []
+             */
+            jobRunners: string[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Office */
+            office: string;
+            /**
+             * Createdtime
+             * Format: date-time
+             */
+            createdTime: string;
+            /**
+             * Updatedtime
+             * Format: date-time
+             */
+            updatedTime: string;
         };
         /** ScriptRunRequest */
         ScriptRunRequest: {
-            /** Officename */
-            officeName: string;
-            /** Scriptname */
-            scriptName: string;
+            /**
+             * Scriptid
+             * Format: uuid
+             */
+            scriptId: string;
+        };
+        /** ScriptUpdate */
+        ScriptUpdate: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Description */
+            description: string;
+            /** Repopath */
+            repoPath: string;
+            /** Executiontype */
+            executionType: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Roles
+             * @default []
+             */
+            roles: string[];
+            /**
+             * Jobrunners
+             * @default []
+             */
+            jobRunners: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -309,6 +428,70 @@ export interface operations {
             };
         };
     };
+    put_script_scripts__script_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_script_scripts__script_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                script_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_scripts_for_office_endpoint_scripts__get: {
         parameters: {
             query: {
@@ -319,6 +502,39 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_script_scripts__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptCreate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -355,7 +571,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OfficeCatalogs"];
+                    "application/json": components["schemas"]["ScriptRead"][];
                 };
             };
         };

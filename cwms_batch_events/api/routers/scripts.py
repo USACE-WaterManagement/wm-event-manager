@@ -5,9 +5,12 @@ from sqlalchemy.exc import NoResultFound
 
 from cwms_batch_events.api.dependencies import get_current_user, get_job_database
 from cwms_batch_events.core.auth.user.models import User
-from cwms_batch_events.core.catalog import get_scripts_catalog
 from cwms_batch_events.core.job_database.base import JobDatabase
-from cwms_batch_events.core.models import OfficeCatalogs, ScriptCreate, ScriptUpdate
+from cwms_batch_events.core.models import (
+    ScriptCreate,
+    ScriptRead,
+    ScriptUpdate,
+)
 
 
 def check_user_office_admin(user: User, office: str):
@@ -88,10 +91,6 @@ def put_script(
 @router.get("/catalog")
 def get_user_scripts_catalog(
     user: User = Depends(get_current_user),
-) -> OfficeCatalogs:
-    all_scripts = OfficeCatalogs(catalogs={})
-    for office in user.offices:
-        office_scripts = get_scripts_catalog(office)
-        if office_scripts:
-            all_scripts.catalogs[office] = office_scripts
-    return all_scripts
+    job_db: JobDatabase = Depends(get_job_database),
+) -> list[ScriptRead]:
+    return job_db.retrieve_script_catalog(user.roles)

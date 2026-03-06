@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 import uuid
 
+from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.job_database.postgres.converters import to_job_record
 from cwms_batch_events.core.job_database.postgres.models import (
     JobModel,
@@ -44,15 +45,22 @@ class PostgresJobDatabase:
             f"cannot bind to {external_job_id}"
         )
 
-    def create_job(self, payload: ScriptRunRequest, user_id: str) -> JobRecord:
-        job_id = uuid.uuid4()
+    def create_job(self, payload: ScriptRunRequest, user: User) -> JobRecord:
+        script = self.db.get_one(ScriptModel, payload.script_id)
+
+        if set(script.roles).isdisjoint(user.roles[script.office]):
+            raise PermissionError("Not authorized to run requested script")
 
         job = JobModel()
-        job.id = job_id
-        job.script_name = payload.script_name
+        job.id = uuid.uuid4()
+        job.script_id = script.id
+        job.script_name = script.name
+        job.script_slug = script.slug
         job.job_status = JobStatus.PENDING
-        job.username = user_id
-        job.office = payload.office_name
+        job.username = user.username
+        job.office = script.office
+        job.repo_path = script.repo_path
+        job.execution_type = script.execution_type
         job.job_runner_id = get_runner_id()
 
         self.db.add(job)
@@ -111,6 +119,20 @@ class PostgresJobDatabase:
                     f"User does not have script admin access for office '{script.office}'"
                 )
             self.db.delete(script)
+
+    def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
+        """Current method may become inefficient if all_scripts becomes huge. At that
+        point, consider storing user roles (temporarily?) in database to perform
+        filtering operation entirely within SQL."""
+        all_scripts = self.db.scalars(select(ScriptModel)).all()
+        runnable_scripts = [
+            script
+            for script in all_scripts
+            if script.office in roles
+            and not set(script.roles).isdisjoint(roles[script.office])
+        ]
+
+        return [ScriptRead.model_validate(script) for script in runnable_scripts]
 
     def store_script(self, payload: ScriptCreate) -> ScriptRead:
         with self.db.begin():

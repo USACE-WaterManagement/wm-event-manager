@@ -35,10 +35,16 @@ class JobModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    script_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("scripts.id", ondelete="SET NULL"), nullable=True
+    )
     script_name: Mapped[str]
+    script_slug: Mapped[str | None]
     job_status: Mapped[JobStatus] = mapped_column(VARCHAR)
     username: Mapped[str]
     office: Mapped[str]
+    repo_path: Mapped[str]
+    execution_type: Mapped[str | None]
     created_time: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp()
     )
@@ -48,6 +54,8 @@ class JobModel(Base):
         UUID(as_uuid=True), ForeignKey("job_runners.id")
     )
     external_job_id: Mapped[Optional[str]]
+
+    script: Mapped["ScriptModel | None"] = relationship("ScriptModel", lazy="selectin")
 
 
 class JobRunnerModel(Base):

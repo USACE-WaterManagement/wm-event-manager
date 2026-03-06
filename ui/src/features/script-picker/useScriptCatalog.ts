@@ -3,7 +3,7 @@ import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
 import { components } from "../../generated/api-types";
 
-export type ScriptsCatalog = components["schemas"]["OfficeCatalogs"];
+export type ScriptsCatalog = components["schemas"]["ScriptRead"][];
 
 const useScriptsCatalog = () => {
   const auth = useAuth();

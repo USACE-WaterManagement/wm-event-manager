@@ -35,10 +35,14 @@ class JobLogs(CamelModel):
 
 class JobRecord(CamelModel):
     id: UUID
+    script_id: UUID | None
     script_name: str
+    script_slug: str | None
     job_status: JobStatus
     username: str
     office: str
+    repo_path: str
+    execution_type: str | None
     created_time: datetime
     run_time: datetime | None = None
     end_time: datetime | None = None
@@ -64,8 +68,13 @@ class OfficeCatalogs(CamelModel):
 
 
 class ScriptRunRequest(CamelModel):
-    office_name: str
-    script_name: str
+    script_id: UUID
+
+
+class ScriptRunOptions(CamelModel):
+    office: str
+    repo_path: str
+    script_slug: str | None
 
 
 class JobSource(str, Enum):
@@ -83,7 +92,7 @@ class JobMessage(BaseModel):
     runner_type: str
     requested_by: JobRequestedBy
     created_at: datetime
-    payload: ScriptRunRequest
+    payload: ScriptRunOptions
 
 
 class BatchJobStatusUpdateRequest(BaseModel):

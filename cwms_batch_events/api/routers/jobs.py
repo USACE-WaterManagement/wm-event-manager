@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.exc import NoResultFound
 
 from cwms_batch_events.api.dependencies import (
     get_current_user,
@@ -9,13 +10,13 @@ from cwms_batch_events.api.dependencies import (
     get_job_queue,
 )
 from cwms_batch_events.core.auth.user.models import User
-from cwms_batch_events.core.catalog import get_scripts_catalog
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.models import (
     JobLogs,
     JobRecord,
     JobSource,
+    ScriptRunOptions,
     ScriptRunRequest,
 )
 from cwms_batch_events.core.queue import JobQueue
@@ -41,29 +42,20 @@ def post_job(
     job_db: JobDatabase = Depends(get_job_database),
     queue: JobQueue = Depends(get_job_queue),
 ) -> JobRecord:
-    if payload.office_name not in user.offices:
+    try:
+        job = job_db.create_job(payload, user)
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except NoResultFound:
         raise HTTPException(
-            status_code=403,
-            detail=f"Not authorized to run scripts for {payload.office_name}.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Script {payload.script_id} not found",
         )
 
-    catalog = get_scripts_catalog(payload.office_name)
-    if not catalog:
-        raise HTTPException(
-            status_code=403,
-            detail=f"No script catalog found for {payload.office_name}.",
-        )
-
-    scripts = catalog.scripts
-    if payload.script_name not in scripts:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Script {payload.script_name} not found for office {payload.office_name}.",
-        )
-
-    job = job_db.create_job(payload, user.username)
-
-    message = queue.create_job_message(job.id, user.username, JobSource.API, payload)
+    options = ScriptRunOptions(
+        office=job.office, repo_path=job.repo_path, script_slug=job.script_slug
+    )
+    message = queue.create_job_message(job.id, user.username, JobSource.API, options)
     background_tasks.add_task(queue.send_job_message, message)
 
     return job
