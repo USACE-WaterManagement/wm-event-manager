@@ -86,3 +86,27 @@ ALL_OFFICES = [
     "UNK",
     "ERD",
 ]
+
+ALL_OFFICES_LOWER = [office.lower() for office in ALL_OFFICES]
+
+ALL_ROLES = [
+    "All Users",
+    "CCP Mgr",
+    "CCP Proc",
+    "CCP Reviewer",
+    "CWMS DBA Users",
+    "CWMS PD Users",
+    "CWMS User Admins",
+    "CWMS Users",
+    "Data Acquisition Mgr",
+    "Data Exchange Mgr",
+    "NWO_Readonly_Users",
+    "RDL Mgr",
+    "RDL Reviewer",
+    "TS ID Creator",
+    "VT Mgr",
+    "Viewer Users",
+]
+
+
+ALL_OFFICE_ROLES = dict.fromkeys(ALL_OFFICES_LOWER, ALL_ROLES)
