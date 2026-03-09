@@ -34,6 +34,8 @@ class JobLogs(CamelModel):
 
 
 class JobRecord(CamelModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     script_id: UUID | None
     script_name: str
@@ -51,6 +53,8 @@ class JobRecord(CamelModel):
 
 
 class JobRunner(CamelModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     slug: str
     label: str
