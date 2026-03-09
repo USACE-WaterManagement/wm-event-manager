@@ -3,6 +3,7 @@ import useScriptsCatalog from "./useScriptCatalog";
 import { Dropdown } from "@usace/groundwork";
 import ScriptExecutor from "./ScriptExecutor";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
+import { OfficeSelector } from "../../shared/components/OfficeSelector";
 
 const ScriptPicker = () => {
   const [office, setOffice] = useState<string | undefined>();
@@ -15,28 +16,20 @@ const ScriptPicker = () => {
   if (isLoading) return <span>Loading...</span>;
   if (isError || !data) return <span>Error occurred!</span>;
 
+  const offices = Array.from(new Set(data.map((s) => s.office)));
   const scriptsForOffice = data.filter((script) => script.office === office);
+
+  const officeChange = (office: string) => {
+    setOffice(office);
+    setScriptId(undefined);
+  };
 
   return (
     <div className="flex flex-col">
-      <Dropdown
-        className="w-36"
-        label="Office"
+      <OfficeSelector
+        offices={offices}
         value={office}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-          setOffice(e.target.value);
-          setScriptId(undefined);
-        }}
-        options={[
-          <option key="" value="">
-            Office...
-          </option>,
-          ...Array.from(new Set(data.map((s) => s.office))).map((code) => (
-            <option key={code} value={code}>
-              {code}
-            </option>
-          )),
-        ]}
+        onChange={officeChange}
       />
       <div className="mt-4">
         <Dropdown

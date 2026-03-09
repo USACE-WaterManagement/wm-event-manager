@@ -1,15 +1,13 @@
 import { useAuth } from "@usace-watermanagement/groundwork-water";
-import { Dropdown } from "@usace/groundwork";
 import useAdminOffices from "./useAdminOffices";
 import { useState } from "react";
-
-const OFFICE_PLACEHOLDER = "Office...";
+import { OfficeSelector } from "../../shared/components/OfficeSelector";
 
 export const ScriptsManager = () => {
   const auth = useAuth();
   const { data, isLoading, isError } = useAdminOffices();
 
-  const [office, setOffice] = useState(OFFICE_PLACEHOLDER);
+  const [office, setOffice] = useState<string | undefined>();
 
   if (!auth.isAuth) return <span>Login required to manage scripts.</span>;
 
@@ -18,19 +16,11 @@ export const ScriptsManager = () => {
   if (!data || data.length < 1)
     return <span>You do not have script admin rights for any offices.</span>;
 
+  const officeChange = (office: string) => {
+    setOffice(office);
+  };
+
   return (
-    <Dropdown
-      className="w-36"
-      label="Office"
-      value={office}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-        setOffice(e.target.value);
-      }}
-      options={data.sort().map((code) => (
-        <option key={code} value={code}>
-          {code}
-        </option>
-      ))}
-    />
+    <OfficeSelector offices={data} value={office} onChange={officeChange} />
   );
 };
