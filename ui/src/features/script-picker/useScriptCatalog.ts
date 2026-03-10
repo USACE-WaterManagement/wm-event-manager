@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
-import { components } from "../../generated/api-types";
-
-export type ScriptsCatalog = components["schemas"]["ScriptRead"][];
+import type { Script } from "../scripts-manager/types";
 
 const useScriptsCatalog = () => {
   const auth = useAuth();
@@ -14,7 +12,7 @@ const useScriptsCatalog = () => {
   });
 };
 
-const fetchCatalog = async (token?: string): Promise<ScriptsCatalog> => {
+const fetchCatalog = async (token?: string): Promise<Script[]> => {
   const response = await fetchWithAuth("/api/scripts/catalog", {}, token);
   if (!response.ok) {
     throw new Error("Failed to fetch the scripts catalog");

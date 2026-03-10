@@ -6,6 +6,7 @@ from sqlalchemy.exc import NoResultFound
 from cwms_batch_events.api.dependencies import get_current_user, get_job_database
 from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.job_database.base import JobDatabase
+from cwms_batch_events.core.job_database.postgres.postgres import SlugError
 from cwms_batch_events.core.models import (
     ScriptCreate,
     ScriptRead,
@@ -64,6 +65,8 @@ def post_script(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )
+    except SlugError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.put("/{script_id}")

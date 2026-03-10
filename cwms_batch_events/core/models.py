@@ -110,7 +110,6 @@ class BindExternalJobIdRequest(BaseModel):
 
 class ScriptBase(CamelModel):
     name: str
-    slug: str
     description: str
     repo_path: str
     execution_type: str
@@ -127,6 +126,7 @@ class ScriptRead(ScriptBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    slug: str
     office: str
     created_time: datetime
     updated_time: datetime

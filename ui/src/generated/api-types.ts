@@ -188,8 +188,6 @@ export interface components {
         ScriptCreate: {
             /** Name */
             name: string;
-            /** Slug */
-            slug: string;
             /** Description */
             description: string;
             /** Repopath */
@@ -218,8 +216,6 @@ export interface components {
         ScriptRead: {
             /** Name */
             name: string;
-            /** Slug */
-            slug: string;
             /** Description */
             description: string;
             /** Repopath */
@@ -246,6 +242,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Slug */
+            slug: string;
             /** Office */
             office: string;
             /**
@@ -271,8 +269,6 @@ export interface components {
         ScriptUpdate: {
             /** Name */
             name: string;
-            /** Slug */
-            slug: string;
             /** Description */
             description: string;
             /** Repopath */

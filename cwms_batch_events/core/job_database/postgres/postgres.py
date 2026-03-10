@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
+import re
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import uuid
 
@@ -18,6 +20,18 @@ from cwms_batch_events.core.models import (
     ScriptUpdate,
 )
 from cwms_batch_events.core.utils import get_runner_id
+
+
+class SlugError(Exception):
+    pass
+
+
+def slugify(value: str) -> str:
+    value = value.lower().strip()
+    value = re.sub(r"[^a-z0-9\s-]", "", value)
+    value = re.sub(r"[\s_-]+", "-", value)
+    value = re.sub(r"^-+|-+$", "", value)
+    return value
 
 
 class PostgresJobDatabase:
@@ -134,29 +148,42 @@ class PostgresJobDatabase:
         return [ScriptRead.model_validate(script) for script in runnable_scripts]
 
     def store_script(self, payload: ScriptCreate) -> ScriptRead:
-        with self.db.begin():
-            script = ScriptModel()
-            script.office = payload.office
-            script.name = payload.name
-            script.slug = payload.slug
-            script.description = payload.description
-            script.repo_path = payload.repo_path
-            script.execution_type = payload.execution_type
-            script.active = payload.active
-            script.roles = payload.roles
+        try:
+            with self.db.begin():
+                script = ScriptModel()
+                script.office = payload.office
+                script.name = payload.name
+                script.slug = slugify(payload.name)
+                script.description = payload.description
+                script.repo_path = payload.repo_path
+                script.execution_type = payload.execution_type
+                script.active = payload.active
+                script.roles = payload.roles
 
-            job_runners = self.db.scalars(
-                select(JobRunnerModel).where(JobRunnerModel.id.in_(payload.job_runners))
-            ).all()
-            if len(job_runners) != len(payload.job_runners):
-                raise ValueError("Invalid job runner ID provided")
-            script.job_runners = list(job_runners)
+                job_runners = self.db.scalars(
+                    select(JobRunnerModel).where(
+                        JobRunnerModel.id.in_(payload.job_runners)
+                    )
+                ).all()
+                if len(job_runners) != len(payload.job_runners):
+                    raise ValueError("Invalid job runner ID provided")
+                script.job_runners = list(job_runners)
 
-            self.db.add(script)
-            self.db.flush()
-            self.db.refresh(script)
+                self.db.add(script)
+                self.db.flush()
+                self.db.refresh(script)
 
-        return ScriptRead.model_validate(script)
+            return ScriptRead.model_validate(script)
+
+        except IntegrityError as e:
+            self.db.rollback()
+
+            if "slug" not in str(e).lower():
+                raise
+
+            raise SlugError(
+                f"Slug '{slugify(payload.name)}' already in use for office '{payload.office}'"
+            )
 
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
         job = self._load_job_for_update(job_id)

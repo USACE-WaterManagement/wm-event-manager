@@ -2,6 +2,7 @@ import { useAuth } from "@usace-watermanagement/groundwork-water";
 import useAdminOffices from "./useAdminOffices";
 import { useState } from "react";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
+import { ScriptsWorkspace } from "./ScriptsWorkspace";
 
 export const ScriptsManager = () => {
   const auth = useAuth();
@@ -21,6 +22,9 @@ export const ScriptsManager = () => {
   };
 
   return (
-    <OfficeSelector offices={data} value={office} onChange={officeChange} />
+    <>
+      <OfficeSelector offices={data} value={office} onChange={officeChange} />
+      {office && <ScriptsWorkspace office={office} />}
+    </>
   );
 };
