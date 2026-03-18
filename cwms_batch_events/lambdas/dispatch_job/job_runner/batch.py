@@ -1,4 +1,5 @@
 import logging
+import re
 from cwms_batch_events.core.models import JobMessage
 from cwms_batch_events.lambdas.dispatch_job.utils import OFFICES
 
@@ -16,8 +17,10 @@ class BatchJobRunner:
         office = message.payload.office_name
         script = message.payload.script_name
 
+        sanitized_script = re.sub(r"[^A-Za-z0-9_-]+", "-", script)
+
         job_name = (
-            f"cwms-{office}-event-{script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
+            f"cwms-{office}-event-{sanitized_script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
         ).replace(".", "_")
 
         response = self.batch.submit_job(
