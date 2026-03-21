@@ -17,7 +17,7 @@ const fetchOfficeScripts = async (
   token?: string,
 ): Promise<Script[]> => {
   const response = await fetchWithAuth(
-    `/api/scripts/?office=${office}`,
+    `/api/scripts?office=${office}`,
     {},
     token,
   );
