@@ -29,8 +29,6 @@ const JobsList = () => {
       </span>
     );
 
-  console.log({ jobs });
-
   return (
     <div className="mx-auto xl:w-1/2">
       {jobs.map((job) => {
