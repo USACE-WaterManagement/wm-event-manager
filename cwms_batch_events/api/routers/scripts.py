@@ -42,7 +42,7 @@ def delete_script(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
-@router.get("/")
+@router.get("")
 def get_scripts_for_office_endpoint(
     office: str,
     user: User = Depends(get_current_user),
@@ -52,7 +52,7 @@ def get_scripts_for_office_endpoint(
     return job_db.get_scripts_for_office(office)
 
 
-@router.post("/")
+@router.post("")
 def post_script(
     payload: ScriptCreate,
     user: User = Depends(get_current_user),

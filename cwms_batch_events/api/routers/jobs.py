@@ -25,7 +25,7 @@ from cwms_batch_events.core.queue import JobQueue
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
-@router.get("/")
+@router.get("")
 def get_jobs_for_user(
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
@@ -34,7 +34,7 @@ def get_jobs_for_user(
     return job_list
 
 
-@router.post("/")
+@router.post("")
 def post_job(
     payload: ScriptRunRequest,
     background_tasks: BackgroundTasks,
