@@ -14,13 +14,14 @@ class BatchJobRunner:
         self.batch = boto3.client("batch")
 
     def run_job(self, message: JobMessage):
-        office = message.payload.office_name
-        script = message.payload.script_name
-
-        sanitized_script = re.sub(r"[^A-Za-z0-9_-]+", "-", script)
+        office = message.payload.office
+        repo_path = message.payload.repo_path
+        script_slug = message.payload.script_slug
+        if script_slug is None:
+            script_slug = repo_path.split("/")[-1]
 
         job_name = (
-            f"cwms-{office}-event-{sanitized_script}-{datetime.now().strftime('%Y%m%d-%H%M')}"
+            f"cwms-{office}-event-{script_slug}-{datetime.now().strftime('%Y%m%d-%H%M')}"
         ).replace(".", "_")
 
         response = self.batch.submit_job(
@@ -31,7 +32,7 @@ class BatchJobRunner:
                 "environment": [
                     {"name": "OFFICE", "value": office},
                 ],
-                "command": ["python", f"/jobs/python/{script}"],
+                "command": ["python", f"/jobs/{repo_path}"],
             },
             tags={
                 "Office": office,

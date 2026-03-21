@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
 
@@ -34,11 +34,17 @@ class JobLogs(CamelModel):
 
 
 class JobRecord(CamelModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
+    script_id: UUID | None
     script_name: str
+    script_slug: str | None
     job_status: JobStatus
     username: str
     office: str
+    repo_path: str
+    execution_type: str | None
     created_time: datetime
     run_time: datetime | None = None
     end_time: datetime | None = None
@@ -47,6 +53,8 @@ class JobRecord(CamelModel):
 
 
 class JobRunner(CamelModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     slug: str
     label: str
@@ -64,8 +72,13 @@ class OfficeCatalogs(CamelModel):
 
 
 class ScriptRunRequest(CamelModel):
-    office_name: str
-    script_name: str
+    script_id: UUID
+
+
+class ScriptRunOptions(CamelModel):
+    office: str
+    repo_path: str
+    script_slug: str | None
 
 
 class JobSource(str, Enum):
@@ -83,7 +96,7 @@ class JobMessage(BaseModel):
     runner_type: str
     requested_by: JobRequestedBy
     created_at: datetime
-    payload: ScriptRunRequest
+    payload: ScriptRunOptions
 
 
 class BatchJobStatusUpdateRequest(BaseModel):
@@ -93,3 +106,36 @@ class BatchJobStatusUpdateRequest(BaseModel):
 
 class BindExternalJobIdRequest(BaseModel):
     external_job_id: str
+
+
+class ScriptBase(CamelModel):
+    name: str
+    description: str
+    repo_path: str
+    execution_type: str
+    active: bool = True
+    roles: list[str] = []
+    job_runners: list[UUID] = []
+
+
+class ScriptCreate(ScriptBase):
+    office: str
+
+
+class ScriptRead(ScriptBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    slug: str
+    office: str
+    created_time: datetime
+    updated_time: datetime
+    job_runners: list[UUID] = []
+
+    @field_validator("job_runners", mode="before")
+    def extract_job_runner_ids(cls, v):
+        return [jr.id if hasattr(jr, "id") else jr for jr in v]
+
+
+class ScriptUpdate(ScriptBase):
+    pass

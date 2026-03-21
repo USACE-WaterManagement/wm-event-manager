@@ -20,12 +20,12 @@ class LocalExecutor:
 
         try:
             container = client.containers.run(
-                image=f"{message.payload.office_name}-jobs",
-                command=f"python /jobs/python/{message.payload.script_name}",
+                image=f"{message.payload.office}-jobs",
+                command=f"python /jobs/{message.payload.repo_path}",
                 detach=True,
                 stderr=True,
                 environment=[
-                    f"OFFICE={message.payload.office_name}",
+                    f"OFFICE={message.payload.office}",
                     "GITHUB_BRANCH=cwbi-dev",
                     f"CDA_API_ROOT={CDA_API_ROOT}",
                 ],

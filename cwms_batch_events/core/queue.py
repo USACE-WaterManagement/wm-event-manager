@@ -6,6 +6,7 @@ from cwms_batch_events.core.models import (
     JobMessage,
     JobRequestedBy,
     JobSource,
+    ScriptRunOptions,
     ScriptRunRequest,
 )
 from cwms_batch_events.core.settings import settings
@@ -23,7 +24,7 @@ class JobQueue:
         self.runner_type = settings.default_job_runner
 
     def create_job_message(
-        self, job_id: UUID, username: str, source: JobSource, payload: ScriptRunRequest
+        self, job_id: UUID, username: str, source: JobSource, payload: ScriptRunOptions
     ):
         requested_by = JobRequestedBy(username=username, source=source)
         return JobMessage(
