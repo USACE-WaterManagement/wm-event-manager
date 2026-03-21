@@ -43,11 +43,13 @@ const ScriptPicker = () => {
             <option key="" value="">
               Script...
             </option>,
-            ...scriptsForOffice.map((script) => (
-              <option key={script.id} value={script.id}>
-                {script.name}
-              </option>
-            )),
+            ...scriptsForOffice
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((script) => (
+                <option key={script.id} value={script.id}>
+                  {script.name}
+                </option>
+              )),
           ]}
         />
       </div>
