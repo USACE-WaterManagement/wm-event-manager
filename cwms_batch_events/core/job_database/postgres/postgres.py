@@ -142,6 +142,7 @@ class PostgresJobDatabase:
             script
             for script in all_scripts
             if script.office in roles
+            and script.active
             and not set(script.roles).isdisjoint(roles[script.office])
         ]
 
