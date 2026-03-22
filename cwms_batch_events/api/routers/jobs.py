@@ -53,7 +53,7 @@ def post_job(
         )
 
     options = ScriptRunOptions(
-        office=job.office, repo_path=job.repo_path, script_slug=job.script_slug
+        office=job.office.lower(), repo_path=job.repo_path, script_slug=job.script_slug
     )
     message = queue.create_job_message(job.id, user.username, JobSource.API, options)
     background_tasks.add_task(queue.send_job_message, message)
