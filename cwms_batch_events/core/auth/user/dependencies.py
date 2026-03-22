@@ -8,7 +8,7 @@ from cwms_batch_events.core.auth.user.roles import (
     get_user_allowed_offices,
     get_user_profile,
 )
-from cwms_batch_events.core.utils import ALL_OFFICES_LOWER, ALL_OFFICE_ROLES
+from cwms_batch_events.core.utils import ALL_OFFICES, ALL_OFFICE_ROLES
 
 oauth2_scheme = HTTPBearer()
 
@@ -41,7 +41,7 @@ async def get_current_user_keycloak(
 async def get_current_user_mock() -> User:
     return User(
         username="dev-user",
-        offices=ALL_OFFICES_LOWER,
-        admin_offices=ALL_OFFICES_LOWER,
+        offices=ALL_OFFICES,
+        admin_offices=ALL_OFFICES,
         roles=ALL_OFFICE_ROLES,
     )

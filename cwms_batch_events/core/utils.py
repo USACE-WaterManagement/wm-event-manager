@@ -87,8 +87,6 @@ ALL_OFFICES = [
     "ERD",
 ]
 
-ALL_OFFICES_LOWER = [office.lower() for office in ALL_OFFICES]
-
 ALL_ROLES = [
     "All Users",
     "CCP Mgr",
@@ -109,4 +107,4 @@ ALL_ROLES = [
 ]
 
 
-ALL_OFFICE_ROLES = dict.fromkeys(ALL_OFFICES_LOWER, ALL_ROLES)
+ALL_OFFICE_ROLES = dict.fromkeys(ALL_OFFICES, ALL_ROLES)
