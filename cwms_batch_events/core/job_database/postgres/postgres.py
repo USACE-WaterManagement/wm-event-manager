@@ -97,7 +97,9 @@ class PostgresJobDatabase:
 
     def get_jobs_for_user(self, user_id: str) -> list[JobRecord]:
         job_models = self.db.scalars(
-            select(JobModel).where(JobModel.username == user_id)
+            select(JobModel)
+            .where(JobModel.username == user_id)
+            .order_by(JobModel.created_time.desc())
         ).all()
         return [JobRecord.model_validate(model) for model in job_models]
 
