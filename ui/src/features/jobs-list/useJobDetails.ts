@@ -13,7 +13,6 @@ const useJobDetails = (jobId: string) => {
     queryFn: () => fetchJob(jobId, auth.token),
     refetchInterval: (query) => {
       const data = query.state.data;
-      console.log(data);
       if (
         data &&
         (data.jobStatus === "Completed" || data.jobStatus === "Failed")

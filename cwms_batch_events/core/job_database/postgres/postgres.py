@@ -1,12 +1,37 @@
 from datetime import datetime, timezone
+import re
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import uuid
 
-from cwms_batch_events.core.job_database.postgres.converters import to_job_record
-from cwms_batch_events.core.job_database.postgres.models import JobModel
-from cwms_batch_events.core.models import JobRecord, JobStatus, ScriptRunRequest
+from cwms_batch_events.core.auth.user.models import User
+from cwms_batch_events.core.job_database.postgres.models import (
+    JobModel,
+    JobRunnerModel,
+    ScriptModel,
+)
+from cwms_batch_events.core.models import (
+    JobRecord,
+    JobStatus,
+    ScriptCreate,
+    ScriptRead,
+    ScriptRunRequest,
+    ScriptUpdate,
+)
 from cwms_batch_events.core.utils import get_runner_id
+
+
+class SlugError(Exception):
+    pass
+
+
+def slugify(value: str) -> str:
+    value = value.lower().strip()
+    value = re.sub(r"[^a-z0-9\s-]", "", value)
+    value = re.sub(r"[\s_-]+", "-", value)
+    value = re.sub(r"^-+|-+$", "", value)
+    return value
 
 
 class PostgresJobDatabase:
@@ -33,27 +58,34 @@ class PostgresJobDatabase:
             f"cannot bind to {external_job_id}"
         )
 
-    def create_job(self, payload: ScriptRunRequest, user_id: str) -> JobRecord:
-        job_id = uuid.uuid4()
+    def create_job(self, payload: ScriptRunRequest, user: User) -> JobRecord:
+        script = self.db.get_one(ScriptModel, payload.script_id)
+
+        if set(script.roles).isdisjoint(user.roles[script.office]):
+            raise PermissionError("Not authorized to run requested script")
 
         job = JobModel()
-        job.id = job_id
-        job.script_name = payload.script_name
+        job.id = uuid.uuid4()
+        job.script_id = script.id
+        job.script_name = script.name
+        job.script_slug = script.slug
         job.job_status = JobStatus.PENDING
-        job.username = user_id
-        job.office = payload.office_name
+        job.username = user.username
+        job.office = script.office
+        job.repo_path = script.repo_path
+        job.execution_type = script.execution_type
         job.job_runner_id = get_runner_id()
 
         self.db.add(job)
         self.db.commit()
         self.db.refresh(job)
-        return to_job_record(job)
+        return JobRecord.model_validate(job)
 
     def get_job_by_id(self, job_id: uuid.UUID) -> JobRecord | None:
         job_model = self.db.get(JobModel, job_id)
         if job_model is None:
             return None
-        return to_job_record(job_model)
+        return JobRecord.model_validate(job_model)
 
     def get_job_by_external_id(self, ext_job_id: str) -> JobRecord | None:
         job_model = self.db.scalars(
@@ -61,13 +93,23 @@ class PostgresJobDatabase:
         ).one_or_none()
         if job_model is None:
             return None
-        return to_job_record(job_model)
+        return JobRecord.model_validate(job_model)
 
     def get_jobs_for_user(self, user_id: str) -> list[JobRecord]:
         job_models = self.db.scalars(
-            select(JobModel).where(JobModel.username == user_id)
+            select(JobModel)
+            .where(JobModel.username == user_id)
+            .order_by(JobModel.created_time.desc())
         ).all()
-        return [to_job_record(model) for model in job_models]
+        return [JobRecord.model_validate(model) for model in job_models]
+
+    def get_scripts_for_office(self, office: str):
+        script_models = self.db.scalars(
+            select(ScriptModel).where(ScriptModel.office == office)
+        ).all()
+        return [
+            ScriptRead.model_validate(script_model) for script_model in script_models
+        ]
 
     def _load_job_for_update(self, job_id: uuid.UUID):
         job = (
@@ -82,6 +124,70 @@ class PostgresJobDatabase:
 
         return job
 
+    def remove_script_if_allowed(
+        self, script_id: uuid.UUID, admin_offices: list[str]
+    ) -> None:
+        with self.db.begin():
+            script = self.db.get_one(ScriptModel, script_id)
+            if script.office not in admin_offices:
+                raise PermissionError(
+                    f"User does not have script admin access for office '{script.office}'"
+                )
+            self.db.delete(script)
+
+    def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
+        """Current method may become inefficient if all_scripts becomes huge. At that
+        point, consider storing user roles (temporarily?) in database to perform
+        filtering operation entirely within SQL."""
+        all_scripts = self.db.scalars(select(ScriptModel)).all()
+        runnable_scripts = [
+            script
+            for script in all_scripts
+            if script.office in roles
+            and script.active
+            and not set(script.roles).isdisjoint(roles[script.office])
+        ]
+
+        return [ScriptRead.model_validate(script) for script in runnable_scripts]
+
+    def store_script(self, payload: ScriptCreate) -> ScriptRead:
+        try:
+            with self.db.begin():
+                script = ScriptModel()
+                script.office = payload.office
+                script.name = payload.name
+                script.slug = slugify(payload.name)
+                script.description = payload.description
+                script.repo_path = payload.repo_path
+                script.execution_type = payload.execution_type
+                script.active = payload.active
+                script.roles = payload.roles
+
+                job_runners = self.db.scalars(
+                    select(JobRunnerModel).where(
+                        JobRunnerModel.id.in_(payload.job_runners)
+                    )
+                ).all()
+                if len(job_runners) != len(payload.job_runners):
+                    raise ValueError("Invalid job runner ID provided")
+                script.job_runners = list(job_runners)
+
+                self.db.add(script)
+                self.db.flush()
+                self.db.refresh(script)
+
+            return ScriptRead.model_validate(script)
+
+        except IntegrityError as e:
+            self.db.rollback()
+
+            if "slug" not in str(e).lower():
+                raise
+
+            raise SlugError(
+                f"Slug '{slugify(payload.name)}' already in use for office '{payload.office}'"
+            )
+
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
         job = self._load_job_for_update(job_id)
 
@@ -93,3 +199,31 @@ class PostgresJobDatabase:
         elif status in (JobStatus.COMPLETED, JobStatus.FAILED):
             job.end_time = now
         self.db.commit()
+
+    def update_script(
+        self, script_id: uuid.UUID, payload: ScriptUpdate, admin_offices: list[str]
+    ) -> ScriptRead:
+        with self.db.begin():
+            script = self.db.get_one(ScriptModel, script_id)
+            if script.office not in admin_offices:
+                raise PermissionError(
+                    f"User does not have script admin access for office '{script.office}'"
+                )
+            for field, value in payload.model_dump(by_alias=False).items():
+                if field == "job_runners":
+                    job_runners = self.db.scalars(
+                        select(JobRunnerModel).where(
+                            JobRunnerModel.id.in_(payload.job_runners)
+                        )
+                    ).all()
+                    if len(job_runners) != len(payload.job_runners):
+                        raise ValueError("Invalid job runner ID provided")
+                    script.job_runners = list(job_runners)
+                else:
+                    setattr(script, field, value)
+
+            script.updated_time = datetime.now()
+            self.db.flush()
+            self.db.refresh(script)
+
+        return ScriptRead.model_validate(script)

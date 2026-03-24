@@ -6,6 +6,7 @@ import AuthButton from "../features/auth/AuthButton";
 const navLinks = [
   { id: "jobs", text: "Jobs List", href: "/jobs" },
   { id: "submit", text: "Submit Job", href: "/submit" },
+  { id: "manager", text: "Scripts Manager", href: "/scripts-manager" },
 ];
 
 export const Route = createRootRoute({
