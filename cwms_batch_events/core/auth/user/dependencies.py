@@ -6,7 +6,7 @@ from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.auth.user.roles import (
     get_user_admin_offices,
     get_user_allowed_offices,
-    get_user_profile,
+    get_user_profile_jwt,
 )
 from cwms_batch_events.core.utils import ALL_OFFICES, ALL_OFFICE_ROLES
 
@@ -27,7 +27,7 @@ async def get_current_user_keycloak(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
         )
 
-    cda_user = get_user_profile(token)
+    cda_user = get_user_profile_jwt(token)
     allowed_offices = get_user_allowed_offices(cda_user)
     admin_offices = get_user_admin_offices(cda_user)
     return User(
