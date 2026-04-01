@@ -1,7 +1,7 @@
 from fastapi import Depends
 
 from cwms_batch_events.core.auth.user.dependencies import (
-    get_current_user_keycloak,
+    get_current_user_cwms,
     get_current_user_mock,
 )
 from cwms_batch_events.core.job_database.base import JobDatabase
@@ -16,7 +16,7 @@ from cwms_batch_events.core.settings import settings
 if settings.mock_user:
     get_current_user = get_current_user_mock
 else:
-    get_current_user = get_current_user_keycloak
+    get_current_user = get_current_user_cwms
 
 
 def get_db_session():
