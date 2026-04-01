@@ -24,7 +24,7 @@ class JobStatus(str, Enum):
 
 class CdaUserProfile(BaseModel):
     user_name: str = Field(alias="user-name")
-    principal: str
+    principal: str | None = None
     cac_auth: bool = Field(alias="cac-auth")
     roles: dict[str, list[str]]
 
