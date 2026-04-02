@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 
 from cwms_batch_events.core.auth.user.jwt import verify_jwt
 from cwms_batch_events.core.auth.user.models import User
@@ -11,8 +11,30 @@ from cwms_batch_events.core.auth.user.roles import (
 )
 from cwms_batch_events.core.utils import ALL_OFFICES, ALL_OFFICE_ROLES
 
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="Keycloak JWT",
+    description="Enter a valid JWT below (do not include Bearer)",
+)
 
-async def get_auth_credentials(request: Request) -> HTTPAuthorizationCredentials:
+api_key_scheme = APIKeyHeader(
+    name="Authorization",
+    auto_error=False,
+    scheme_name="CDA API Key",
+    description="Use format: apikey <your-api-key>",
+)
+
+
+async def get_auth_header_for_docs(
+    bearer: str = Depends(bearer_scheme),
+    api_key: str = Depends(api_key_scheme),
+):
+    return bearer or api_key
+
+
+async def get_auth_credentials(
+    request: Request, _: str = Depends(get_auth_header_for_docs)
+) -> HTTPAuthorizationCredentials:
     header = request.headers.get("Authorization")
     if not header:
         raise HTTPException(status_code=401, detail="Missing Authorization header")
