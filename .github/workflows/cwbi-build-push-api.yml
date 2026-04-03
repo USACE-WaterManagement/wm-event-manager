@@ -39,14 +39,17 @@ jobs:
             "cwbi-dev")
               echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::718787032875:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
               echo "IMAGE_TAG=dev" >> $GITHUB_ENV
+              echo "BUILD_FLAGS=--push" >> $GITHUB_ENV
               ;;
             "cwbi-test")
               echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::276847049069:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
               echo "IMAGE_TAG=test" >> $GITHUB_ENV
+              echo "BUILD_FLAGS=--push --pull" >> $GITHUB_ENV
               ;;
             "cwbi-prod")
               echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::648157167324:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
               echo "IMAGE_TAG=prod" >> $GITHUB_ENV
+              echo "BUILD_FLAGS=--push --pull" >> $GITHUB_ENV
               ;;
           esac
 
@@ -71,7 +74,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build --pull --push \
+          docker build $BUILD_FLAGS \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
           $PATH_TO_DOCKERFILE
