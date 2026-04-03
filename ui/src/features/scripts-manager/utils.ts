@@ -1,0 +1,18 @@
+export const allRoles = [
+  "All Users",
+  "CCP Mgr",
+  "CCP Proc",
+  "CCP Reviewer",
+  "CWMS DBA Users",
+  "CWMS PD Users",
+  "CWMS User Admins",
+  "CWMS Users",
+  "Data Acquisition Mgr",
+  "Data Exchange Mgr",
+  "NWO_Readonly_Users",
+  "RDL Mgr",
+  "RDL Reviewer",
+  "TS ID Creator",
+  "VT Mgr",
+  "Viewer Users",
+];

@@ -17,13 +17,7 @@
 3. Start the API Server **(From the project root)**
     1. Create the `cwms` docker network with: `docker network create cwms`
     2. Start the API server environment with `docker compose up`   
-4. Populate the script catalogs from step #2
-    1. Enter the local repositories you have cloned from step #2 into this file:   
-    `/home/rocky/projects/cwms-batch-events/scripts/catalogs/catalog_config.toml`  
-    *NOTE:* Absolute paths are recommended!
-    2. Jump to the catalog directory: `cd scripts/catalogs`
-    3. Run the catalog script: `python3 build_catalogs.py`
-5. Start the Web Interface **(From the project root)**
+4. Start the Web Interface **(From the project root)**
     1. `cd ui`
     2. Install Packages (NodeJS required): `npm install`
     3. Run the local development vite server: `npm run dev`

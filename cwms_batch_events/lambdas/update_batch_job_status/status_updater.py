@@ -55,13 +55,6 @@ def get_internal_token() -> str:
 
 
 def lambda_handler(event, context):
-    internal_token = get_internal_token()
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-Internal-Token": internal_token,
-    }
-
     logger.info("Received Batch job state change event from EventBridge")
 
     try:
@@ -91,6 +84,13 @@ def lambda_handler(event, context):
     except KeyError:
         logger.info("Ignoring unsupported Batch status: %s", raw_status)
         return
+
+    internal_token = get_internal_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-Internal-Token": internal_token,
+    }
 
     payload = {"status": status, "event_time": time_iso}
     try:

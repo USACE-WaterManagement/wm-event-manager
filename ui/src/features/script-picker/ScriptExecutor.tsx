@@ -2,15 +2,14 @@ import { Button } from "@usace/groundwork";
 import useExecuteScript from "./useExecuteScript";
 
 interface ScriptExecutorProps {
-  office: string;
-  script: string;
+  scriptId: string;
 }
 
-const ScriptExecutor = ({ office, script }: ScriptExecutorProps) => {
+const ScriptExecutor = ({ scriptId }: ScriptExecutorProps) => {
   const { mutate, isPending, isError, error } = useExecuteScript();
 
   const handleExecute = () => {
-    mutate({ officeName: office, scriptName: script });
+    mutate({ scriptId });
   };
 
   return (

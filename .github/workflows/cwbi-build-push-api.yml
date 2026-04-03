@@ -8,6 +8,8 @@ on:
     paths:
       - "cwms_batch_events/api/**"
       - "cwms_batch_events/core/**"
+  schedule:
+    - cron: "0 6 * * 1"
   # Allow the workflow to be triggered manually from the GitHub UI
   workflow_dispatch:
 
@@ -15,6 +17,7 @@ on:
 env:
   AWS_REGION: us-gov-west-1 #Change to reflect your Region
   PATH_TO_DOCKERFILE: .
+  ECR_REPOSITORY: cwms-batch-events-api
 
 # Permission can be added at job level or workflow level
 permissions:
@@ -23,6 +26,7 @@ permissions:
 
 jobs:
   Build-Push-to-Env:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Git clone the repository
@@ -34,18 +38,18 @@ jobs:
           case "${GITHUB_REF##*/}" in
             "cwbi-dev")
               echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::718787032875:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
-              echo "ECR_REPOSITORY=cwms-batch-events-api" >> $GITHUB_ENV
               echo "IMAGE_TAG=dev" >> $GITHUB_ENV
+              echo "BUILD_FLAGS=--push" >> $GITHUB_ENV
               ;;
             "cwbi-test")
               echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::276847049069:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
-              echo "ECR_REPOSITORY=cwms-batch-events-api" >> $GITHUB_ENV
               echo "IMAGE_TAG=test" >> $GITHUB_ENV
+              echo "BUILD_FLAGS=--push --pull" >> $GITHUB_ENV
               ;;
             "cwbi-prod")
               echo "ROLE_TO_ASSUME=arn:aws-us-gov:iam::648157167324:role/github-actions-ecr-cwms-batch-events" >> $GITHUB_ENV
-              echo "ECR_REPOSITORY=cwms-batch-events-api" >> $GITHUB_ENV
               echo "IMAGE_TAG=prod" >> $GITHUB_ENV
+              echo "BUILD_FLAGS=--push --pull" >> $GITHUB_ENV
               ;;
           esac
 
@@ -70,9 +74,58 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build --push \
+          docker build $BUILD_FLAGS \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          $PATH_TO_DOCKERFILE
+
+      - name: ECR Logout
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
+
+  Scheduled-Rebuild-Dev-Test:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env:
+          - branch: cwbi-dev
+            role: arn:aws-us-gov:iam::718787032875:role/github-actions-ecr-cwms-batch-events
+            tag: dev
+          - branch: cwbi-test
+            role: arn:aws-us-gov:iam::276847049069:role/github-actions-ecr-cwms-batch-events
+            tag: test
+
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.env.branch }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ matrix.env.role }}
+          output-credentials: false
+
+      # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: "true"
+
+      - name: Build Image; Push to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build --pull --push \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          --tag $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.env.tag }} \
           $PATH_TO_DOCKERFILE
 
       - name: ECR Logout
