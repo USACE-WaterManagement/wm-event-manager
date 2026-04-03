@@ -1,33 +1,74 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 
 from cwms_batch_events.core.auth.user.jwt import verify_jwt
 from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.auth.user.roles import (
     get_user_admin_offices,
     get_user_allowed_offices,
-    get_user_profile,
+    get_user_profile_apikey,
+    get_user_profile_jwt,
 )
 from cwms_batch_events.core.utils import ALL_OFFICES, ALL_OFFICE_ROLES
 
-oauth2_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="Keycloak JWT",
+    description="Enter a valid JWT below (do not include Bearer)",
+)
+
+api_key_scheme = APIKeyHeader(
+    name="Authorization",
+    auto_error=False,
+    scheme_name="CDA API Key",
+    description="Use format: apikey <your-api-key>",
+)
 
 
-async def get_current_user_keycloak(
-    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+async def get_auth_header_for_docs(
+    bearer: str = Depends(bearer_scheme),
+    api_key: str = Depends(api_key_scheme),
+):
+    return bearer or api_key
+
+
+async def get_auth_credentials(
+    request: Request, _: str = Depends(get_auth_header_for_docs)
+) -> HTTPAuthorizationCredentials:
+    header = request.headers.get("Authorization")
+    if not header:
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
+    parts = header.split()
+    if len(parts) != 2:
+        raise HTTPException(status_code=401, detail="Invalid Authorization header")
+    return HTTPAuthorizationCredentials(scheme=parts[0], credentials=parts[1])
+
+
+async def get_current_user_cwms(
+    credentials: HTTPAuthorizationCredentials = Depends(get_auth_credentials),
 ) -> User:
-    token = credentials.credentials
-    try:
-        claims = verify_jwt(token)
-        azp = claims.get("azp", "")
-        if claims["azp"] != "cwms":
-            raise Exception(f"Client '{azp}' is not authorized for this API")
-    except Exception as e:
+    if credentials.scheme.lower() == "bearer":
+        token = credentials.credentials
+        try:
+            claims = verify_jwt(token)
+            azp = claims.get("azp", "")
+            if claims["azp"] != "cwms":
+                raise Exception(f"Client '{azp}' is not authorized for this API")
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token: {str(e)}",
+            )
+        cda_user = get_user_profile_jwt(token)
+    elif credentials.scheme.lower() == "apikey":
+        apikey = credentials.credentials
+        cda_user = get_user_profile_apikey(apikey)
+    else:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {str(e)}"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Unsupported auth scheme: {credentials.scheme}",
         )
 
-    cda_user = get_user_profile(token)
     allowed_offices = get_user_allowed_offices(cda_user)
     admin_offices = get_user_admin_offices(cda_user)
     return User(
