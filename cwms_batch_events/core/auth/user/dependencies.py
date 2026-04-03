@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 
+from cachetools import TTLCache
 from cwms_batch_events.core.auth.user.jwt import verify_jwt
 from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.auth.user.roles import (
@@ -23,6 +24,8 @@ api_key_scheme = APIKeyHeader(
     scheme_name="CDA API Key",
     description="Use format: apikey <your-api-key>",
 )
+
+user_cache: TTLCache[str, User] = TTLCache(maxsize=1024, ttl=300)
 
 
 async def get_auth_header_for_docs(
@@ -47,6 +50,10 @@ async def get_auth_credentials(
 async def get_current_user_cwms(
     credentials: HTTPAuthorizationCredentials = Depends(get_auth_credentials),
 ) -> User:
+    cache_key = f"{credentials.scheme}:{credentials.credentials}"
+    if cache_key in user_cache:
+        return user_cache[cache_key]
+
     if credentials.scheme.lower() == "bearer":
         token = credentials.credentials
         try:
@@ -71,12 +78,15 @@ async def get_current_user_cwms(
 
     allowed_offices = get_user_allowed_offices(cda_user)
     admin_offices = get_user_admin_offices(cda_user)
-    return User(
+    user = User(
         username=cda_user.user_name,
         offices=allowed_offices,
         admin_offices=admin_offices,
         roles=cda_user.roles,
     )
+
+    user_cache[cache_key] = user
+    return user
 
 
 async def get_current_user_mock() -> User:
