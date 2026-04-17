@@ -38,7 +38,7 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       - name: Run pytest
-        run: pytest --cov-report=html
+        run: pytest --cov-report=html --cov-report=json
 
       - name: Upload coverage HTML report
         if: always()
@@ -46,3 +46,27 @@ jobs:
         with:
           name: python-htmlcov
           path: htmlcov/
+
+      - name: Add coverage summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          coverage_file = Path("coverage.json")
+          if not coverage_file.exists():
+              raise SystemExit("coverage.json was not generated")
+
+          data = json.loads(coverage_file.read_text())
+          total = data["totals"]["percent_covered_display"]
+
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          summary.write_text(
+              "## Python Coverage\n\n"
+              f"- Total coverage: `{total}%`\n"
+              "- HTML report: download the `python-htmlcov` artifact from this workflow run.\n",
+              encoding="utf-8",
+          )
+          PY
