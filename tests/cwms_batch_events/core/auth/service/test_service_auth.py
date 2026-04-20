@@ -38,3 +38,10 @@ def test_valid_token_succeeds(internal_auth_token):
     r = client.post("/internal", headers={"X-Internal-Token": internal_auth_token})
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
+
+
+def test_missing_app_key_returns_500():
+    with mock.patch("cwms_batch_events.core.settings.settings.app_key", ""):
+        r = client.post("/internal", headers={"X-Internal-Token": "anything"})
+
+    assert r.status_code == 500

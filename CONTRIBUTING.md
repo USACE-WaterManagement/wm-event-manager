@@ -26,3 +26,6 @@
 * Type Standardization
   * TypeScript types are generated from the API for use in the frontend using [OpenAPI TypeScript](https://openapi-ts.dev/). 
   * If API types are updated or modified, run `npm run generate:types` to update the type definitions.
+* Python Testing
+  * Run `pytest` from the project root to execute the Python unit test suite.
+  * The suite is configured to report coverage for `cwms_batch_events` and should stay fast and free of external dependencies.
