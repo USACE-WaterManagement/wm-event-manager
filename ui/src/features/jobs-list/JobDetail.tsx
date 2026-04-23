@@ -1,4 +1,5 @@
 import { PropsWithChildren } from "react";
+import LoadingSpinner from "../../shared/components/LoadingSpinner";
 import { JobDetails } from "./useJobDetails";
 
 const jobFields: (keyof JobDetails)[] = [
@@ -33,7 +34,18 @@ function JobDetail({ job }: JobDetailProps) {
             : "col-span-1";
           return (
             <JobDetailField key={field} field={field} className={className}>
-              {job[field]}
+              {field === "jobStatus" ? (
+                job.jobStatus !== "Completed" && job.jobStatus !== "Failed" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span>{job.jobStatus}</span>
+                    <LoadingSpinner />
+                  </span>
+                ) : (
+                  job.jobStatus
+                )
+              ) : (
+                job[field]
+              )}
             </JobDetailField>
           );
         })}
