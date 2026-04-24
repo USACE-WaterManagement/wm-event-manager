@@ -40,7 +40,9 @@ const authMethod = (() => {
       host: authHost,
       realm: authRealm,
       client: "cwms",
-      flow: "direct-grant",
+      flow: "authorization-code-pkce",
+      redirectUri: window.location.href,
+      providerHint: "federation-eams",
     });
   } else {
     return createMockAuthMethod();
@@ -58,5 +60,5 @@ createRoot(document.getElementById("root")!).render(
         </LinkProvider>
       </AuthProvider>
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );
