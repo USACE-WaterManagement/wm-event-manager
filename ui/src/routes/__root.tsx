@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { SiteWrapper, Container } from "@usace/groundwork";
-import "@usace/groundwork/dist/style.css";
+import "@usace/groundwork/dist/groundwork.css";
 import AuthButton from "../features/auth/AuthButton";
 
 const navLinks = [
