@@ -21,6 +21,9 @@ ISSUER = {
 
 
 def get_public_pem():
+    if not settings.auth_environment:
+        raise ValueError("AUTH_ENVIRONMENT is not configured")
+
     try:
         public_key = PUBLIC_KEY[settings.auth_environment]
     except KeyError as e:

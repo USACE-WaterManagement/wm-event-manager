@@ -11,3 +11,5 @@ if str(ROOT) not in sys.path:
 os.environ.setdefault("ALB_DNS_NAME", "http://events")
 os.environ.setdefault("APP_SECRETS_ARN", "arn:aws:secretsmanager:test")
 os.environ.setdefault("AWS_DEFAULT_REGION", "us-gov-west-1")
+os.environ.setdefault("APP_KEY", "test")
+os.environ.setdefault("AUTH_ENVIRONMENT", "TEST")

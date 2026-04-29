@@ -11,7 +11,7 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 
-app = FastAPI(root_path=settings.root_path)
+app = FastAPI(root_path=settings.fastapi_root_path)
 
 
 origins = r"http://localhost(:\d+)?"
