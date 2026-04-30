@@ -6,18 +6,18 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     app_key: str
     auth_environment: str | None = None
-    auth_host: str = "http://traefik/auth"
+    auth_host: str | None = None
     auth_realm: str = "cwms"
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_default_region: str | None = None
-    cda_api_root: str = "http://traefik/cwms-data/"
+    cda_api_root: str | None = None
     default_job_runner: str = "batch"
-    dynamodb_host: str = "http://dynamodb:9010"
+    dynamodb_host: str | None = None
     pguser: str | None = None
     pgpassword: str | None = None
-    pgdatabase: str = "postgres"
-    pghost: str = "db"
+    pgdatabase: str | None = None
+    pghost: str | None = None
     mock_user: bool = False
     root_path: str | None = None
     s3_bucket: str | None = None
