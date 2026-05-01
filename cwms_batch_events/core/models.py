@@ -99,6 +99,138 @@ class JobMessage(BaseModel):
     payload: ScriptRunOptions
 
 
+class NotificationSeverity(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class NotificationMessage(BaseModel):
+    version: str
+    template: str
+    office: str
+    severity: NotificationSeverity
+    recipients: list[str]
+    subject: str
+    body: str
+    created_at: datetime
+    data: dict[str, str | None]
+
+
+class NotificationEventType(str, Enum):
+    JOB_FAILED = "job_failed"
+
+
+class NotificationTemplateBase(CamelModel):
+    office: str
+    slug: str
+    subject_template: str
+    body_template: str
+    active: bool = True
+
+
+class NotificationTemplateCreate(NotificationTemplateBase):
+    pass
+
+
+class NotificationTemplateUpdate(NotificationTemplateBase):
+    pass
+
+
+class NotificationTemplateRead(NotificationTemplateBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    created_time: datetime
+    updated_time: datetime
+
+
+class NotificationGroupBase(CamelModel):
+    office: str
+    slug: str
+    name: str
+    active: bool = True
+
+
+class NotificationGroupCreate(NotificationGroupBase):
+    pass
+
+
+class NotificationGroupUpdate(NotificationGroupBase):
+    pass
+
+
+class NotificationGroupRead(NotificationGroupBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    created_time: datetime
+    updated_time: datetime
+
+
+class NotificationGroupMemberBase(CamelModel):
+    email: str
+    active: bool = True
+
+
+class NotificationGroupMemberCreate(NotificationGroupMemberBase):
+    pass
+
+
+class NotificationGroupMemberUpdate(NotificationGroupMemberBase):
+    pass
+
+
+class NotificationGroupMemberRead(NotificationGroupMemberBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    group_id: UUID
+    created_time: datetime
+    updated_time: datetime
+
+
+class ScriptNotificationRuleBase(CamelModel):
+    script_id: UUID
+    event_type: NotificationEventType = NotificationEventType.JOB_FAILED
+    template_id: UUID
+    group_id: UUID
+    active: bool = True
+
+
+class ScriptNotificationRuleCreate(ScriptNotificationRuleBase):
+    pass
+
+
+class ScriptNotificationRuleUpdate(ScriptNotificationRuleBase):
+    pass
+
+
+class ScriptNotificationRuleRead(ScriptNotificationRuleBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    created_time: datetime
+    updated_time: datetime
+
+
+class ScriptNotificationRuleDetails(ScriptNotificationRuleRead):
+    template: NotificationTemplateRead
+    group: NotificationGroupRead
+
+
+class NotificationPreviewRequest(CamelModel):
+    job_id: UUID | None = None
+    data: dict[str, str | None] = {}
+
+
+class RenderedNotification(CamelModel):
+    recipients: list[str]
+    subject: str
+    body: str
+    data: dict[str, str | None]
+
+
 class BatchJobStatusUpdateRequest(BaseModel):
     status: JobStatus
     event_time: datetime

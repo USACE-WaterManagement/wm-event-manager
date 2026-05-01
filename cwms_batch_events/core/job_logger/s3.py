@@ -12,6 +12,7 @@ class S3JobLogger:
         self.s3 = boto3.client(
             "s3",
             endpoint_url=S3_ENDPOINT_URL,
+            region_name=settings.aws_default_region,
         )
 
     def get_logs_for_job(self, job_id: UUID) -> str:

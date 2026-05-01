@@ -14,7 +14,7 @@ COPY requirements-dev.txt .
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
 COPY cwms_batch_events ./cwms_batch_events
-COPY infra/dispatcher ./infra/dispatcher
+COPY infra ./infra
 
 ENV PYTHONPATH=/app
 

@@ -4,6 +4,8 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     String,
+    CheckConstraint,
+    UniqueConstraint,
     func,
     Table,
     UUID,
@@ -99,3 +101,115 @@ class ScriptModel(Base):
     job_runners: Mapped[list["JobRunnerModel"]] = relationship(
         secondary=scripts_job_runners, lazy="selectin", back_populates="scripts"
     )
+
+
+class NotificationTemplateModel(Base):
+    __tablename__ = "notification_templates"
+    __table_args__ = (
+        UniqueConstraint("office", "slug", name="notification_templates_office_slug"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    office: Mapped[str]
+    slug: Mapped[str]
+    subject_template: Mapped[str]
+    body_template: Mapped[str]
+    active: Mapped[bool]
+    created_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+    updated_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+
+
+class NotificationGroupModel(Base):
+    __tablename__ = "notification_groups"
+    __table_args__ = (
+        UniqueConstraint("office", "slug", name="notification_groups_office_slug"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    office: Mapped[str]
+    slug: Mapped[str]
+    name: Mapped[str]
+    active: Mapped[bool]
+    created_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+    updated_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+
+    members: Mapped[list["NotificationGroupMemberModel"]] = relationship(
+        back_populates="group", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class NotificationGroupMemberModel(Base):
+    __tablename__ = "notification_group_members"
+    __table_args__ = (
+        UniqueConstraint(
+            "group_id", "email", name="notification_group_members_group_email"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("notification_groups.id", ondelete="CASCADE")
+    )
+    email: Mapped[str]
+    active: Mapped[bool]
+    created_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+    updated_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+
+    group: Mapped["NotificationGroupModel"] = relationship(back_populates="members")
+
+
+class ScriptNotificationRuleModel(Base):
+    __tablename__ = "script_notification_rules"
+    __table_args__ = (
+        CheckConstraint("event_type = 'job_failed'", name="script_notification_rules_event_type"),
+        UniqueConstraint(
+            "script_id",
+            "event_type",
+            "template_id",
+            "group_id",
+            name="script_notification_rules_unique_rule",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    script_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("scripts.id", ondelete="CASCADE")
+    )
+    event_type: Mapped[str]
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("notification_templates.id", ondelete="CASCADE")
+    )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("notification_groups.id", ondelete="CASCADE")
+    )
+    active: Mapped[bool]
+    created_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+    updated_time: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
+
+    script: Mapped["ScriptModel"] = relationship(lazy="selectin")
+    template: Mapped["NotificationTemplateModel"] = relationship(lazy="selectin")
+    group: Mapped["NotificationGroupModel"] = relationship(lazy="selectin")

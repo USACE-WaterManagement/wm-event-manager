@@ -9,12 +9,30 @@ from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.job_database.postgres.models import (
     JobModel,
     JobRunnerModel,
+    NotificationGroupMemberModel,
+    NotificationGroupModel,
+    NotificationTemplateModel,
     ScriptModel,
+    ScriptNotificationRuleModel,
 )
 from cwms_batch_events.core.models import (
     JobRecord,
     JobStatus,
+    NotificationEventType,
+    NotificationGroupCreate,
+    NotificationGroupMemberCreate,
+    NotificationGroupMemberRead,
+    NotificationGroupMemberUpdate,
+    NotificationGroupRead,
+    NotificationGroupUpdate,
+    NotificationTemplateCreate,
+    NotificationTemplateRead,
+    NotificationTemplateUpdate,
     ScriptCreate,
+    ScriptNotificationRuleCreate,
+    ScriptNotificationRuleDetails,
+    ScriptNotificationRuleRead,
+    ScriptNotificationRuleUpdate,
     ScriptRead,
     ScriptRunRequest,
     ScriptUpdate,
@@ -37,6 +55,29 @@ def slugify(value: str) -> str:
 class PostgresJobDatabase:
     def __init__(self, db: Session):
         self.db = db
+
+    def _ensure_admin_office(self, office: str, admin_offices: list[str]) -> None:
+        if office not in admin_offices:
+            raise PermissionError(
+                f"User does not have script admin access for office '{office}'"
+            )
+
+    def _load_group_for_admin(
+        self, group_id: uuid.UUID, admin_offices: list[str]
+    ) -> NotificationGroupModel:
+        group = self.db.get_one(NotificationGroupModel, group_id)
+        self._ensure_admin_office(group.office, admin_offices)
+        return group
+
+    def _load_script_for_admin(
+        self, script_id: uuid.UUID, admin_offices: list[str]
+    ) -> ScriptModel:
+        script = self.db.get_one(ScriptModel, script_id)
+        self._ensure_admin_office(script.office, admin_offices)
+        return script
+
+    def _raise_slug_error(self, slug: str, office: str) -> None:
+        raise SlugError(f"Slug '{slug}' already in use for office '{office}'")
 
     def bind_external_job_id(
         self,
@@ -129,10 +170,7 @@ class PostgresJobDatabase:
     ) -> None:
         with self.db.begin():
             script = self.db.get_one(ScriptModel, script_id)
-            if script.office not in admin_offices:
-                raise PermissionError(
-                    f"User does not have script admin access for office '{script.office}'"
-                )
+            self._ensure_admin_office(script.office, admin_offices)
             self.db.delete(script)
 
     def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
@@ -184,9 +222,7 @@ class PostgresJobDatabase:
             if "slug" not in str(e).lower():
                 raise
 
-            raise SlugError(
-                f"Slug '{slugify(payload.name)}' already in use for office '{payload.office}'"
-            )
+            self._raise_slug_error(slugify(payload.name), payload.office)
 
     def update_job_status(self, job_id: uuid.UUID, status: JobStatus) -> None:
         job = self._load_job_for_update(job_id)
@@ -205,10 +241,7 @@ class PostgresJobDatabase:
     ) -> ScriptRead:
         with self.db.begin():
             script = self.db.get_one(ScriptModel, script_id)
-            if script.office not in admin_offices:
-                raise PermissionError(
-                    f"User does not have script admin access for office '{script.office}'"
-                )
+            self._ensure_admin_office(script.office, admin_offices)
             for field, value in payload.model_dump(by_alias=False).items():
                 if field == "job_runners":
                     job_runners = self.db.scalars(
@@ -227,3 +260,276 @@ class PostgresJobDatabase:
             self.db.refresh(script)
 
         return ScriptRead.model_validate(script)
+
+    def get_active_job_failed_notification_rules(
+        self, script_id: uuid.UUID
+    ) -> list[ScriptNotificationRuleDetails]:
+        rules = self.db.scalars(
+            select(ScriptNotificationRuleModel)
+            .join(ScriptNotificationRuleModel.template)
+            .join(ScriptNotificationRuleModel.group)
+            .where(
+                ScriptNotificationRuleModel.script_id == script_id,
+                ScriptNotificationRuleModel.event_type == NotificationEventType.JOB_FAILED,
+                ScriptNotificationRuleModel.active.is_(True),
+                NotificationTemplateModel.active.is_(True),
+                NotificationGroupModel.active.is_(True),
+            )
+        ).all()
+        return [ScriptNotificationRuleDetails.model_validate(rule) for rule in rules]
+
+    def get_active_notification_group_member_emails(
+        self, group_id: uuid.UUID
+    ) -> list[str]:
+        members = self.db.scalars(
+            select(NotificationGroupMemberModel)
+            .where(
+                NotificationGroupMemberModel.group_id == group_id,
+                NotificationGroupMemberModel.active.is_(True),
+            )
+            .order_by(NotificationGroupMemberModel.email)
+        ).all()
+        return [member.email for member in members]
+
+    def get_notification_templates_for_office(
+        self, office: str
+    ) -> list[NotificationTemplateRead]:
+        templates = self.db.scalars(
+            select(NotificationTemplateModel)
+            .where(NotificationTemplateModel.office == office)
+            .order_by(NotificationTemplateModel.slug)
+        ).all()
+        return [NotificationTemplateRead.model_validate(model) for model in templates]
+
+    def store_notification_template(
+        self, payload: NotificationTemplateCreate
+    ) -> NotificationTemplateRead:
+        try:
+            with self.db.begin():
+                template = NotificationTemplateModel(**payload.model_dump(by_alias=False))
+                self.db.add(template)
+                self.db.flush()
+                self.db.refresh(template)
+            return NotificationTemplateRead.model_validate(template)
+        except IntegrityError:
+            self.db.rollback()
+            self._raise_slug_error(payload.slug, payload.office)
+
+    def update_notification_template(
+        self,
+        template_id: uuid.UUID,
+        payload: NotificationTemplateUpdate,
+        admin_offices: list[str],
+    ) -> NotificationTemplateRead:
+        try:
+            with self.db.begin():
+                template = self.db.get_one(NotificationTemplateModel, template_id)
+                self._ensure_admin_office(template.office, admin_offices)
+                self._ensure_admin_office(payload.office, admin_offices)
+                for field, value in payload.model_dump(by_alias=False).items():
+                    setattr(template, field, value)
+                template.updated_time = datetime.now(timezone.utc)
+                self.db.flush()
+                self.db.refresh(template)
+            return NotificationTemplateRead.model_validate(template)
+        except IntegrityError:
+            self.db.rollback()
+            self._raise_slug_error(payload.slug, payload.office)
+
+    def remove_notification_template_if_allowed(
+        self, template_id: uuid.UUID, admin_offices: list[str]
+    ) -> None:
+        with self.db.begin():
+            template = self.db.get_one(NotificationTemplateModel, template_id)
+            self._ensure_admin_office(template.office, admin_offices)
+            self.db.delete(template)
+
+    def get_notification_template_if_allowed(
+        self, template_id: uuid.UUID, admin_offices: list[str]
+    ) -> NotificationTemplateRead:
+        template = self.db.get_one(NotificationTemplateModel, template_id)
+        self._ensure_admin_office(template.office, admin_offices)
+        return NotificationTemplateRead.model_validate(template)
+
+    def get_notification_groups_for_office(
+        self, office: str
+    ) -> list[NotificationGroupRead]:
+        groups = self.db.scalars(
+            select(NotificationGroupModel)
+            .where(NotificationGroupModel.office == office)
+            .order_by(NotificationGroupModel.slug)
+        ).all()
+        return [NotificationGroupRead.model_validate(model) for model in groups]
+
+    def store_notification_group(
+        self, payload: NotificationGroupCreate
+    ) -> NotificationGroupRead:
+        try:
+            with self.db.begin():
+                group = NotificationGroupModel(**payload.model_dump(by_alias=False))
+                self.db.add(group)
+                self.db.flush()
+                self.db.refresh(group)
+            return NotificationGroupRead.model_validate(group)
+        except IntegrityError:
+            self.db.rollback()
+            self._raise_slug_error(payload.slug, payload.office)
+
+    def update_notification_group(
+        self,
+        group_id: uuid.UUID,
+        payload: NotificationGroupUpdate,
+        admin_offices: list[str],
+    ) -> NotificationGroupRead:
+        try:
+            with self.db.begin():
+                group = self.db.get_one(NotificationGroupModel, group_id)
+                self._ensure_admin_office(group.office, admin_offices)
+                self._ensure_admin_office(payload.office, admin_offices)
+                for field, value in payload.model_dump(by_alias=False).items():
+                    setattr(group, field, value)
+                group.updated_time = datetime.now(timezone.utc)
+                self.db.flush()
+                self.db.refresh(group)
+            return NotificationGroupRead.model_validate(group)
+        except IntegrityError:
+            self.db.rollback()
+            self._raise_slug_error(payload.slug, payload.office)
+
+    def remove_notification_group_if_allowed(
+        self, group_id: uuid.UUID, admin_offices: list[str]
+    ) -> None:
+        with self.db.begin():
+            group = self._load_group_for_admin(group_id, admin_offices)
+            self.db.delete(group)
+
+    def get_notification_group_members(
+        self, group_id: uuid.UUID, admin_offices: list[str]
+    ) -> list[NotificationGroupMemberRead]:
+        self._load_group_for_admin(group_id, admin_offices)
+        members = self.db.scalars(
+            select(NotificationGroupMemberModel)
+            .where(NotificationGroupMemberModel.group_id == group_id)
+            .order_by(NotificationGroupMemberModel.email)
+        ).all()
+        return [NotificationGroupMemberRead.model_validate(model) for model in members]
+
+    def store_notification_group_member(
+        self,
+        group_id: uuid.UUID,
+        payload: NotificationGroupMemberCreate,
+        admin_offices: list[str],
+    ) -> NotificationGroupMemberRead:
+        try:
+            with self.db.begin():
+                self._load_group_for_admin(group_id, admin_offices)
+                member = NotificationGroupMemberModel(
+                    group_id=group_id,
+                    **payload.model_dump(by_alias=False),
+                )
+                self.db.add(member)
+                self.db.flush()
+                self.db.refresh(member)
+            return NotificationGroupMemberRead.model_validate(member)
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError(f"Email '{payload.email}' already exists in group")
+
+    def update_notification_group_member(
+        self,
+        member_id: uuid.UUID,
+        payload: NotificationGroupMemberUpdate,
+        admin_offices: list[str],
+    ) -> NotificationGroupMemberRead:
+        try:
+            with self.db.begin():
+                member = self.db.get_one(NotificationGroupMemberModel, member_id)
+                self._ensure_admin_office(member.group.office, admin_offices)
+                for field, value in payload.model_dump(by_alias=False).items():
+                    setattr(member, field, value)
+                member.updated_time = datetime.now(timezone.utc)
+                self.db.flush()
+                self.db.refresh(member)
+            return NotificationGroupMemberRead.model_validate(member)
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError(f"Email '{payload.email}' already exists in group")
+
+    def remove_notification_group_member_if_allowed(
+        self, member_id: uuid.UUID, admin_offices: list[str]
+    ) -> None:
+        with self.db.begin():
+            member = self.db.get_one(NotificationGroupMemberModel, member_id)
+            self._ensure_admin_office(member.group.office, admin_offices)
+            self.db.delete(member)
+
+    def get_script_notification_rules(
+        self, script_id: uuid.UUID, admin_offices: list[str]
+    ) -> list[ScriptNotificationRuleRead]:
+        self._load_script_for_admin(script_id, admin_offices)
+        rules = self.db.scalars(
+            select(ScriptNotificationRuleModel)
+            .where(ScriptNotificationRuleModel.script_id == script_id)
+            .order_by(ScriptNotificationRuleModel.created_time)
+        ).all()
+        return [ScriptNotificationRuleRead.model_validate(rule) for rule in rules]
+
+    def store_script_notification_rule(
+        self, payload: ScriptNotificationRuleCreate, admin_offices: list[str]
+    ) -> ScriptNotificationRuleRead:
+        try:
+            with self.db.begin():
+                self._validate_rule_payload(payload, admin_offices)
+                rule = ScriptNotificationRuleModel(**payload.model_dump(by_alias=False))
+                self.db.add(rule)
+                self.db.flush()
+                self.db.refresh(rule)
+            return ScriptNotificationRuleRead.model_validate(rule)
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError("Notification rule already exists")
+
+    def update_script_notification_rule(
+        self,
+        rule_id: uuid.UUID,
+        payload: ScriptNotificationRuleUpdate,
+        admin_offices: list[str],
+    ) -> ScriptNotificationRuleRead:
+        try:
+            with self.db.begin():
+                self._validate_rule_payload(payload, admin_offices)
+                rule = self.db.get_one(ScriptNotificationRuleModel, rule_id)
+                self._ensure_admin_office(rule.script.office, admin_offices)
+                for field, value in payload.model_dump(by_alias=False).items():
+                    setattr(rule, field, value)
+                rule.updated_time = datetime.now(timezone.utc)
+                self.db.flush()
+                self.db.refresh(rule)
+            return ScriptNotificationRuleRead.model_validate(rule)
+        except IntegrityError:
+            self.db.rollback()
+            raise ValueError("Notification rule already exists")
+
+    def remove_script_notification_rule_if_allowed(
+        self, rule_id: uuid.UUID, admin_offices: list[str]
+    ) -> None:
+        with self.db.begin():
+            rule = self.db.get_one(ScriptNotificationRuleModel, rule_id)
+            self._ensure_admin_office(rule.script.office, admin_offices)
+            self.db.delete(rule)
+
+    def _validate_rule_payload(
+        self,
+        payload: ScriptNotificationRuleCreate | ScriptNotificationRuleUpdate,
+        admin_offices: list[str],
+    ) -> None:
+        script = self._load_script_for_admin(payload.script_id, admin_offices)
+        template = self.db.get_one(NotificationTemplateModel, payload.template_id)
+        group = self.db.get_one(NotificationGroupModel, payload.group_id)
+
+        if payload.event_type != NotificationEventType.JOB_FAILED:
+            raise ValueError("Only job_failed notification rules are supported")
+        if template.office != script.office:
+            raise ValueError("Notification template office must match script office")
+        if group.office != script.office:
+            raise ValueError("Notification group office must match script office")

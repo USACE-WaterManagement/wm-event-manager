@@ -13,7 +13,7 @@ To get your local environment setup and/or make contributions please see the con
 page | url
 ---- | ---
 ElasticMQ Web Interface | http://localhost:9325
-Minio Web Interface | http://localhost:9001
+Minio Web Interface | http://localhost:9101
 Web Dev Server | http://localhost:5173
 Swagger Docs | http://localhost:8000/docs
 Redoc | http://localhost:8000/redoc
@@ -32,4 +32,3 @@ Available district scripts are managed within the cwms-batch application itself 
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.
-

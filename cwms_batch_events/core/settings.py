@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     pgdatabase: str = "postgres"
     pghost: str = "db"
     mock_user: bool = False
+    notification_queue_name: str = "cwms-batch-events-notifications"
     root_path: str = ""
     s3_bucket: str = ""
     s3_endpoint_url: str | None = None

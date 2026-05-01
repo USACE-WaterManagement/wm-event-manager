@@ -31,6 +31,7 @@ services:
       PGPASSWORD: *application_password
       PGDATABASE: postgres
       PGHOST: db
+      NOTIFICATION_QUEUE_NAME: cwms-batch-events-notifications
       S3_BUCKET: wm-event-manager-local
       WM_WEB_INTERNAL_S3_BUCKET: wm-web-internal-local
       WM_WEB_PUBLIC_S3_BUCKET: wm-web-public-local
@@ -50,6 +51,7 @@ services:
     build:
       context: .
       dockerfile: infra/dispatcher/Dockerfile
+    restart: on-failure
     depends_on:
       - elasticmq
       - db
@@ -57,6 +59,8 @@ services:
       AWS_ACCESS_KEY_ID: eventsadmin
       AWS_SECRET_ACCESS_KEY: eventsadmin
       AWS_REGION: us-gov-west-1
+      AWS_DEFAULT_REGION: us-gov-west-1
+      SQS_ENDPOINT_URL: http://elasticmq:9324
       PGUSER: *application_user
       PGPASSWORD: *application_password
       PGDATABASE: postgres
@@ -64,8 +68,27 @@ services:
       QUEUE_URL: http://elasticmq:9324/000000000000/cwms-batch-events
       S3_BUCKET: wm-event-manager-local
       S3_ENDPOINT_URL: http://minio:9000
+      NOTIFICATION_QUEUE_NAME: cwms-batch-events-notifications
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cwms
+
+  notifier:
+    build:
+      context: .
+      dockerfile: infra/dispatcher/Dockerfile
+    restart: on-failure
+    depends_on:
+      - elasticmq
+    environment:
+      AWS_ACCESS_KEY_ID: eventsadmin
+      AWS_SECRET_ACCESS_KEY: eventsadmin
+      AWS_REGION: us-gov-west-1
+      AWS_DEFAULT_REGION: us-gov-west-1
+      QUEUE_URL: http://elasticmq:9324/000000000000/cwms-batch-events-notifications
+    command: >
+      python -u infra/notifications/notification_loop.py
     networks:
       - cwms
 
@@ -84,8 +107,8 @@ services:
   minio:
     image: minio/minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9100:9000"
+      - "9101:9001"
     volumes:
       - minio-data:/data
     environment:
@@ -120,7 +143,7 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: always
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]

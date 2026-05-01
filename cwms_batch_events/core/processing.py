@@ -1,6 +1,8 @@
 from datetime import datetime
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.models import JobStatus
+from cwms_batch_events.core.notifications import enqueue_failed_job_notifications
+from cwms_batch_events.core.notification_queue import NotificationQueue
 
 
 STATUS_PRIORITY = {
@@ -12,7 +14,11 @@ STATUS_PRIORITY = {
 
 
 def update_batch_job_status(
-    batch_job_id: str, status: JobStatus, time_iso: datetime, db: JobDatabase
+    batch_job_id: str,
+    status: JobStatus,
+    time_iso: datetime,
+    db: JobDatabase,
+    notification_queue: NotificationQueue | None = None,
 ):
     job = db.get_job_by_external_id(batch_job_id)
 
@@ -28,3 +34,6 @@ def update_batch_job_status(
     print(f"Updating job `{job_id}` status to `{status}` at {time_iso}")
 
     db.update_job_status(job_id, status)
+
+    if status == JobStatus.FAILED and notification_queue is not None:
+        enqueue_failed_job_notifications(job, db, notification_queue)
