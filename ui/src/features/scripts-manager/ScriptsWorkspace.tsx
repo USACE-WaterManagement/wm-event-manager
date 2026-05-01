@@ -7,6 +7,7 @@ import { Button, H2 } from "@usace/groundwork";
 import { useUpdateScript } from "./useUpdateScript";
 import { useCreateScript } from "./useCreateScript";
 import { useDeleteScript } from "./useDeleteScript";
+import { NotificationAdminPanel } from "../notifications-manager/NotificationAdminPanel";
 
 const BATCH_RUNNER_UUID = "58600a09-f18e-42c5-9d3c-df52ebe409f9";
 
@@ -96,28 +97,31 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     updateScriptMutation.error;
 
   return (
-    <div className="w-full grid grid-cols-2 gap-6 mt-4">
-      <div>
-        <header className="flex justify-between">
-          <H2>{office.toUpperCase()} Scripts</H2>
-          <Button onClick={onNew}>New +</Button>
-        </header>
-        <ScriptsList
-          scripts={scripts.data}
-          selectScript={onSelect}
-          selectedScriptId={selectedScriptId}
+    <>
+      <div className="w-full grid grid-cols-2 gap-6 mt-4">
+        <div>
+          <header className="flex justify-between">
+            <H2>{office.toUpperCase()} Scripts</H2>
+            <Button onClick={onNew}>New +</Button>
+          </header>
+          <ScriptsList
+            scripts={scripts.data}
+            selectScript={onSelect}
+            selectedScriptId={selectedScriptId}
+          />
+        </div>
+        <ScriptDetailPanel
+          script={selectedScript}
+          mode={panelMode}
+          isPending={isPending}
+          mutationError={mutationError}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onSave={onSave}
+          onCancelEdit={onCancelEdit}
         />
       </div>
-      <ScriptDetailPanel
-        script={selectedScript}
-        mode={panelMode}
-        isPending={isPending}
-        mutationError={mutationError}
-        onDelete={onDelete}
-        onEdit={onEdit}
-        onSave={onSave}
-        onCancelEdit={onCancelEdit}
-      />
-    </div>
+      <NotificationAdminPanel office={office} selectedScript={selectedScript} />
+    </>
   );
 };
