@@ -13,7 +13,7 @@ To get your local environment setup and/or make contributions please see the con
 page | url
 ---- | ---
 ElasticMQ Web Interface | http://localhost:9325
-Minio Web Interface | http://localhost:9101
+Minio Web Interface | http://localhost:9001
 Web Dev Server | http://localhost:5173
 Swagger Docs | http://localhost:8000/docs
 Redoc | http://localhost:8000/redoc
