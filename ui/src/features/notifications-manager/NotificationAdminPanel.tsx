@@ -270,18 +270,22 @@ export const NotificationAdminPanel = ({
                 <Button type="submit">Create</Button>
               </Fieldset>
             </form>
-            <Dropdown
-              label="Member Group"
-              value={selectedGroupForMembers ?? ""}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                setSelectedGroupId(e.target.value)
-              }
-              options={activeGroups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            />
+            {activeGroups.length > 0 ? (
+              <Dropdown
+                label="Member Group"
+                value={selectedGroupForMembers ?? ""}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedGroupId(e.target.value)
+                }
+                options={activeGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              />
+            ) : (
+              <Text>Create a group before adding members.</Text>
+            )}
             <form onSubmit={createMemberSubmit} className="flex gap-2">
               <Input
                 aria-label="Member email"
@@ -310,30 +314,38 @@ export const NotificationAdminPanel = ({
             {selectedScript && (
               <>
                 <Text>{selectedScript.name}</Text>
-                <Dropdown
-                  label="Template"
-                  value={selectedTemplateId || activeTemplates[0]?.id || ""}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setSelectedTemplateId(e.target.value)
-                  }
-                  options={activeTemplates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.slug}
-                    </option>
-                  ))}
-                />
-                <Dropdown
-                  label="Group"
-                  value={selectedGroupId || activeGroups[0]?.id || ""}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setSelectedGroupId(e.target.value)
-                  }
-                  options={activeGroups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                />
+                {activeTemplates.length > 0 ? (
+                  <Dropdown
+                    label="Template"
+                    value={selectedTemplateId || activeTemplates[0]?.id || ""}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                      setSelectedTemplateId(e.target.value)
+                    }
+                    options={activeTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.slug}
+                      </option>
+                    ))}
+                  />
+                ) : (
+                  <Text>Create a template before enabling an alert.</Text>
+                )}
+                {activeGroups.length > 0 ? (
+                  <Dropdown
+                    label="Group"
+                    value={selectedGroupId || activeGroups[0]?.id || ""}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                      setSelectedGroupId(e.target.value)
+                    }
+                    options={activeGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                  />
+                ) : (
+                  <Text>Create a group before enabling an alert.</Text>
+                )}
                 <Button
                   type="submit"
                   disabled={
