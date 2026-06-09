@@ -45,6 +45,10 @@ class JobRecord(CamelModel):
     office: str
     repo_path: str
     execution_type: str | None
+    runtime: str = "python"
+    resource_profile: str = "small"
+    env_vars: dict[str, str] = Field(default_factory=dict)
+    secret_env_names: list[str] = Field(default_factory=list)
     created_time: datetime
     run_time: datetime | None = None
     end_time: datetime | None = None
@@ -79,6 +83,9 @@ class ScriptRunOptions(CamelModel):
     office: str
     repo_path: str
     script_slug: str | None
+    runtime: str = "python"
+    resource_profile: str = "small"
+    env_vars: dict[str, str] = Field(default_factory=dict)
 
 
 class JobSource(str, Enum):
@@ -108,11 +115,19 @@ class BindExternalJobIdRequest(BaseModel):
     external_job_id: str
 
 
+class RuntimeEnvResponse(CamelModel):
+    env_vars: dict[str, str]
+
+
 class ScriptBase(CamelModel):
     name: str
     description: str
     repo_path: str
     execution_type: str
+    runtime: str = "python"
+    resource_profile: str = "small"
+    env_vars: dict[str, str] = Field(default_factory=dict)
+    secret_env_names: list[str] = Field(default_factory=list)
     active: bool = True
     roles: list[str] = []
     job_runners: list[UUID] = []

@@ -34,6 +34,14 @@ def get_jobs_for_user(
     return job_list
 
 
+def _authorize_job_access(job: JobRecord, user: User):
+    if job.username == user.username:
+        return
+    if job.office in user.admin_offices:
+        return
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+
 @router.post("")
 def post_job(
     payload: ScriptRunRequest,
@@ -53,7 +61,12 @@ def post_job(
         )
 
     options = ScriptRunOptions(
-        office=job.office.lower(), repo_path=job.repo_path, script_slug=job.script_slug
+        office=job.office.lower(),
+        repo_path=job.repo_path,
+        script_slug=job.script_slug,
+        runtime=job.runtime,
+        resource_profile=job.resource_profile,
+        env_vars=job.env_vars,
     )
     message = queue.create_job_message(job.id, user.username, JobSource.API, options)
     background_tasks.add_task(queue.send_job_message, message)
@@ -72,12 +85,22 @@ def get_job_by_id(
         raise HTTPException(
             status_code=404, detail=f"No job found for jobId '{job_id}'"
         )
+    _authorize_job_access(job, user)
     return job
 
 
 @router.get("/{job_id}/logs")
 def get_logs_for_job(
-    job_id: UUID, job_logger: JobLogger = Depends(get_job_logger)
+    job_id: UUID,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+    job_logger: JobLogger = Depends(get_job_logger),
 ) -> JobLogs:
+    job = job_db.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=404, detail=f"No job found for jobId '{job_id}'"
+        )
+    _authorize_job_access(job, user)
     logs = job_logger.get_logs_for_job(job_id)
     return JobLogs(logs=logs)

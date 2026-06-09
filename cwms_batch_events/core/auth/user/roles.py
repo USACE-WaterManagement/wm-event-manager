@@ -12,6 +12,7 @@ def get_user_profile_apikey(apikey: str):
     headers = {"accept": "application/json", "Authorization": f"apikey {apikey}"}
     url = f"{CDA_API_ROOT}user/profile"
     response = requests.get(url, headers=headers)
+    response.raise_for_status()
     profile = CdaUserProfile(**response.json())
     return profile
 
@@ -22,6 +23,7 @@ def get_user_profile_jwt(token: str):
     headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
     url = f"{CDA_API_ROOT}user/profile"
     response = requests.get(url, headers=headers)
+    response.raise_for_status()
     profile = CdaUserProfile(**response.json())
     return profile
 

@@ -77,7 +77,13 @@ def test_verify_jwt_by_api_uses_jwks_client():
 
     assert payload == {"sub": "123"}
     jwk_client_cls.assert_called_once()
-    jwt_decode.assert_called_once_with("token", signing_key, ["RS256"])
+    jwt_decode.assert_called_once_with(
+        "token",
+        signing_key,
+        algorithms=["RS256"],
+        issuer="http://traefik/auth/realms/cwms",
+        audience="cwms",
+    )
 
 
 def test_verify_jwt_by_saved_key_uses_saved_public_key_and_issuer():
@@ -102,5 +108,5 @@ def test_verify_jwt_by_saved_key_uses_saved_public_key_and_issuer():
         "pem",
         algorithms=["RS256"],
         issuer=mock_issuer["TEST"],
-        options={"verify_aud": False},
+        audience="cwms",
     )

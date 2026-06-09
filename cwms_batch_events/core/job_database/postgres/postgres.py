@@ -61,7 +61,7 @@ class PostgresJobDatabase:
     def create_job(self, payload: ScriptRunRequest, user: User) -> JobRecord:
         script = self.db.get_one(ScriptModel, payload.script_id)
 
-        if set(script.roles).isdisjoint(user.roles[script.office]):
+        if set(script.roles).isdisjoint(user.roles.get(script.office, [])):
             raise PermissionError("Not authorized to run requested script")
 
         job = JobModel()
@@ -74,6 +74,10 @@ class PostgresJobDatabase:
         job.office = script.office
         job.repo_path = script.repo_path
         job.execution_type = script.execution_type
+        job.runtime = script.runtime
+        job.resource_profile = script.resource_profile
+        job.env_vars = script.env_vars or {}
+        job.secret_env_names = script.secret_env_names or []
         job.job_runner_id = get_runner_id()
 
         self.db.add(job)
@@ -160,6 +164,10 @@ class PostgresJobDatabase:
                 script.description = payload.description
                 script.repo_path = payload.repo_path
                 script.execution_type = payload.execution_type
+                script.runtime = payload.runtime
+                script.resource_profile = payload.resource_profile
+                script.env_vars = payload.env_vars
+                script.secret_env_names = payload.secret_env_names
                 script.active = payload.active
                 script.roles = payload.roles
 

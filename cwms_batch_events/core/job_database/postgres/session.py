@@ -10,6 +10,11 @@ db_url = URL.create(
     password=settings.pgpassword,
     database=settings.pgdatabase,
     host=settings.pghost,
+    query=(
+        {"options": f"-csearch_path={settings.pgschema}"}
+        if settings.pgschema
+        else {}
+    ),
 )
 
 engine = create_engine(db_url)

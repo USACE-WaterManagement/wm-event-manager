@@ -10,6 +10,7 @@ from cwms_batch_events.core.auth.user.roles import (
     get_user_profile_apikey,
     get_user_profile_jwt,
 )
+from cwms_batch_events.core.settings import settings
 from cwms_batch_events.core.utils import ALL_OFFICES, ALL_OFFICE_ROLES
 
 bearer_scheme = HTTPBearer(
@@ -59,7 +60,7 @@ async def get_current_user_cwms(
         try:
             claims = verify_jwt(token)
             azp = claims.get("azp", "")
-            if claims["azp"] != "cwms":
+            if azp != settings.auth_client_id:
                 raise Exception(f"Client '{azp}' is not authorized for this API")
         except Exception as e:
             raise HTTPException(

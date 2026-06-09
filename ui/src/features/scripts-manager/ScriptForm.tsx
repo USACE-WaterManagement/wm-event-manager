@@ -62,10 +62,46 @@ export const ScriptForm = ({
     description: script?.description ?? "",
     active: script?.active ?? true,
     repoPath: script?.repoPath ?? "",
+    runtime: script?.runtime ?? "python",
+    resourceProfile: script?.resourceProfile ?? "small",
+    envVars: script?.envVars ?? {},
+    secretEnvNames: script?.secretEnvNames ?? [],
     roles: script?.roles ?? ["CWMS Users"],
   });
+  const [envVarsText, setEnvVarsText] = useState(
+    JSON.stringify(script?.envVars ?? {}, null, 2),
+  );
+  const [secretEnvNamesText, setSecretEnvNamesText] = useState(
+    (script?.secretEnvNames ?? []).join("\n"),
+  );
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleSubmit = () => onSave(form);
+  const handleSubmit = () => {
+    try {
+      const parsedEnvVars = JSON.parse(envVarsText || "{}");
+      if (
+        parsedEnvVars === null ||
+        Array.isArray(parsedEnvVars) ||
+        typeof parsedEnvVars !== "object"
+      ) {
+        setFormError("Environment variables must be a JSON object");
+        return;
+      }
+      const secretEnvNames = secretEnvNamesText
+        .split(/[,\n]/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+      setFormError(null);
+      onSave({
+        ...form,
+        envVars: parsedEnvVars,
+        secretEnvNames,
+      });
+    } catch {
+      setFormError("Environment variables must be valid JSON");
+    }
+  };
 
   const update = <K extends keyof typeof form>(
     key: K,
@@ -127,11 +163,59 @@ export const ScriptForm = ({
             {script?.executionType ?? "python"}
           </ViewField>
           <FormRow>
+            <InputLabel htmlFor="runtime">Runtime</InputLabel>
+            <Input
+              id="runtime"
+              name="runtime"
+              value={form.runtime}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                update("runtime", e.target.value)
+              }
+              required
+            />
+          </FormRow>
+          <FormRow>
+            <InputLabel htmlFor="resourceProfile">Resource Profile</InputLabel>
+            <Input
+              id="resourceProfile"
+              name="resourceProfile"
+              value={form.resourceProfile}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                update("resourceProfile", e.target.value)
+              }
+              required
+            />
+          </FormRow>
+          <FormRow>
             <Label htmlFor="roles">Roles</Label>
             <RoleMultiSelect
               allRoles={allRoles}
               initialSelectedRoles={form.roles}
               onChange={(selectedRoles) => update("roles", selectedRoles)}
+            />
+          </FormRow>
+          <FormRow>
+            <InputLabel htmlFor="envVars">Environment Variables</InputLabel>
+            <textarea
+              id="envVars"
+              name="envVars"
+              className="min-h-32 rounded border border-gray-400 p-2 font-mono text-sm"
+              value={envVarsText}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setEnvVarsText(e.target.value)
+              }
+            />
+          </FormRow>
+          <FormRow>
+            <InputLabel htmlFor="secretEnvNames">Secret Names</InputLabel>
+            <textarea
+              id="secretEnvNames"
+              name="secretEnvNames"
+              className="min-h-24 rounded border border-gray-400 p-2 font-mono text-sm"
+              value={secretEnvNamesText}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setSecretEnvNamesText(e.target.value)
+              }
             />
           </FormRow>
           <FormRow>
@@ -169,10 +253,12 @@ export const ScriptForm = ({
             </Button>
           </div>
         </div>
-        {mutationError && (
+        {(formError || mutationError) && (
           <div className="flex gap-2">
             <MdErrorOutline className="text-red-500 flex-none size-6" />
-            <Text className="text-red-500">{mutationError.message}</Text>
+            <Text className="text-red-500">
+              {formError ?? mutationError?.message}
+            </Text>
           </div>
         )}
       </div>

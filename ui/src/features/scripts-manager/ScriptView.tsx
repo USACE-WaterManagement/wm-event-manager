@@ -33,6 +33,16 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Description">{script.description}</ViewField>
           <ViewField label="GitHub Repo Path">{script.repoPath}</ViewField>
           <ViewField label="Execution Type">{script.executionType}</ViewField>
+          <ViewField label="Runtime">{script.runtime}</ViewField>
+          <ViewField label="Resource Profile">{script.resourceProfile}</ViewField>
+          <ViewField label="Environment Variables">
+            <pre className="whitespace-pre-wrap">
+              {JSON.stringify(script.envVars ?? {}, null, 2)}
+            </pre>
+          </ViewField>
+          <ViewField label="Secret Names">
+            <RoleList roles={script.secretEnvNames ?? []} />
+          </ViewField>
           <ViewField label="Roles">
             <RoleList roles={script.roles} />
           </ViewField>

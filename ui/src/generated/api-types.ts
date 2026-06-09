@@ -162,6 +162,20 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string | null;
+            /** Runtime */
+            runtime: string;
+            /** Resourceprofile */
+            resourceProfile: string;
+            /**
+             * Envvars
+             * @default {}
+             */
+            envVars: Record<string, string>;
+            /**
+             * Secretenvnames
+             * @default []
+             */
+            secretEnvNames: string[];
             /**
              * Createdtime
              * Format: date-time
@@ -194,6 +208,20 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string;
+            /** Runtime */
+            runtime: string;
+            /** Resourceprofile */
+            resourceProfile: string;
+            /**
+             * Envvars
+             * @default {}
+             */
+            envVars: Record<string, string>;
+            /**
+             * Secretenvnames
+             * @default []
+             */
+            secretEnvNames: string[];
             /**
              * Active
              * @default true
@@ -222,6 +250,20 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string;
+            /** Runtime */
+            runtime: string;
+            /** Resourceprofile */
+            resourceProfile: string;
+            /**
+             * Envvars
+             * @default {}
+             */
+            envVars: Record<string, string>;
+            /**
+             * Secretenvnames
+             * @default []
+             */
+            secretEnvNames: string[];
             /**
              * Active
              * @default true
@@ -275,6 +317,20 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string;
+            /** Runtime */
+            runtime: string;
+            /** Resourceprofile */
+            resourceProfile: string;
+            /**
+             * Envvars
+             * @default {}
+             */
+            envVars: Record<string, string>;
+            /**
+             * Secretenvnames
+             * @default []
+             */
+            secretEnvNames: string[];
             /**
              * Active
              * @default true

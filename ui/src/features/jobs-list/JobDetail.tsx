@@ -24,6 +24,12 @@ interface JobDetailProps {
   job: JobDetails;
 }
 
+const renderFieldValue = (value: JobDetails[keyof JobDetails]) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return value;
+};
+
 function JobDetail({ job }: JobDetailProps) {
   return (
     <>
@@ -44,7 +50,7 @@ function JobDetail({ job }: JobDetailProps) {
                   job.jobStatus
                 )
               ) : (
-                job[field]
+                renderFieldValue(job[field])
               )}
             </JobDetailField>
           );

@@ -79,12 +79,14 @@ def test_get_job_by_id_returns_404_when_missing(client, job_db):
     assert response.json() == {"detail": f"No job found for jobId '{job_id}'"}
 
 
-def test_get_logs_for_job_returns_logs(client, job_logger):
-    job_id = str(uuid4())
+def test_get_logs_for_job_returns_logs(client, job_db, job_logger):
+    job = make_job_record()
+    job_db.get_job_by_id.return_value = job
     job_logger.get_logs_for_job.return_value = "hello"
 
-    response = client.get(f"/jobs/{job_id}/logs")
+    response = client.get(f"/jobs/{job.id}/logs")
 
     assert response.status_code == 200
     assert response.json() == {"logs": "hello"}
+    job_db.get_job_by_id.assert_called_once_with(job.id)
     job_logger.get_logs_for_job.assert_called_once()
