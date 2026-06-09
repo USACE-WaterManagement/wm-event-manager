@@ -57,6 +57,9 @@ services:
       AWS_ACCESS_KEY_ID: eventsadmin
       AWS_SECRET_ACCESS_KEY: eventsadmin
       AWS_REGION: us-gov-west-1
+      APP_KEY: localdevtoken
+      BATCH_EVENTS_API_ROOT: http://api:8000
+      BATCH_EVENTS_INTERNAL_TOKEN: localdevtoken
       PGUSER: *application_user
       PGPASSWORD: *application_password
       PGDATABASE: postgres
