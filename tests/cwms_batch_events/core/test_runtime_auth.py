@@ -1,7 +1,12 @@
 import time
 from uuid import uuid4
 
-from cwms_batch_events.core.runtime_auth import create_runtime_token, verify_runtime_token
+from cwms_batch_events.core.runtime_auth import (
+    RUNTIME_TOKEN_EXPIRED,
+    create_runtime_token,
+    validate_runtime_token,
+    verify_runtime_token,
+)
 from cwms_batch_events.core.settings import settings
 
 
@@ -31,3 +36,4 @@ def test_runtime_token_rejects_expired_token(monkeypatch):
     time.sleep(1)
 
     assert verify_runtime_token(token, job_id) is False
+    assert validate_runtime_token(token, job_id) == (False, RUNTIME_TOKEN_EXPIRED)

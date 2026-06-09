@@ -13,7 +13,7 @@ from cwms_batch_events.core.models import (
     RuntimeEnvResponse,
 )
 from cwms_batch_events.core.processing import update_batch_job_status
-from cwms_batch_events.core.runtime_auth import verify_runtime_token
+from cwms_batch_events.core.runtime_auth import validate_runtime_token
 from cwms_batch_events.core.secret_broker import (
     MissingJobError,
     MissingSecretError,
@@ -86,10 +86,11 @@ def get_runtime_env(
             detail="Invalid job id",
         ) from e
 
-    if not verify_runtime_token(x_runtime_token, parsed_job_id):
+    valid_token, token_error = validate_runtime_token(x_runtime_token, parsed_job_id)
+    if not valid_token:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid runtime broker token provided",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=token_error,
         )
     try:
         return resolve_runtime_env(parsed_job_id, job_db)

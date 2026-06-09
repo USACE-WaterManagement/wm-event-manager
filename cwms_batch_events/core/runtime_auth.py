@@ -7,6 +7,9 @@ from uuid import UUID
 
 from cwms_batch_events.core.settings import settings
 
+RUNTIME_TOKEN_EXPIRED = "Runtime broker token expired"
+RUNTIME_TOKEN_INVALID = "Invalid runtime broker token provided"
+
 
 def _base64url(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
@@ -45,13 +48,13 @@ def create_runtime_token(job_id: UUID) -> str:
     return f"{signing_input}.{_base64url(signature)}"
 
 
-def verify_runtime_token(token: str, job_id: UUID) -> bool:
+def validate_runtime_token(token: str, job_id: UUID) -> tuple[bool, str | None]:
     if not settings.app_key or not token:
-        return False
+        return False, RUNTIME_TOKEN_INVALID
 
     parts = token.split(".")
     if len(parts) != 3:
-        return False
+        return False, RUNTIME_TOKEN_INVALID
 
     signing_input = ".".join(parts[:2])
     expected = hmac.new(
@@ -63,17 +66,27 @@ def verify_runtime_token(token: str, job_id: UUID) -> bool:
         provided = _decode_base64url(parts[2])
         payload = json.loads(_decode_base64url(parts[1]))
     except Exception:
-        return False
+        return False, RUNTIME_TOKEN_INVALID
 
     if not hmac.compare_digest(provided, expected):
-        return False
+        return False, RUNTIME_TOKEN_INVALID
 
     now = int(time.time())
-    return (
+    exp = payload.get("exp")
+    if not isinstance(exp, int):
+        return False, RUNTIME_TOKEN_INVALID
+    if exp < now:
+        return False, RUNTIME_TOKEN_EXPIRED
+
+    valid = (
         payload.get("iss") == "cwms-batch-events"
         and payload.get("aud") == "cwms-batch-runtime-env"
         and payload.get("purpose") == "runtime-env"
         and payload.get("job_id") == str(job_id)
-        and isinstance(payload.get("exp"), int)
-        and payload["exp"] >= now
     )
+    return (True, None) if valid else (False, RUNTIME_TOKEN_INVALID)
+
+
+def verify_runtime_token(token: str, job_id: UUID) -> bool:
+    valid, _ = validate_runtime_token(token, job_id)
+    return valid

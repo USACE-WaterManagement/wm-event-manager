@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     batch_job_context_key_id: str = "current"
     batch_job_context_issuer: str = "cwms-batch-events"
     batch_job_context_audience: str = "cwms-data-api"
-    batch_job_context_ttl_seconds: int = 900
-    batch_runtime_token_ttl_seconds: int = 600
+    batch_job_context_ttl_seconds: int = 300
+    batch_runtime_token_ttl_seconds: int = 300
 
 
 @lru_cache

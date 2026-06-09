@@ -126,7 +126,7 @@ def test_get_runtime_env_rejects_missing_runtime_token(client, monkeypatch):
     monkeypatch.setattr(settings, "app_key", "test-runtime-token-secret-with-32-chars")
     response = client.get(f"/internal/jobs/{uuid4()}/runtime-env")
 
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert response.json() == {"detail": "Invalid runtime broker token provided"}
 
 
@@ -137,5 +137,19 @@ def test_get_runtime_env_rejects_runtime_token_for_other_job(client, monkeypatch
         headers={"X-Runtime-Token": create_runtime_token(uuid4())},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 401
     assert response.json() == {"detail": "Invalid runtime broker token provided"}
+
+
+def test_get_runtime_env_rejects_expired_runtime_token(client, monkeypatch):
+    job_id = uuid4()
+    monkeypatch.setattr(settings, "app_key", "test-runtime-token-secret-with-32-chars")
+    monkeypatch.setattr(settings, "batch_runtime_token_ttl_seconds", -1)
+
+    response = client.get(
+        f"/internal/jobs/{job_id}/runtime-env",
+        headers={"X-Runtime-Token": create_runtime_token(job_id)},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Runtime broker token expired"}
