@@ -24,12 +24,15 @@ For the best experience, [pyenv](https://github.com/pyenv/pyenv) is recommended 
 #### Authentication
 By default, the local instance of the API uses a mock user account.  This account has script-execute permissions for all districts.  As a result, the API will return scripts for all offices that contain a corresponding script catalog within the minio instance.
 
-#### Script Containers
-The API will reference district script docker images that exist locally by the name `[office-code]-jobs`, e.g. `lrh-jobs`.  These can be created by cloning the corresponding district jobs repo, e.g. [lrh-wm-cwbi-jobs](https://github.com/USACE-WaterManagement/lrh-wm-cwbi-jobs), and building the images from the local dockerfile with `docker build . -t [office-code]-jobs`.
+#### Job Registry
+Available office jobs are managed in Batch Events using the "Scripts Manager" in the Web UI or the `/scripts` API endpoints. A registry entry defines the office, repository path, runtime (`python`, `node`, `java`, or `shell`), resource profile (`small`, `medium`, or `large`), optional environment variables, allowed secret names, roles, and optional schedule.
 
-#### Script Catalogs
-Available district scripts are managed within the cwms-batch application itself using the "Scripts Manager" available through the Web UI or directly through API endpoints.
+Scheduled jobs are also registry-driven. Airflow calls `/scripts/scheduled`, filters jobs due for the current minute, and triggers them through `/jobs`. This keeps office timing and resource choices in Batch Events instead of duplicating one Airflow or AWS Batch definition per office.
+
+#### Runtime Containers
+Production uses shared AWS Batch job definitions per runtime rather than per-office job definitions. The shared runner image is built from `cwbi-wm-images`, clones the office repository at runtime, asks Batch Events for the job's brokered runtime environment, and then runs the registered script path.
+
+Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.
-
