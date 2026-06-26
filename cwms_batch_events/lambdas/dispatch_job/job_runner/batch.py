@@ -15,6 +15,7 @@ RUNTIME_JOB_DEFINITIONS = {
     "python": "cwms-python-runner-jobdef",
     "node": "cwms-node-runner-jobdef",
     "java": "cwms-java-runner-jobdef",
+    "shell": "cwms-shell-runner-jobdef",
 }
 
 RESOURCE_PROFILES = {

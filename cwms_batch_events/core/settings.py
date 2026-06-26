@@ -7,7 +7,9 @@ class Settings(BaseSettings):
     auth_environment: str = ""
     auth_audience: str = "cwms"
     auth_client_id: str = "cwms"
+    auth_client_ids: str = ""
     auth_host: str = "http://traefik/auth"
+    auth_jwks_host: str = ""
     auth_realm: str = "cwms"
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
@@ -34,6 +36,16 @@ class Settings(BaseSettings):
     batch_job_context_audience: str = "cwms-data-api"
     batch_job_context_ttl_seconds: int = 300
     batch_runtime_token_ttl_seconds: int = 300
+
+    @property
+    def authorized_auth_client_ids(self) -> set[str]:
+        client_ids = {self.auth_client_id}
+        client_ids.update(
+            client_id.strip()
+            for client_id in self.auth_client_ids.split(",")
+            if client_id.strip()
+        )
+        return client_ids
 
 
 @lru_cache

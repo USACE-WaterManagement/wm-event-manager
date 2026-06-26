@@ -60,7 +60,7 @@ async def get_current_user_cwms(
         try:
             claims = verify_jwt(token)
             azp = claims.get("azp", "")
-            if azp != settings.auth_client_id:
+            if azp not in settings.authorized_auth_client_ids:
                 raise Exception(f"Client '{azp}' is not authorized for this API")
         except Exception as e:
             raise HTTPException(

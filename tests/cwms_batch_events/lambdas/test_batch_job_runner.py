@@ -101,3 +101,30 @@ def test_batch_job_runner_passes_broker_url_and_public_env_vars():
     ]
     assert {"name": "BATCH_EVENTS_API_ROOT", "value": "http://internal-alb/api"} in environment
     assert {"name": "CDA_API_ROOT", "value": "https://cda"} in environment
+
+
+def test_batch_job_runner_supports_shell_runtime():
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="swt",
+            repo_path="bin/hourly.sh",
+            script_slug="hourly",
+            runtime="shell",
+        )
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    submit_kwargs = batch_client.submit_job.call_args.kwargs
+    assert submit_kwargs["jobDefinition"] == "cwms-shell-runner-jobdef"
+    assert submit_kwargs["tags"]["Runtime"] == "shell"
+    assert {"name": "RUNTIME", "value": "shell"} in submit_kwargs[
+        "containerOverrides"
+    ]["environment"]

@@ -24,6 +24,7 @@ class LocalExecutor:
                 "python": ["python", f"/jobs/{message.payload.repo_path}"],
                 "node": ["node", f"/jobs/{message.payload.repo_path}"],
                 "java": ["bash", f"/jobs/{message.payload.repo_path}"],
+                "shell": ["bash", f"/jobs/{message.payload.repo_path}"],
             }[message.payload.runtime]
 
             environment = [

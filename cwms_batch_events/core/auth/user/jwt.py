@@ -3,12 +3,6 @@ from jwt import PyJWKClient
 
 from cwms_batch_events.core.settings import settings
 
-AUTH_HOST = settings.auth_host
-AUTH_REALM = settings.auth_realm
-
-KEYCLOAK_ISSUER = f"{AUTH_HOST}/realms/{AUTH_REALM}"
-KEYCLOAK_JWKS = f"{KEYCLOAK_ISSUER}/protocol/openid-connect/certs"
-
 PUBLIC_KEY = {
     "PROD": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgaLcKGp9KKeN+8REa4oHK41PQYpvIeP7XpXmPB70cV8uBBx8Er3SDrZ2TAz9UKZ2Z6m6QRreQjgk2FI+EQ2bHWToMRhnthIzbuHzI64GyBjCnGhu3sd0OFb9wTAvu6TcV7w+q7+WrVIF1vzHlpFo7qLewxJjEAKzJGx3EgDFhlRCPXG4BjP4Lsg/rBpV3ltZ74HtTlx3r7XeDKCIIgqAJOQueaQtwR7Snp2FFY3is/PHrWNKWLw3lRV0Lm4VtGHm4YOAqCwq6FfyHLjjohp2JXuzTVB+9s7cmbLq1dyDBCWkX02s4g3AZuJcycyrie+8TDvbCJ+ogHLcixwLDizXaQIDAQAB",
     "TEST": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArYxyX6mFWXEEpi8GhEs8GbUjZwYLIJ7ixEIoIZN1f4C7LoNMxz5mrDZcojNi91xSXqtFLlXfYTc/sI4JLYUEzKE0fNUxY9jldzI36ZLvIMqGg7KqaFukI3WO1AVejkJ77Lox+V20nJoZTrO577uElfIsqlJc11HHojME4f/Q7OOYoTPE4yYOGP8WbLPg4CSiSNR+ZYA4JdDLMZxD+FduhHkE7QbPZGsZqXCnr1UDzgNUaXFbufsmGo1N2h9eQOTNu6aV9zI7DdMZkVCbApwEov+p2n8EMp3xAZ5tAviXNzP8z3oifsw8XQLFFCyUUEr8e3kCmLW97lV7ys5iWnNhMQIDAQAB",
@@ -46,13 +40,16 @@ def verify_jwt(token: str) -> dict:
 
 
 def verify_jwt_by_api(token: str) -> dict:
-    jwks = PyJWKClient(KEYCLOAK_JWKS)
+    issuer = f"{settings.auth_host}/realms/{settings.auth_realm}"
+    jwks_host = settings.auth_jwks_host or settings.auth_host
+    jwks_url = f"{jwks_host}/realms/{settings.auth_realm}/protocol/openid-connect/certs"
+    jwks = PyJWKClient(jwks_url)
     key = jwks.get_signing_key_from_jwt(token)
     payload = jwt.decode(
         token,
         key,
         algorithms=["RS256"],
-        issuer=KEYCLOAK_ISSUER,
+        issuer=issuer,
         audience=settings.auth_audience,
     )
     return payload
