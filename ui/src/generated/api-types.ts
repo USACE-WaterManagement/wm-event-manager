@@ -183,6 +183,16 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /**
+             * Commandargs
+             * @default []
+             */
+            commandArgs: string[];
+            /**
+             * Timeoutminutes
+             * @default 30
+             */
+            timeoutMinutes: number;
             /** Scheduleenabled */
             scheduleEnabled: boolean;
             /** Scheduletype */
@@ -235,6 +245,16 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /**
+             * Commandargs
+             * @default []
+             */
+            commandArgs: string[];
+            /**
+             * Timeoutminutes
+             * @default 30
+             */
+            timeoutMinutes: number;
             /** Scheduleenabled */
             scheduleEnabled: boolean;
             /** Scheduletype */
@@ -283,6 +303,16 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /**
+             * Commandargs
+             * @default []
+             */
+            commandArgs: string[];
+            /**
+             * Timeoutminutes
+             * @default 30
+             */
+            timeoutMinutes: number;
             /** Scheduleenabled */
             scheduleEnabled: boolean;
             /** Scheduletype */
@@ -356,6 +386,16 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /**
+             * Commandargs
+             * @default []
+             */
+            commandArgs: string[];
+            /**
+             * Timeoutminutes
+             * @default 30
+             */
+            timeoutMinutes: number;
             /** Scheduleenabled */
             scheduleEnabled: boolean;
             /** Scheduletype */

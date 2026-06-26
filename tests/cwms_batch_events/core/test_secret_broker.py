@@ -115,6 +115,8 @@ def test_resolve_runtime_env_adds_signed_job_context_when_configured(monkeypatch
         office="SWT",
         env_vars={"CDA_API_ROOT": "https://cda"},
         secret_env_names=[],
+        command_args=["--project", "KEYS"],
+        timeout_minutes=45,
     )
     monkeypatch.setattr(
         "cwms_batch_events.core.secret_broker.settings.batch_job_context_secret",
@@ -132,6 +134,8 @@ def test_resolve_runtime_env_adds_signed_job_context_when_configured(monkeypatch
     assert payload["office"] == "SWT"
     assert payload["requested_by"] == "test-user"
     assert payload["script_office"] == "SWT"
+    assert payload["command_args"] == ["--project", "KEYS"]
+    assert payload["timeout_minutes"] == 45
     assert payload["iss"] == "cwms-batch-events"
     assert payload["aud"] == "cwms-data-api"
 

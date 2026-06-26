@@ -85,6 +85,8 @@ export const ScriptForm = ({
     repoPath: script?.repoPath ?? "",
     runtime: script?.runtime ?? "python",
     resourceProfile: script?.resourceProfile ?? "small",
+    commandArgs: script?.commandArgs ?? [],
+    timeoutMinutes: script?.timeoutMinutes ?? 30,
     scheduleEnabled: script?.scheduleEnabled ?? false,
     scheduleType: script?.scheduleType ?? "manual",
     scheduleMinute: script?.scheduleMinute ?? 15,
@@ -97,6 +99,9 @@ export const ScriptForm = ({
   );
   const [secretEnvNamesText, setSecretEnvNamesText] = useState(
     (script?.secretEnvNames ?? []).join("\n"),
+  );
+  const [commandArgsText, setCommandArgsText] = useState(
+    (script?.commandArgs ?? []).join("\n"),
   );
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -130,10 +135,15 @@ export const ScriptForm = ({
       .split(/[,\n]/)
       .map((value) => value.trim())
       .filter(Boolean);
+    const commandArgs = commandArgsText
+      .split(/\n/)
+      .map((value) => value.trim())
+      .filter(Boolean);
 
     setFormError(null);
     onSave({
       ...form,
+      commandArgs,
       scheduleMinute: form.scheduleEnabled ? form.scheduleMinute : null,
       scheduleType: form.scheduleEnabled ? form.scheduleType : "manual",
       envVars,
@@ -270,6 +280,33 @@ export const ScriptForm = ({
                   Large - 4 vCPU / 8 GB
                 </option>,
               ]}
+            />
+          </FormRow>
+          <FormRow>
+            <InputLabel htmlFor="timeoutMinutes">Timeout</InputLabel>
+            <Input
+              id="timeoutMinutes"
+              max={1440}
+              min={1}
+              name="timeoutMinutes"
+              type="number"
+              value={form.timeoutMinutes}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                update("timeoutMinutes", Number(e.target.value))
+              }
+              required
+            />
+          </FormRow>
+          <FormRow>
+            <InputLabel htmlFor="commandArgs">Command Args</InputLabel>
+            <textarea
+              id="commandArgs"
+              name="commandArgs"
+              className="min-h-24 rounded border border-gray-400 p-2 font-mono text-sm"
+              value={commandArgsText}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setCommandArgsText(e.target.value)
+              }
             />
           </FormRow>
           <FormRow>

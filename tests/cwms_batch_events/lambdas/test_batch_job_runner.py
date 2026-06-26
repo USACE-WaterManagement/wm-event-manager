@@ -32,16 +32,18 @@ def test_batch_job_runner_submits_expected_batch_job():
                 {"name": "OFFICE", "value": "swt"},
                 {"name": "JOB_ID", "value": str(message.job_id)},
                 {"name": "REPO_PATH", "value": "run.py"},
-                    {"name": "SCRIPT_PATH", "value": "run.py"},
-                    {"name": "SCRIPT_SLUG", "value": "script"},
-                    {"name": "RUNTIME", "value": "python"},
-                    {"name": "BATCH_EVENTS_API_ROOT", "value": "http://events/api"},
-                ],
+                {"name": "SCRIPT_PATH", "value": "run.py"},
+                {"name": "SCRIPT_SLUG", "value": "script"},
+                {"name": "RUNTIME", "value": "python"},
+                {"name": "BATCH_EVENTS_API_ROOT", "value": "http://events/api"},
+            ],
+            "command": ["python", "/jobs/run.py"],
             "resourceRequirements": [
                 {"type": "VCPU", "value": "1"},
                 {"type": "MEMORY", "value": "2048"},
             ],
         },
+        timeout={"attemptDurationSeconds": 1800},
         tags={
             "Office": "swt",
             "Runtime": "python",
@@ -101,6 +103,36 @@ def test_batch_job_runner_passes_broker_url_and_public_env_vars():
     ]
     assert {"name": "BATCH_EVENTS_API_ROOT", "value": "http://internal-alb/api"} in environment
     assert {"name": "CDA_API_ROOT", "value": "https://cda"} in environment
+
+
+def test_batch_job_runner_passes_command_args_and_timeout():
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="swt",
+            repo_path="python/report.py",
+            script_slug="report",
+            command_args=["--project", "KEYS"],
+            timeout_minutes=45,
+        )
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    submit_kwargs = batch_client.submit_job.call_args.kwargs
+    assert submit_kwargs["containerOverrides"]["command"] == [
+        "python",
+        "/jobs/python/report.py",
+        "--project",
+        "KEYS",
+    ]
+    assert submit_kwargs["timeout"] == {"attemptDurationSeconds": 2700}
 
 
 def test_batch_job_runner_supports_shell_runtime():

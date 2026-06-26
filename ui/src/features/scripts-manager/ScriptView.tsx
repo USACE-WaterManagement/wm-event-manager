@@ -63,6 +63,10 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Execution Type">{script.executionType}</ViewField>
           <ViewField label="Runtime">{script.runtime}</ViewField>
           <ViewField label="Resource Profile">{script.resourceProfile}</ViewField>
+          <ViewField label="Timeout">{script.timeoutMinutes} minutes</ViewField>
+          <ViewField label="Command Args">
+            <RoleList roles={script.commandArgs ?? []} />
+          </ViewField>
           <ViewField label="Schedule">
             {script.scheduleEnabled
               ? `${script.scheduleType} at minute ${script.scheduleMinute}`

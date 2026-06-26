@@ -47,6 +47,8 @@ class JobModel(Base):
     execution_type: Mapped[str | None]
     runtime: Mapped[str] = mapped_column(default="python")
     resource_profile: Mapped[str] = mapped_column(default="small")
+    command_args: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    timeout_minutes: Mapped[int] = mapped_column(default=30)
     schedule_enabled: Mapped[bool] = mapped_column(default=False)
     schedule_type: Mapped[str] = mapped_column(default="manual")
     schedule_minute: Mapped[int | None]
@@ -96,6 +98,8 @@ class ScriptModel(Base):
     execution_type: Mapped[str]
     runtime: Mapped[str] = mapped_column(default="python")
     resource_profile: Mapped[str] = mapped_column(default="small")
+    command_args: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    timeout_minutes: Mapped[int] = mapped_column(default=30)
     schedule_enabled: Mapped[bool] = mapped_column(default=False)
     schedule_type: Mapped[str] = mapped_column(default="manual")
     schedule_minute: Mapped[int | None]

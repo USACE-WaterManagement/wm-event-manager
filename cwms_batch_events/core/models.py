@@ -47,6 +47,8 @@ class JobRecord(CamelModel):
     execution_type: str | None
     runtime: str = "python"
     resource_profile: str = "small"
+    command_args: list[str] = Field(default_factory=list)
+    timeout_minutes: int = 30
     schedule_enabled: bool = False
     schedule_type: str = "manual"
     schedule_minute: int | None = None
@@ -88,6 +90,8 @@ class ScriptRunOptions(CamelModel):
     script_slug: str | None
     runtime: str = "python"
     resource_profile: str = "small"
+    command_args: list[str] = Field(default_factory=list)
+    timeout_minutes: int = 30
     env_vars: dict[str, str] = Field(default_factory=dict)
 
 
@@ -129,6 +133,8 @@ class ScriptBase(CamelModel):
     execution_type: str
     runtime: str = "python"
     resource_profile: str = "small"
+    command_args: list[str] = Field(default_factory=list)
+    timeout_minutes: int = 30
     schedule_enabled: bool = False
     schedule_type: str = "manual"
     schedule_minute: int | None = None
@@ -148,6 +154,12 @@ class ScriptBase(CamelModel):
     def validate_resource_profile(cls, value: str) -> str:
         if value not in {"small", "medium", "large"}:
             raise ValueError("resourceProfile must be one of: small, medium, large")
+        return value
+
+    @field_validator("timeout_minutes")
+    def validate_timeout_minutes(cls, value: int) -> int:
+        if not 1 <= value <= 1440:
+            raise ValueError("timeoutMinutes must be between 1 and 1440")
         return value
 
     @field_validator("schedule_type")

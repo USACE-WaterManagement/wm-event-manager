@@ -76,6 +76,8 @@ class PostgresJobDatabase:
         job.execution_type = script.execution_type
         job.runtime = script.runtime
         job.resource_profile = script.resource_profile
+        job.command_args = script.command_args or []
+        job.timeout_minutes = script.timeout_minutes
         job.schedule_enabled = script.schedule_enabled
         job.schedule_type = script.schedule_type
         job.schedule_minute = script.schedule_minute
@@ -181,6 +183,8 @@ class PostgresJobDatabase:
                 script.execution_type = payload.execution_type
                 script.runtime = payload.runtime
                 script.resource_profile = payload.resource_profile
+                script.command_args = payload.command_args
+                script.timeout_minutes = payload.timeout_minutes
                 script.schedule_enabled = payload.schedule_enabled
                 script.schedule_type = payload.schedule_type
                 script.schedule_minute = payload.schedule_minute

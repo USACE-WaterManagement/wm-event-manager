@@ -25,12 +25,12 @@ For the best experience, [pyenv](https://github.com/pyenv/pyenv) is recommended 
 By default, the local instance of the API uses a mock user account.  This account has script-execute permissions for all districts.  As a result, the API will return scripts for all offices that contain a corresponding script catalog within the minio instance.
 
 #### Job Registry
-Available office jobs are managed in Batch Events using the "Scripts Manager" in the Web UI or the `/scripts` API endpoints. A registry entry defines the office, repository path, runtime (`python`, `node`, `java`, or `shell`), resource profile (`small`, `medium`, or `large`), optional environment variables, allowed secret names, roles, and optional schedule.
+Available office jobs are managed in Batch Events using the "Scripts Manager" in the Web UI or the `/scripts` API endpoints. A registry entry defines the office, repository path, runtime (`python`, `node`, `java`, or `shell`), command arguments, resource profile (`small`, `medium`, or `large`), timeout, optional environment variables, allowed secret names, roles, and optional schedule.
 
 Scheduled jobs are also registry-driven. Airflow calls `/scripts/scheduled`, filters jobs due for the current minute, and triggers them through `/jobs`. This keeps office timing and resource choices in Batch Events instead of duplicating one Airflow or AWS Batch definition per office.
 
 #### Runtime Containers
-Production uses shared AWS Batch job definitions per runtime rather than per-office job definitions. The shared runner image is built from `cwbi-wm-images`, clones the office repository at runtime, asks Batch Events for the job's brokered runtime environment, and then runs the registered script path.
+Production uses shared AWS Batch job definitions per runtime rather than per-office job definitions. The shared runner image is built from `cwbi-wm-images`, clones the office repository at runtime, asks Batch Events for the job's brokered runtime environment, and then runs the registered script path with the registry's command arguments and timeout.
 
 Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
 

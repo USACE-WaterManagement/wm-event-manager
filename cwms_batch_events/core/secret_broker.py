@@ -113,6 +113,8 @@ def _sign_job_context(job) -> str | None:
         "office": job.office.upper(),
         "runtime": job.runtime,
         "resource_profile": job.resource_profile,
+        "command_args": job.command_args,
+        "timeout_minutes": job.timeout_minutes,
     }
     header = {"alg": "HS256", "typ": "JWT", "kid": settings.batch_job_context_key_id}
     signing_input = ".".join(

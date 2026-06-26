@@ -26,6 +26,7 @@ class LocalExecutor:
                 "java": ["bash", f"/jobs/{message.payload.repo_path}"],
                 "shell": ["bash", f"/jobs/{message.payload.repo_path}"],
             }[message.payload.runtime]
+            command = [*command, *message.payload.command_args]
 
             environment = [
                 f"OFFICE={message.payload.office}",

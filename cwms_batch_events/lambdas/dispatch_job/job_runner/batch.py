@@ -24,6 +24,13 @@ RESOURCE_PROFILES = {
     "large": {"VCPU": "4", "MEMORY": "8192"},
 }
 
+RUNTIME_COMMANDS = {
+    "python": ["python"],
+    "node": ["node"],
+    "java": ["bash"],
+    "shell": ["bash"],
+}
+
 
 class BatchJobRunner:
     def __init__(self):
@@ -35,11 +42,13 @@ class BatchJobRunner:
         script_slug = message.payload.script_slug
         runtime = message.payload.runtime.lower()
         resource_profile = message.payload.resource_profile.lower()
+        command_args = message.payload.command_args
         if script_slug is None:
             script_slug = repo_path.split("/")[-1]
 
         job_definition = RUNTIME_JOB_DEFINITIONS[runtime]
         resources = RESOURCE_PROFILES[resource_profile]
+        command = [*RUNTIME_COMMANDS[runtime], f"/jobs/{repo_path}", *command_args]
 
         job_name = (
             f"cwms-{office}-{runtime}-{script_slug}-{datetime.now().strftime('%Y%m%d-%H%M')}"
@@ -82,10 +91,14 @@ class BatchJobRunner:
             jobDefinition=job_definition,
             containerOverrides={
                 "environment": environment,
+                "command": command,
                 "resourceRequirements": [
                     {"type": kind, "value": value}
                     for kind, value in resources.items()
                 ],
+            },
+            timeout={
+                "attemptDurationSeconds": message.payload.timeout_minutes * 60,
             },
             tags={
                 "Office": office,
