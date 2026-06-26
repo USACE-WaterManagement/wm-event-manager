@@ -41,7 +41,7 @@ class CloudWatchJobLogger:
             raise ValueError(f"No external_job_id found for job_id {job_id}")
         log_name = self.get_batch_log_name(job.external_job_id)
 
-        log_group = f"ecs/cwms-batch/{job.office.lower()}-jobs"
+        log_group = f"ecs/cwms-batch/{job.runtime.lower()}-runner"
 
         logs = self.logs.get_log_events(
             logGroupName=log_group,

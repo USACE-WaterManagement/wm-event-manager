@@ -90,6 +90,7 @@ def test_cloudwatch_job_logger_requires_external_job_id():
     db.get_job_by_id.return_value = SimpleNamespace(
         external_job_id=None,
         office="SWT",
+        runtime="shell",
     )
 
     with mock.patch(
@@ -108,6 +109,7 @@ def test_cloudwatch_job_logger_returns_joined_log_messages():
     db.get_job_by_id.return_value = SimpleNamespace(
         external_job_id="ext-123",
         office="SWT",
+        runtime="shell",
     )
     batch_client = mock.Mock()
     batch_client.describe_jobs.return_value = {
@@ -127,7 +129,7 @@ def test_cloudwatch_job_logger_returns_joined_log_messages():
 
     assert logs == "line 1\nline 2"
     logs_client.get_log_events.assert_called_once_with(
-        logGroupName="ecs/cwms-batch/swt-jobs",
+        logGroupName="ecs/cwms-batch/shell-runner",
         logStreamName="stream",
         startFromHead=True,
     )
