@@ -6,6 +6,10 @@ from cwms_batch_events.core.models import ScriptRunOptions
 from tests.factories import make_job_message
 
 
+def container_override(submit_kwargs):
+    return submit_kwargs["ecsPropertiesOverride"]["taskProperties"][0]["containers"][0]
+
+
 def test_batch_job_runner_submits_expected_batch_job():
     batch_client = mock.Mock()
     batch_client.submit_job.return_value = {"jobId": "ext-123"}
@@ -27,20 +31,31 @@ def test_batch_job_runner_submits_expected_batch_job():
         jobName="cwms-swt-python-script-20260416-1230",
         jobQueue="cwms-swd-jq",
         jobDefinition="cwms-python-runner-jobdef",
-        containerOverrides={
-            "environment": [
-                {"name": "OFFICE", "value": "swt"},
-                {"name": "JOB_ID", "value": str(message.job_id)},
-                {"name": "REPO_PATH", "value": "run.py"},
-                {"name": "SCRIPT_PATH", "value": "run.py"},
-                {"name": "SCRIPT_SLUG", "value": "script"},
-                {"name": "RUNTIME", "value": "python"},
-                {"name": "BATCH_EVENTS_API_ROOT", "value": "http://events/api"},
-            ],
-            "command": ["python", "/jobs/run.py"],
-            "resourceRequirements": [
-                {"type": "VCPU", "value": "1"},
-                {"type": "MEMORY", "value": "2048"},
+        ecsPropertiesOverride={
+            "taskProperties": [
+                {
+                    "containers": [
+                        {
+                            "environment": [
+                                {"name": "OFFICE", "value": "swt"},
+                                {"name": "JOB_ID", "value": str(message.job_id)},
+                                {"name": "REPO_PATH", "value": "run.py"},
+                                {"name": "SCRIPT_PATH", "value": "run.py"},
+                                {"name": "SCRIPT_SLUG", "value": "script"},
+                                {"name": "RUNTIME", "value": "python"},
+                                {
+                                    "name": "BATCH_EVENTS_API_ROOT",
+                                    "value": "http://events/api",
+                                },
+                            ],
+                            "command": ["python", "/jobs/run.py"],
+                            "resourceRequirements": [
+                                {"type": "VCPU", "value": "1"},
+                                {"type": "MEMORY", "value": "2048"},
+                            ],
+                        },
+                    ],
+                },
             ],
         },
         timeout={"attemptDurationSeconds": 1800},
@@ -98,7 +113,7 @@ def test_batch_job_runner_passes_broker_url_and_public_env_vars():
         runner = BatchJobRunner()
         runner.run_job(message)
 
-    environment = batch_client.submit_job.call_args.kwargs["containerOverrides"][
+    environment = container_override(batch_client.submit_job.call_args.kwargs)[
         "environment"
     ]
     assert {"name": "BATCH_EVENTS_API_ROOT", "value": "http://internal-alb/api"} in environment
@@ -126,7 +141,7 @@ def test_batch_job_runner_passes_command_args_and_timeout():
         runner.run_job(message)
 
     submit_kwargs = batch_client.submit_job.call_args.kwargs
-    assert submit_kwargs["containerOverrides"]["command"] == [
+    assert container_override(submit_kwargs)["command"] == [
         "python",
         "/jobs/python/report.py",
         "--project",
@@ -157,6 +172,6 @@ def test_batch_job_runner_supports_shell_runtime():
     submit_kwargs = batch_client.submit_job.call_args.kwargs
     assert submit_kwargs["jobDefinition"] == "cwms-shell-runner-jobdef"
     assert submit_kwargs["tags"]["Runtime"] == "shell"
-    assert {"name": "RUNTIME", "value": "shell"} in submit_kwargs[
-        "containerOverrides"
-    ]["environment"]
+    assert {"name": "RUNTIME", "value": "shell"} in container_override(submit_kwargs)[
+        "environment"
+    ]

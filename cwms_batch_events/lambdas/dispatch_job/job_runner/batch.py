@@ -85,16 +85,26 @@ class BatchJobRunner:
             for name, value in message.payload.env_vars.items()
         )
 
+        container_override = {
+            "environment": environment,
+            "command": command,
+            "resourceRequirements": [
+                {"type": kind, "value": value}
+                for kind, value in resources.items()
+            ],
+        }
+
         response = self.batch.submit_job(
             jobName=job_name,
             jobQueue=f"cwms-{OFFICES[office]['division']}-jq",
             jobDefinition=job_definition,
-            containerOverrides={
-                "environment": environment,
-                "command": command,
-                "resourceRequirements": [
-                    {"type": kind, "value": value}
-                    for kind, value in resources.items()
+            ecsPropertiesOverride={
+                "taskProperties": [
+                    {
+                        "containers": [
+                            container_override,
+                        ],
+                    },
                 ],
             },
             timeout={
