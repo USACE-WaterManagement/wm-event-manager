@@ -27,10 +27,20 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 @router.get("")
 def get_jobs_for_user(
+    office: str | None = None,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[JobRecord]:
-    job_list = job_db.get_jobs_for_user(user.username)
+    if office:
+        office = office.upper()
+        if office not in user.admin_offices:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User does not have job list access for office '{office}'",
+            )
+        return job_db.get_jobs_for_office(office)
+
+    job_list = job_db.get_jobs_for_user(user.username, user.admin_offices)
     return job_list
 
 
@@ -66,6 +76,8 @@ def post_job(
         script_slug=job.script_slug,
         runtime=job.runtime,
         resource_profile=job.resource_profile,
+        command_args=job.command_args,
+        timeout_minutes=job.timeout_minutes,
         env_vars=job.env_vars,
     )
     message = queue.create_job_message(job.id, user.username, JobSource.API, options)

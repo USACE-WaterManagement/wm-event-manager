@@ -6,7 +6,9 @@
 export interface paths {
     "/jobs/": {
         parameters: {
-            query?: never;
+            query?: {
+                office?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -448,7 +450,9 @@ export type $defs = Record<string, never>;
 export interface operations {
     get_jobs_for_user_jobs__get: {
         parameters: {
-            query?: never;
+            query?: {
+                office?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;

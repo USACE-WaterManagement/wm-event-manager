@@ -15,7 +15,28 @@ def test_get_jobs_for_user_returns_jobs(client, job_db, user):
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == str(job.id)
-    job_db.get_jobs_for_user.assert_called_once_with(user.username)
+    job_db.get_jobs_for_user.assert_called_once_with(user.username, user.admin_offices)
+
+
+def test_get_jobs_for_office_requires_admin_access(client, job_db):
+    response = client.get("/jobs", params={"office": "LRH"})
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "detail": "User does not have job list access for office 'LRH'"
+    }
+    job_db.get_jobs_for_office.assert_not_called()
+
+
+def test_get_jobs_for_office_returns_office_jobs(client, job_db):
+    job = make_job_record(office="SWT")
+    job_db.get_jobs_for_office.return_value = [job]
+
+    response = client.get("/jobs", params={"office": "SWT"})
+
+    assert response.status_code == 200
+    assert response.json()[0]["office"] == "SWT"
+    job_db.get_jobs_for_office.assert_called_once_with("SWT")
 
 
 def test_post_job_creates_and_dispatches_message(client, job_db, job_queue):
@@ -38,6 +59,8 @@ def test_post_job_creates_and_dispatches_message(client, job_db, job_queue):
     assert create_call.args[3].office == "swt"
     assert create_call.args[3].repo_path == job.repo_path
     assert create_call.args[3].script_slug == job.script_slug
+    assert create_call.args[3].command_args == job.command_args
+    assert create_call.args[3].timeout_minutes == job.timeout_minutes
     job_queue.send_job_message.assert_called_once_with(message)
 
 

@@ -3,18 +3,22 @@ import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
 import { JobDetails } from "./useJobDetails";
 
-const useJobsList = () => {
+const useJobsList = (office?: string) => {
   const auth = useAuth();
 
   return useQuery({
-    queryKey: ["jobs"],
-    queryFn: () => fetchJobs(auth.token),
+    queryKey: ["jobs", office ?? ""],
+    queryFn: () => fetchJobs(auth.token, office),
     enabled: auth.isAuth,
   });
 };
 
-const fetchJobs = async (token?: string): Promise<JobDetails[]> => {
-  const response = await fetchWithAuth("/api/jobs", {}, token);
+const fetchJobs = async (
+  token?: string,
+  office?: string,
+): Promise<JobDetails[]> => {
+  const query = office ? `?office=${encodeURIComponent(office)}` : "";
+  const response = await fetchWithAuth(`/api/jobs${query}`, {}, token);
   if (!response.ok) {
     throw new Error("Failed to fetch the jobs list");
   }

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import re
 from sqlalchemy import select
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import uuid
@@ -104,10 +105,26 @@ class PostgresJobDatabase:
             return None
         return JobRecord.model_validate(job_model)
 
-    def get_jobs_for_user(self, user_id: str) -> list[JobRecord]:
+    def get_jobs_for_user(
+        self, user_id: str, admin_offices: list[str] | None = None
+    ) -> list[JobRecord]:
+        admin_offices = admin_offices or []
         job_models = self.db.scalars(
             select(JobModel)
-            .where(JobModel.username == user_id)
+            .where(
+                or_(
+                    JobModel.username == user_id,
+                    JobModel.office.in_(admin_offices),
+                )
+            )
+            .order_by(JobModel.created_time.desc())
+        ).all()
+        return [JobRecord.model_validate(model) for model in job_models]
+
+    def get_jobs_for_office(self, office: str) -> list[JobRecord]:
+        job_models = self.db.scalars(
+            select(JobModel)
+            .where(JobModel.office == office)
             .order_by(JobModel.created_time.desc())
         ).all()
         return [JobRecord.model_validate(model) for model in job_models]
