@@ -18,9 +18,7 @@ def make_user(**overrides) -> User:
         username=overrides.pop("username", "test-user"),
         offices=overrides.pop("offices", ["SWT", "LRH"]),
         admin_offices=overrides.pop("admin_offices", ["SWT"]),
-        roles=overrides.pop(
-            "roles", {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
-        ),
+        roles=overrides.pop("roles", {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}),
         **overrides,
     )
 
@@ -40,6 +38,10 @@ def make_job_record(**overrides) -> JobRecord:
         resource_profile=overrides.pop("resource_profile", "small"),
         command_args=overrides.pop("command_args", []),
         timeout_minutes=overrides.pop("timeout_minutes", 30),
+        schedule_enabled=overrides.pop("schedule_enabled", False),
+        schedule_type=overrides.pop("schedule_type", "manual"),
+        schedule_minute=overrides.pop("schedule_minute", None),
+        schedule_cron=overrides.pop("schedule_cron", None),
         env_vars=overrides.pop("env_vars", {}),
         secret_env_names=overrides.pop("secret_env_names", []),
         created_time=overrides.pop("created_time", datetime.now(timezone.utc)),
@@ -65,6 +67,10 @@ def make_script_read(**overrides) -> ScriptRead:
         resource_profile=overrides.pop("resource_profile", "small"),
         command_args=overrides.pop("command_args", []),
         timeout_minutes=overrides.pop("timeout_minutes", 30),
+        schedule_enabled=overrides.pop("schedule_enabled", False),
+        schedule_type=overrides.pop("schedule_type", "manual"),
+        schedule_minute=overrides.pop("schedule_minute", None),
+        schedule_cron=overrides.pop("schedule_cron", None),
         env_vars=overrides.pop("env_vars", {}),
         secret_env_names=overrides.pop("secret_env_names", []),
         active=overrides.pop("active", True),
@@ -86,6 +92,10 @@ def make_script_payload(**overrides) -> dict:
         "resourceProfile": overrides.pop("resourceProfile", "small"),
         "commandArgs": overrides.pop("commandArgs", []),
         "timeoutMinutes": overrides.pop("timeoutMinutes", 30),
+        "scheduleEnabled": overrides.pop("scheduleEnabled", False),
+        "scheduleType": overrides.pop("scheduleType", "manual"),
+        "scheduleMinute": overrides.pop("scheduleMinute", None),
+        "scheduleCron": overrides.pop("scheduleCron", None),
         "envVars": overrides.pop("envVars", {}),
         "secretEnvNames": overrides.pop("secretEnvNames", []),
         "active": overrides.pop("active", True),

@@ -3,6 +3,22 @@ import { ViewField } from "./ViewField";
 import { Button, Text } from "@usace/groundwork";
 import type { Script } from "../scripts-manager/types";
 
+const scheduleLabel = (script: Script) => {
+  if (!script.scheduleEnabled) {
+    return "Manual";
+  }
+
+  if (script.scheduleType === "cron") {
+    return script.scheduleCron ? `Cron: ${script.scheduleCron}` : "Cron";
+  }
+
+  if (script.scheduleType === "hourly") {
+    return `Hourly at minute ${script.scheduleMinute}`;
+  }
+
+  return script.scheduleType;
+};
+
 export const RoleList = ({ roles }: { roles: string[] }) => {
   if (roles) {
     return (
@@ -68,9 +84,7 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
             <RoleList roles={script.commandArgs ?? []} />
           </ViewField>
           <ViewField label="Schedule">
-            {script.scheduleEnabled
-              ? `${script.scheduleType} at minute ${script.scheduleMinute}`
-              : "Manual"}
+            {scheduleLabel(script)}
           </ViewField>
           <ViewField label="Environment Variables">
             <EnvVarList envVars={script.envVars} />

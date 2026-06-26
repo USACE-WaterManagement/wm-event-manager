@@ -82,6 +82,7 @@ class PostgresJobDatabase:
         job.schedule_enabled = script.schedule_enabled
         job.schedule_type = script.schedule_type
         job.schedule_minute = script.schedule_minute
+        job.schedule_cron = script.schedule_cron
         job.env_vars = script.env_vars or {}
         job.secret_env_names = script.secret_env_names or []
         job.job_runner_id = get_runner_id()
@@ -205,6 +206,7 @@ class PostgresJobDatabase:
                 script.schedule_enabled = payload.schedule_enabled
                 script.schedule_type = payload.schedule_type
                 script.schedule_minute = payload.schedule_minute
+                script.schedule_cron = payload.schedule_cron
                 script.env_vars = payload.env_vars
                 script.secret_env_names = payload.secret_env_names
                 script.active = payload.active

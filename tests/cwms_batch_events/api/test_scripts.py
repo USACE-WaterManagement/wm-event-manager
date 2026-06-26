@@ -4,7 +4,11 @@ from uuid import uuid4
 from sqlalchemy.exc import NoResultFound
 
 from cwms_batch_events.core.job_database.postgres.postgres import SlugError
-from tests.factories import make_script_create_payload, make_script_payload, make_script_read
+from tests.factories import (
+    make_script_create_payload,
+    make_script_payload,
+    make_script_read,
+)
 
 
 def test_get_scripts_for_office_requires_admin_access(client):
@@ -45,7 +49,9 @@ def test_post_script_returns_created_script(client, job_db):
         (SlugError("slug in use"), 409, "slug in use"),
     ],
 )
-def test_post_script_maps_errors(client, job_db, side_effect, expected_status, expected_detail):
+def test_post_script_maps_errors(
+    client, job_db, side_effect, expected_status, expected_detail
+):
     job_db.store_script.side_effect = side_effect
 
     response = client.post("/scripts", json=make_script_create_payload())
@@ -82,7 +88,9 @@ def test_put_script_returns_404_when_missing(client, job_db):
         (ValueError("bad payload"), 422, "bad payload"),
     ],
 )
-def test_put_script_maps_other_errors(client, job_db, side_effect, expected_status, expected_detail):
+def test_put_script_maps_other_errors(
+    client, job_db, side_effect, expected_status, expected_detail
+):
     job_db.update_script.side_effect = side_effect
 
     response = client.put(f"/scripts/{uuid4()}", json=make_script_payload())
@@ -151,3 +159,19 @@ def test_get_scheduled_scripts_catalog_returns_role_filtered_schedules(client, j
     job_db.retrieve_scheduled_script_catalog.assert_called_once_with(
         {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
     )
+
+
+def test_get_scheduled_scripts_catalog_returns_cron_schedules(client, job_db):
+    script = make_script_read(
+        schedule_enabled=True,
+        schedule_type="cron",
+        schedule_cron="0 17 * * *",
+    )
+    job_db.retrieve_scheduled_script_catalog.return_value = [script]
+
+    response = client.get("/scripts/scheduled")
+
+    assert response.status_code == 200
+    assert response.json()[0]["scheduleEnabled"] is True
+    assert response.json()[0]["scheduleType"] == "cron"
+    assert response.json()[0]["scheduleCron"] == "0 17 * * *"

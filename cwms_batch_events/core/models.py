@@ -52,6 +52,7 @@ class JobRecord(CamelModel):
     schedule_enabled: bool = False
     schedule_type: str = "manual"
     schedule_minute: int | None = None
+    schedule_cron: str | None = None
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     created_time: datetime
@@ -138,6 +139,7 @@ class ScriptBase(CamelModel):
     schedule_enabled: bool = False
     schedule_type: str = "manual"
     schedule_minute: int | None = None
+    schedule_cron: str | None = None
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     active: bool = True
@@ -164,8 +166,8 @@ class ScriptBase(CamelModel):
 
     @field_validator("schedule_type")
     def validate_schedule_type(cls, value: str) -> str:
-        if value not in {"manual", "hourly"}:
-            raise ValueError("scheduleType must be one of: manual, hourly")
+        if value not in {"manual", "hourly", "cron"}:
+            raise ValueError("scheduleType must be one of: manual, hourly, cron")
         return value
 
     @field_validator("schedule_minute")
@@ -173,6 +175,17 @@ class ScriptBase(CamelModel):
         if value is not None and not 0 <= value <= 59:
             raise ValueError("scheduleMinute must be between 0 and 59")
         return value
+
+    @field_validator("schedule_cron")
+    def validate_schedule_cron(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+
+        fields = value.strip().split()
+        if len(fields) != 5:
+            raise ValueError("scheduleCron must be a five-field cron expression")
+
+        return " ".join(fields)
 
 
 class ScriptCreate(ScriptBase):

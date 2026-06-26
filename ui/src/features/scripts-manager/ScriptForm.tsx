@@ -90,6 +90,7 @@ export const ScriptForm = ({
     scheduleEnabled: script?.scheduleEnabled ?? false,
     scheduleType: script?.scheduleType ?? "manual",
     scheduleMinute: script?.scheduleMinute ?? 15,
+    scheduleCron: script?.scheduleCron ?? "",
     envVars: script?.envVars ?? {},
     secretEnvNames: script?.secretEnvNames ?? [],
     roles: script?.roles ?? ["CWMS Users"],
@@ -144,7 +145,14 @@ export const ScriptForm = ({
     onSave({
       ...form,
       commandArgs,
-      scheduleMinute: form.scheduleEnabled ? form.scheduleMinute : null,
+      scheduleCron:
+        form.scheduleEnabled && form.scheduleType === "cron"
+          ? form.scheduleCron?.trim()
+          : null,
+      scheduleMinute:
+        form.scheduleEnabled && form.scheduleType === "hourly"
+          ? form.scheduleMinute
+          : null,
       scheduleType: form.scheduleEnabled ? form.scheduleType : "manual",
       envVars,
       secretEnvNames,
@@ -337,24 +345,44 @@ export const ScriptForm = ({
                     <option key="hourly" value="hourly">
                       Hourly
                     </option>,
+                    <option key="cron" value="cron">
+                      Cron
+                    </option>,
                   ]}
                 />
               </FormRow>
-              <FormRow>
-                <InputLabel htmlFor="scheduleMinute">Minute</InputLabel>
-                <Input
-                  id="scheduleMinute"
-                  max={59}
-                  min={0}
-                  name="scheduleMinute"
-                  type="number"
-                  value={form.scheduleMinute ?? 15}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    update("scheduleMinute", Number(e.target.value))
-                  }
-                  required
-                />
-              </FormRow>
+              {form.scheduleType === "hourly" && (
+                <FormRow>
+                  <InputLabel htmlFor="scheduleMinute">Minute</InputLabel>
+                  <Input
+                    id="scheduleMinute"
+                    max={59}
+                    min={0}
+                    name="scheduleMinute"
+                    type="number"
+                    value={form.scheduleMinute ?? 15}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      update("scheduleMinute", Number(e.target.value))
+                    }
+                    required
+                  />
+                </FormRow>
+              )}
+              {form.scheduleType === "cron" && (
+                <FormRow>
+                  <InputLabel htmlFor="scheduleCron">Cron</InputLabel>
+                  <Input
+                    id="scheduleCron"
+                    name="scheduleCron"
+                    placeholder="0 17 * * *"
+                    value={form.scheduleCron ?? ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      update("scheduleCron", e.target.value)
+                    }
+                    required
+                  />
+                </FormRow>
+              )}
             </>
           )}
           <FormRow>

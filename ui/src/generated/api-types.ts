@@ -201,6 +201,8 @@ export interface components {
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
             /**
              * Envvars
              * @default {}
@@ -263,6 +265,8 @@ export interface components {
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
             /**
              * Envvars
              * @default {}
@@ -321,6 +325,8 @@ export interface components {
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
             /**
              * Envvars
              * @default {}
@@ -404,6 +410,8 @@ export interface components {
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
             /**
              * Envvars
              * @default {}
