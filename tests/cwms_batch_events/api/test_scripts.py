@@ -131,3 +131,23 @@ def test_get_scripts_catalog_returns_role_filtered_catalog(client, job_db):
     job_db.retrieve_script_catalog.assert_called_once_with(
         {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
     )
+
+
+def test_get_scheduled_scripts_catalog_returns_role_filtered_schedules(client, job_db):
+    script = make_script_read(
+        schedule_enabled=True,
+        schedule_type="hourly",
+        schedule_minute=15,
+    )
+    job_db.retrieve_scheduled_script_catalog.return_value = [script]
+
+    response = client.get("/scripts/scheduled")
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == str(script.id)
+    assert response.json()[0]["scheduleEnabled"] is True
+    assert response.json()[0]["scheduleType"] == "hourly"
+    assert response.json()[0]["scheduleMinute"] == 15
+    job_db.retrieve_scheduled_script_catalog.assert_called_once_with(
+        {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
+    )

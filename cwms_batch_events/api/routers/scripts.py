@@ -97,3 +97,11 @@ def get_user_scripts_catalog(
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[ScriptRead]:
     return job_db.retrieve_script_catalog(user.roles)
+
+
+@router.get("/scheduled")
+def get_user_scheduled_scripts_catalog(
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+) -> list[ScriptRead]:
+    return job_db.retrieve_scheduled_script_catalog(user.roles)

@@ -4,6 +4,7 @@ import {
   Button,
   Checkboxes,
   DeleteConfirm,
+  Dropdown,
   Field,
   Fieldset,
   Input,
@@ -84,6 +85,9 @@ export const ScriptForm = ({
     repoPath: script?.repoPath ?? "",
     runtime: script?.runtime ?? "python",
     resourceProfile: script?.resourceProfile ?? "small",
+    scheduleEnabled: script?.scheduleEnabled ?? false,
+    scheduleType: script?.scheduleType ?? "manual",
+    scheduleMinute: script?.scheduleMinute ?? 15,
     envVars: script?.envVars ?? {},
     secretEnvNames: script?.secretEnvNames ?? [],
     roles: script?.roles ?? ["CWMS Users"],
@@ -130,6 +134,8 @@ export const ScriptForm = ({
     setFormError(null);
     onSave({
       ...form,
+      scheduleMinute: form.scheduleEnabled ? form.scheduleMinute : null,
+      scheduleType: form.scheduleEnabled ? form.scheduleType : "manual",
       envVars,
       secretEnvNames,
     });
@@ -221,28 +227,99 @@ export const ScriptForm = ({
           </ViewField>
           <FormRow>
             <InputLabel htmlFor="runtime">Runtime</InputLabel>
-            <Input
+            <Dropdown
               id="runtime"
               name="runtime"
               value={form.runtime}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 update("runtime", e.target.value)
               }
-              required
+              options={[
+                <option key="python" value="python">
+                  Python
+                </option>,
+                <option key="node" value="node">
+                  Node
+                </option>,
+                <option key="java" value="java">
+                  Java
+                </option>,
+                <option key="shell" value="shell">
+                  Shell
+                </option>,
+              ]}
             />
           </FormRow>
           <FormRow>
             <InputLabel htmlFor="resourceProfile">Resource Profile</InputLabel>
-            <Input
+            <Dropdown
               id="resourceProfile"
               name="resourceProfile"
               value={form.resourceProfile}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 update("resourceProfile", e.target.value)
               }
-              required
+              options={[
+                <option key="small" value="small">
+                  Small - 1 vCPU / 2 GB
+                </option>,
+                <option key="medium" value="medium">
+                  Medium - 2 vCPU / 4 GB
+                </option>,
+                <option key="large" value="large">
+                  Large - 4 vCPU / 8 GB
+                </option>,
+              ]}
             />
           </FormRow>
+          <FormRow>
+            <Label htmlFor="scheduleEnabled">Schedule</Label>
+            <Checkboxes
+              content={[
+                {
+                  id: "scheduleEnabled",
+                  defaultChecked: form.scheduleEnabled,
+                  onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                    update("scheduleEnabled", e.target.checked),
+                },
+              ]}
+            />
+          </FormRow>
+          {form.scheduleEnabled && (
+            <>
+              <FormRow>
+                <InputLabel htmlFor="scheduleType">Schedule Type</InputLabel>
+                <Dropdown
+                  id="scheduleType"
+                  name="scheduleType"
+                  value={form.scheduleType}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    update("scheduleType", e.target.value)
+                  }
+                  options={[
+                    <option key="hourly" value="hourly">
+                      Hourly
+                    </option>,
+                  ]}
+                />
+              </FormRow>
+              <FormRow>
+                <InputLabel htmlFor="scheduleMinute">Minute</InputLabel>
+                <Input
+                  id="scheduleMinute"
+                  max={59}
+                  min={0}
+                  name="scheduleMinute"
+                  type="number"
+                  value={form.scheduleMinute ?? 15}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    update("scheduleMinute", Number(e.target.value))
+                  }
+                  required
+                />
+              </FormRow>
+            </>
+          )}
           <FormRow>
             <Label htmlFor="roles">Roles</Label>
             <RoleMultiSelect

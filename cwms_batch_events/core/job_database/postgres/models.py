@@ -47,6 +47,9 @@ class JobModel(Base):
     execution_type: Mapped[str | None]
     runtime: Mapped[str] = mapped_column(default="python")
     resource_profile: Mapped[str] = mapped_column(default="small")
+    schedule_enabled: Mapped[bool] = mapped_column(default=False)
+    schedule_type: Mapped[str] = mapped_column(default="manual")
+    schedule_minute: Mapped[int | None]
     env_vars: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     secret_env_names: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     created_time: Mapped[datetime.datetime] = mapped_column(
@@ -93,6 +96,9 @@ class ScriptModel(Base):
     execution_type: Mapped[str]
     runtime: Mapped[str] = mapped_column(default="python")
     resource_profile: Mapped[str] = mapped_column(default="small")
+    schedule_enabled: Mapped[bool] = mapped_column(default=False)
+    schedule_type: Mapped[str] = mapped_column(default="manual")
+    schedule_minute: Mapped[int | None]
     env_vars: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     secret_env_names: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     active: Mapped[bool]

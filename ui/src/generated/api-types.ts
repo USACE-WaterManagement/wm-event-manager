@@ -109,6 +109,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/scripts/scheduled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Scheduled Scripts Catalog */
+        get: operations["get_user_scheduled_scripts_catalog_scripts_scheduled_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me/admin-offices": {
         parameters: {
             query?: never;
@@ -166,6 +183,12 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /** Scheduleenabled */
+            scheduleEnabled: boolean;
+            /** Scheduletype */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
             /**
              * Envvars
              * @default {}
@@ -212,6 +235,12 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /** Scheduleenabled */
+            scheduleEnabled: boolean;
+            /** Scheduletype */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
             /**
              * Envvars
              * @default {}
@@ -254,6 +283,12 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /** Scheduleenabled */
+            scheduleEnabled: boolean;
+            /** Scheduletype */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
             /**
              * Envvars
              * @default {}
@@ -321,6 +356,12 @@ export interface components {
             runtime: string;
             /** Resourceprofile */
             resourceProfile: string;
+            /** Scheduleenabled */
+            scheduleEnabled: boolean;
+            /** Scheduletype */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
             /**
              * Envvars
              * @default {}
@@ -609,6 +650,26 @@ export interface operations {
         };
     };
     get_user_scripts_catalog_scripts_catalog_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptRead"][];
+                };
+            };
+        };
+    };
+    get_user_scheduled_scripts_catalog_scripts_scheduled_get: {
         parameters: {
             query?: never;
             header?: never;

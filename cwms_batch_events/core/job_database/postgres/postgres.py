@@ -76,6 +76,9 @@ class PostgresJobDatabase:
         job.execution_type = script.execution_type
         job.runtime = script.runtime
         job.resource_profile = script.resource_profile
+        job.schedule_enabled = script.schedule_enabled
+        job.schedule_type = script.schedule_type
+        job.schedule_minute = script.schedule_minute
         job.env_vars = script.env_vars or {}
         job.secret_env_names = script.secret_env_names or []
         job.job_runner_id = get_runner_id()
@@ -139,12 +142,12 @@ class PostgresJobDatabase:
                 )
             self.db.delete(script)
 
-    def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
+    def _runnable_scripts(self, roles: dict[str, list[str]]) -> list[ScriptModel]:
         """Current method may become inefficient if all_scripts becomes huge. At that
         point, consider storing user roles (temporarily?) in database to perform
         filtering operation entirely within SQL."""
         all_scripts = self.db.scalars(select(ScriptModel)).all()
-        runnable_scripts = [
+        return [
             script
             for script in all_scripts
             if script.office in roles
@@ -152,6 +155,18 @@ class PostgresJobDatabase:
             and not set(script.roles).isdisjoint(roles[script.office])
         ]
 
+    def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
+        runnable_scripts = self._runnable_scripts(roles)
+        return [ScriptRead.model_validate(script) for script in runnable_scripts]
+
+    def retrieve_scheduled_script_catalog(
+        self, roles: dict[str, list[str]]
+    ) -> list[ScriptRead]:
+        runnable_scripts = [
+            script
+            for script in self._runnable_scripts(roles)
+            if script.schedule_enabled and script.schedule_type != "manual"
+        ]
         return [ScriptRead.model_validate(script) for script in runnable_scripts]
 
     def store_script(self, payload: ScriptCreate) -> ScriptRead:
@@ -166,6 +181,9 @@ class PostgresJobDatabase:
                 script.execution_type = payload.execution_type
                 script.runtime = payload.runtime
                 script.resource_profile = payload.resource_profile
+                script.schedule_enabled = payload.schedule_enabled
+                script.schedule_type = payload.schedule_type
+                script.schedule_minute = payload.schedule_minute
                 script.env_vars = payload.env_vars
                 script.secret_env_names = payload.secret_env_names
                 script.active = payload.active

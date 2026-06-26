@@ -47,6 +47,9 @@ class JobRecord(CamelModel):
     execution_type: str | None
     runtime: str = "python"
     resource_profile: str = "small"
+    schedule_enabled: bool = False
+    schedule_type: str = "manual"
+    schedule_minute: int | None = None
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     created_time: datetime
@@ -126,11 +129,38 @@ class ScriptBase(CamelModel):
     execution_type: str
     runtime: str = "python"
     resource_profile: str = "small"
+    schedule_enabled: bool = False
+    schedule_type: str = "manual"
+    schedule_minute: int | None = None
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     active: bool = True
     roles: list[str] = []
     job_runners: list[UUID] = []
+
+    @field_validator("runtime")
+    def validate_runtime(cls, value: str) -> str:
+        if value not in {"python", "node", "java", "shell"}:
+            raise ValueError("runtime must be one of: python, node, java, shell")
+        return value
+
+    @field_validator("resource_profile")
+    def validate_resource_profile(cls, value: str) -> str:
+        if value not in {"small", "medium", "large"}:
+            raise ValueError("resourceProfile must be one of: small, medium, large")
+        return value
+
+    @field_validator("schedule_type")
+    def validate_schedule_type(cls, value: str) -> str:
+        if value not in {"manual", "hourly"}:
+            raise ValueError("scheduleType must be one of: manual, hourly")
+        return value
+
+    @field_validator("schedule_minute")
+    def validate_schedule_minute(cls, value: int | None) -> int | None:
+        if value is not None and not 0 <= value <= 59:
+            raise ValueError("scheduleMinute must be between 0 and 59")
+        return value
 
 
 class ScriptCreate(ScriptBase):
