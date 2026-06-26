@@ -57,6 +57,42 @@ def test_resolve_runtime_env_merges_nonsecret_and_allowed_secret_values():
     )
 
 
+def test_resolve_runtime_env_maps_office_prefixed_keycloak_client_credentials():
+    job_id = uuid4()
+    job_db = mock.Mock()
+    job_db.get_job_by_id.return_value = make_job_record(
+        id=job_id,
+        office="SWT",
+        env_vars={
+            "CDA_API_ROOT": "https://cda",
+            "CDA_TOKEN_URL": "https://keycloak/realms/cwms/protocol/openid-connect/token",
+        },
+        secret_env_names=["CDA_CLIENT_ID", "CDA_CLIENT_SECRET"],
+    )
+    secrets_client = mock.Mock()
+    secrets_client.get_secret_value.return_value = {
+        "SecretString": json.dumps(
+            {
+                "SWT_CDA_CLIENT_ID": "cwms-batch-runner-swt",
+                "SWT_CDA_CLIENT_SECRET": "local-cwms-batch-runner-swt-secret",
+            }
+        )
+    }
+
+    with mock.patch(
+        "cwms_batch_events.core.secret_broker._secrets_client",
+        return_value=secrets_client,
+    ):
+        response = resolve_runtime_env(job_id, job_db)
+
+    assert response.env_vars == {
+        "CDA_API_ROOT": "https://cda",
+        "CDA_TOKEN_URL": "https://keycloak/realms/cwms/protocol/openid-connect/token",
+        "CDA_CLIENT_ID": "cwms-batch-runner-swt",
+        "CDA_CLIENT_SECRET": "local-cwms-batch-runner-swt-secret",
+    }
+
+
 def test_resolve_runtime_env_skips_secrets_when_script_needs_none():
     job_id = uuid4()
     job_db = mock.Mock()
