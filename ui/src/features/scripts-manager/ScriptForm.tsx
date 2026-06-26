@@ -12,6 +12,7 @@ import {
 } from "@usace/groundwork";
 import type { Script, ScriptFormData } from "../scripts-manager/types";
 import { MdErrorOutline } from "react-icons/md";
+import { MdAdd, MdDelete } from "react-icons/md";
 import { useState } from "react";
 import { RoleMultiSelect } from "./RoleMultiSelect";
 import { allRoles } from "./utils";
@@ -28,6 +29,25 @@ const slugify = (str: string) => {
 const FormRow = ({ children }: React.PropsWithChildren) => {
   return <Field className="grid grid-cols-[120px_1fr] gap-6">{children}</Field>;
 };
+
+type EnvVarRow = {
+  id: string;
+  key: string;
+  value: string;
+};
+
+const newEnvVarRow = (): EnvVarRow => ({
+  id: `env-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  key: "",
+  value: "",
+});
+
+const envVarsToRows = (envVars?: Record<string, string>): EnvVarRow[] =>
+  Object.entries(envVars ?? {}).map(([key, value], index) => ({
+    id: `env-${index}-${key}`,
+    key,
+    value: value ?? "",
+  }));
 
 const InputLabel = ({
   htmlFor,
@@ -68,8 +88,8 @@ export const ScriptForm = ({
     secretEnvNames: script?.secretEnvNames ?? [],
     roles: script?.roles ?? ["CWMS Users"],
   });
-  const [envVarsText, setEnvVarsText] = useState(
-    JSON.stringify(script?.envVars ?? {}, null, 2),
+  const [envVarRows, setEnvVarRows] = useState<EnvVarRow[]>(
+    envVarsToRows(script?.envVars),
   );
   const [secretEnvNamesText, setSecretEnvNamesText] = useState(
     (script?.secretEnvNames ?? []).join("\n"),
@@ -77,30 +97,42 @@ export const ScriptForm = ({
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = () => {
-    try {
-      const parsedEnvVars = JSON.parse(envVarsText || "{}");
-      if (
-        parsedEnvVars === null ||
-        Array.isArray(parsedEnvVars) ||
-        typeof parsedEnvVars !== "object"
-      ) {
-        setFormError("Environment variables must be a JSON object");
+    const envVars: Record<string, string> = {};
+    const usedKeys = new Set<string>();
+
+    for (const row of envVarRows) {
+      const key = row.key.trim();
+      const value = row.value;
+
+      if (!key && !value.trim()) {
+        continue;
+      }
+
+      if (!key) {
+        setFormError("Environment variable keys cannot be blank");
         return;
       }
-      const secretEnvNames = secretEnvNamesText
-        .split(/[,\n]/)
-        .map((value) => value.trim())
-        .filter(Boolean);
 
-      setFormError(null);
-      onSave({
-        ...form,
-        envVars: parsedEnvVars,
-        secretEnvNames,
-      });
-    } catch {
-      setFormError("Environment variables must be valid JSON");
+      if (usedKeys.has(key)) {
+        setFormError(`Environment variable key "${key}" is duplicated`);
+        return;
+      }
+
+      usedKeys.add(key);
+      envVars[key] = value;
     }
+
+    const secretEnvNames = secretEnvNamesText
+      .split(/[,\n]/)
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    setFormError(null);
+    onSave({
+      ...form,
+      envVars,
+      secretEnvNames,
+    });
   };
 
   const update = <K extends keyof typeof form>(
@@ -109,6 +141,31 @@ export const ScriptForm = ({
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  const updateEnvVarRow = (
+    rowId: string,
+    field: "key" | "value",
+    value: string,
+  ) => {
+    setEnvVarRows((rows) =>
+      rows.map((row) => (row.id === rowId ? { ...row, [field]: value } : row)),
+    );
+  };
+
+  const deleteEnvVarRow = (rowId: string) => {
+    setEnvVarRows((rows) => rows.filter((row) => row.id !== rowId));
+  };
+
+  const envVarKeyCounts = envVarRows.reduce<Record<string, number>>(
+    (counts, row) => {
+      const key = row.key.trim();
+      if (key) {
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
+      return counts;
+    },
+    {},
+  );
 
   return (
     <form
@@ -196,15 +253,75 @@ export const ScriptForm = ({
           </FormRow>
           <FormRow>
             <InputLabel htmlFor="envVars">Environment Variables</InputLabel>
-            <textarea
-              id="envVars"
-              name="envVars"
-              className="min-h-32 rounded border border-gray-400 p-2 font-mono text-sm"
-              value={envVarsText}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setEnvVarsText(e.target.value)
-              }
-            />
+            <div className="flex flex-col gap-2">
+              <div
+                id="envVars"
+                className="max-h-64 overflow-y-auto rounded border border-gray-400"
+              >
+                <div className="sticky top-0 grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,1.5fr)_2.5rem] gap-2 border-b border-gray-300 bg-gray-100 px-2 py-1 text-sm font-semibold">
+                  <span>Key</span>
+                  <span>Value</span>
+                  <span className="sr-only">Delete</span>
+                </div>
+                {envVarRows.length === 0 ? (
+                  <div className="px-2 py-3 text-sm text-gray-600">
+                    No environment variables.
+                  </div>
+                ) : (
+                  <div className="flex flex-col divide-y divide-gray-200">
+                    {envVarRows.map((row) => {
+                      const isDuplicate =
+                        row.key.trim() !== "" &&
+                        envVarKeyCounts[row.key.trim()] > 1;
+
+                      return (
+                        <div
+                          className="grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,1.5fr)_2.5rem] gap-2 px-2 py-2"
+                          key={row.id}
+                        >
+                          <Input
+                            aria-label="Environment variable key"
+                            className={
+                              isDuplicate ? "border-red-500" : undefined
+                            }
+                            value={row.key}
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) => updateEnvVarRow(row.id, "key", e.target.value)}
+                          />
+                          <Input
+                            aria-label={`Value for ${row.key || "environment variable"}`}
+                            value={row.value}
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) =>
+                              updateEnvVarRow(row.id, "value", e.target.value)
+                            }
+                          />
+                          <Button
+                            aria-label={`Delete ${row.key || "environment variable"}`}
+                            title="Delete environment variable"
+                            type="button"
+                            onClick={() => deleteEnvVarRow(row.id)}
+                          >
+                            <MdDelete />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div>
+                <Button
+                  type="button"
+                  onClick={() => setEnvVarRows((rows) => [...rows, newEnvVarRow()])}
+                >
+                  <MdAdd />
+                  Add variable
+                </Button>
+              </div>
+            </div>
           </FormRow>
           <FormRow>
             <InputLabel htmlFor="secretEnvNames">Secret Names</InputLabel>

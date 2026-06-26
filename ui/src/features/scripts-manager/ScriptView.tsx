@@ -17,6 +17,34 @@ export const RoleList = ({ roles }: { roles: string[] }) => {
   }
 };
 
+const EnvVarList = ({ envVars }: { envVars?: Record<string, string> }) => {
+  const entries = Object.entries(envVars ?? {});
+
+  if (entries.length === 0) {
+    return <Text>No environment variables.</Text>;
+  }
+
+  return (
+    <div className="max-h-64 overflow-y-auto rounded border border-gray-300">
+      <div className="sticky top-0 grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,1.5fr)] gap-2 border-b border-gray-300 bg-gray-100 px-2 py-1 text-sm font-semibold">
+        <span>Key</span>
+        <span>Value</span>
+      </div>
+      <ul className="divide-y divide-gray-200">
+        {entries.map(([key, value]) => (
+          <li
+            className="grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,1.5fr)] gap-2 px-2 py-2"
+            key={key}
+          >
+            <span className="font-mono text-sm">{key}</span>
+            <span className="break-all font-mono text-sm">{value}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 interface ScriptViewProps {
   script?: Script;
   onEdit: () => void;
@@ -36,9 +64,7 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Runtime">{script.runtime}</ViewField>
           <ViewField label="Resource Profile">{script.resourceProfile}</ViewField>
           <ViewField label="Environment Variables">
-            <pre className="whitespace-pre-wrap">
-              {JSON.stringify(script.envVars ?? {}, null, 2)}
-            </pre>
+            <EnvVarList envVars={script.envVars} />
           </ViewField>
           <ViewField label="Secret Names">
             <RoleList roles={script.secretEnvNames ?? []} />
