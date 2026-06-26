@@ -258,7 +258,7 @@ export const ScriptForm = ({
                 id="envVars"
                 className="max-h-64 overflow-y-auto rounded border border-gray-400"
               >
-                <div className="sticky top-0 grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,1.5fr)_2.5rem] gap-2 border-b border-gray-300 bg-gray-100 px-2 py-1 text-sm font-semibold">
+                <div className="sticky top-0 grid grid-cols-[minmax(8rem,1fr)_minmax(10rem,1.5fr)_3.25rem] gap-2 border-b border-gray-300 bg-gray-100 px-2 py-1 pr-4 text-sm font-semibold">
                   <span>Key</span>
                   <span>Value</span>
                   <span className="sr-only">Delete</span>
@@ -276,13 +276,15 @@ export const ScriptForm = ({
 
                       return (
                         <div
-                          className="grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,1.5fr)_2.5rem] gap-2 px-2 py-2"
+                          className="grid grid-cols-[minmax(8rem,1fr)_minmax(10rem,1.5fr)_3.25rem] gap-2 px-2 py-2 pr-4"
                           key={row.id}
                         >
                           <Input
                             aria-label="Environment variable key"
                             className={
-                              isDuplicate ? "border-red-500" : undefined
+                              isDuplicate
+                                ? "min-w-0 border-red-500"
+                                : "min-w-0"
                             }
                             value={row.key}
                             onChange={(
@@ -291,6 +293,7 @@ export const ScriptForm = ({
                           />
                           <Input
                             aria-label={`Value for ${row.key || "environment variable"}`}
+                            className="min-w-0"
                             value={row.value}
                             onChange={(
                               e: React.ChangeEvent<HTMLInputElement>,
@@ -300,11 +303,12 @@ export const ScriptForm = ({
                           />
                           <Button
                             aria-label={`Delete ${row.key || "environment variable"}`}
+                            className="flex h-9 w-11 items-center justify-center rounded bg-red-700 p-0 text-white hover:bg-red-800 focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
                             title="Delete environment variable"
                             type="button"
                             onClick={() => deleteEnvVarRow(row.id)}
                           >
-                            <MdDelete />
+                            <MdDelete className="size-5" />
                           </Button>
                         </div>
                       );
