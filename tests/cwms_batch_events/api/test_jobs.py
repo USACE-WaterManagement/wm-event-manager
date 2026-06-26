@@ -92,6 +92,26 @@ def test_get_job_by_id_returns_job(client, job_db):
     job_db.get_job_by_id.assert_called_once_with(job.id)
 
 
+def test_get_job_by_id_allows_office_admin(client, job_db):
+    job = make_job_record(username="other-user", office="SWT")
+    job_db.get_job_by_id.return_value = job
+
+    response = client.get(f"/jobs/{job.id}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(job.id)
+
+
+def test_get_job_by_id_hides_job_from_unrelated_user(client, job_db):
+    job = make_job_record(username="other-user", office="LRH")
+    job_db.get_job_by_id.return_value = job
+
+    response = client.get(f"/jobs/{job.id}")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Job not found"}
+
+
 def test_get_job_by_id_returns_404_when_missing(client, job_db):
     job_id = str(uuid4())
     job_db.get_job_by_id.return_value = None
@@ -102,7 +122,7 @@ def test_get_job_by_id_returns_404_when_missing(client, job_db):
     assert response.json() == {"detail": f"No job found for jobId '{job_id}'"}
 
 
-def test_get_logs_for_job_returns_logs(client, job_db, job_logger):
+def test_get_logs_for_job_returns_logs_for_owner(client, job_db, job_logger):
     job = make_job_record()
     job_db.get_job_by_id.return_value = job
     job_logger.get_logs_for_job.return_value = "hello"
@@ -113,3 +133,26 @@ def test_get_logs_for_job_returns_logs(client, job_db, job_logger):
     assert response.json() == {"logs": "hello"}
     job_db.get_job_by_id.assert_called_once_with(job.id)
     job_logger.get_logs_for_job.assert_called_once()
+
+
+def test_get_logs_for_job_allows_office_admin(client, job_db, job_logger):
+    job = make_job_record(username="other-user", office="SWT")
+    job_db.get_job_by_id.return_value = job
+    job_logger.get_logs_for_job.return_value = "office logs"
+
+    response = client.get(f"/jobs/{job.id}/logs")
+
+    assert response.status_code == 200
+    assert response.json() == {"logs": "office logs"}
+    job_logger.get_logs_for_job.assert_called_once_with(job.id)
+
+
+def test_get_logs_for_job_hides_logs_from_unrelated_user(client, job_db, job_logger):
+    job = make_job_record(username="other-user", office="LRH")
+    job_db.get_job_by_id.return_value = job
+
+    response = client.get(f"/jobs/{job.id}/logs")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Job not found"}
+    job_logger.get_logs_for_job.assert_not_called()
