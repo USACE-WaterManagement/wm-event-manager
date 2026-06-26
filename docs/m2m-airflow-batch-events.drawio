@@ -16,7 +16,7 @@
         <mxCell id="airflow_client" value="Scheduler identity&lt;br&gt;Keycloak confidential client&lt;br&gt;cwms-batch-airflow-swt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="70" y="230" width="210" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="keycloak" value="Keycloak&lt;br&gt;/token&lt;br&gt;grant_type=client_credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="keycloak" value="Keycloak&lt;br&gt;Token endpoint&lt;br&gt;client_credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="400" y="120" width="210" height="85" as="geometry" />
         </mxCell>
         <mxCell id="batch_api" value="Batch Events API&lt;br&gt;POST /jobs&lt;br&gt;validates JWT, azp allow-list,&lt;br&gt;CDA profile roles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
@@ -58,13 +58,13 @@
         <mxCell id="note" value="Important separation&lt;br&gt;Airflow client is allowed to schedule the job.&lt;br&gt;Runner client is the machine identity used inside CDA.&lt;br&gt;Batch Events stores the authorization decision and brokers only the env/secrets requested by the script." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacing=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="735" width="310" height="160" as="geometry" />
         </mxCell>
-        <mxCell id="e1" value="1. request scheduler token" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="airflow" target="keycloak">
+        <mxCell id="e1" value="1. client_credentials" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="airflow_client" target="keycloak">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" value="2. access token azp=cwms-batch-airflow-swt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="keycloak" target="airflow_client">
+        <mxCell id="e2" value="2. scheduler access token azp=cwms-batch-airflow-swt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="keycloak" target="airflow_client">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" value="3. POST /jobs {scriptId}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="airflow" target="batch_api">
+        <mxCell id="e3" value="3. POST /jobs {scriptId} with bearer token" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="airflow" target="batch_api">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e4" value="4. resolve roles with same token" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="batch_api" target="cda_profile">
@@ -91,7 +91,7 @@
         <mxCell id="e11" value="11. CDA_CLIENT_ID/SECRET + script env" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="runtime_broker" target="runner">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e12" value="12. client_credentials for runner token" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="runner" target="runner_client">
+        <mxCell id="e12" value="12. client_credentials for runner token" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="runner_client" target="keycloak">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e13" value="13. run bin/hourly.sh with CDA_BEARER_TOKEN" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="runner" target="office_scripts">
