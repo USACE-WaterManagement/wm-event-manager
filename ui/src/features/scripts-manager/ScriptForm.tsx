@@ -180,6 +180,16 @@ export const ScriptForm = ({
     setEnvVarRows((rows) => rows.filter((row) => row.id !== rowId));
   };
 
+  const updateScheduleEnabled = (enabled: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      scheduleEnabled: enabled,
+      scheduleType:
+        enabled && prev.scheduleType === "manual" ? "hourly" : prev.scheduleType,
+      scheduleMinute: enabled ? (prev.scheduleMinute ?? 15) : prev.scheduleMinute,
+    }));
+  };
+
   const envVarKeyCounts = envVarRows.reduce<Record<string, number>>(
     (counts, row) => {
       const key = row.key.trim();
@@ -325,7 +335,7 @@ export const ScriptForm = ({
                   id: "scheduleEnabled",
                   defaultChecked: form.scheduleEnabled,
                   onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                    update("scheduleEnabled", e.target.checked),
+                    updateScheduleEnabled(e.target.checked),
                 },
               ]}
             />
