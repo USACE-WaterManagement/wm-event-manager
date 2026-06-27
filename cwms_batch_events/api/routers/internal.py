@@ -18,6 +18,7 @@ from cwms_batch_events.core.processing import (
 )
 from cwms_batch_events.core.runtime_auth import validate_runtime_token
 from cwms_batch_events.core.secret_broker import (
+    InvalidRuntimeEnvError,
     MissingJobError,
     MissingSecretError,
     resolve_runtime_env,
@@ -105,6 +106,9 @@ def get_runtime_env(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     except MissingSecretError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
+
+    except InvalidRuntimeEnvError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
 
     except Exception as e:

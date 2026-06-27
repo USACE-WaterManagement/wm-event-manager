@@ -6,7 +6,11 @@ from cwms_batch_events.core.models import RuntimeEnvResponse
 from cwms_batch_events.core.processing import MissingBatchJobError
 from cwms_batch_events.core.runtime_auth import create_runtime_token
 from cwms_batch_events.core.settings import settings
-from cwms_batch_events.core.secret_broker import MissingJobError, MissingSecretError
+from cwms_batch_events.core.secret_broker import (
+    InvalidRuntimeEnvError,
+    MissingJobError,
+    MissingSecretError,
+)
 
 
 def test_update_batch_job_status_returns_no_content(client, job_db):
@@ -105,6 +109,7 @@ def test_get_runtime_env_returns_brokered_env(client, job_db, monkeypatch):
     [
         (MissingJobError("missing"), 404),
         (MissingSecretError("missing secret"), 422),
+        (InvalidRuntimeEnvError("reserved"), 422),
         (RuntimeError("boom"), 500),
     ],
 )

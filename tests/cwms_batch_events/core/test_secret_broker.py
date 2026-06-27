@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 
 from cwms_batch_events.core.secret_broker import (
+    InvalidRuntimeEnvError,
     MissingJobError,
     MissingSecretError,
     resolve_runtime_env,
@@ -146,6 +147,37 @@ def test_resolve_runtime_env_requires_existing_job():
 
     with pytest.raises(MissingJobError):
         resolve_runtime_env(uuid4(), job_db)
+
+
+def test_resolve_runtime_env_rejects_reserved_public_env_names():
+    job_id = uuid4()
+    job_db = mock.Mock()
+    job_db.get_job_by_id.return_value = make_job_record(
+        id=job_id,
+        env_vars={"BATCH_EVENTS_INTERNAL_TOKEN": "bad"},
+        secret_env_names=[],
+    )
+
+    with pytest.raises(InvalidRuntimeEnvError, match="reserved for Batch Events runtime"):
+        resolve_runtime_env(job_id, job_db)
+
+
+def test_resolve_runtime_env_rejects_reserved_secret_env_names_before_reading_secret():
+    job_id = uuid4()
+    job_db = mock.Mock()
+    job_db.get_job_by_id.return_value = make_job_record(
+        id=job_id,
+        secret_env_names=["BATCH_JOB_CONTEXT_TOKEN"],
+    )
+    secrets_client = mock.Mock()
+
+    with mock.patch(
+        "cwms_batch_events.core.secret_broker._secrets_client",
+        return_value=secrets_client,
+    ), pytest.raises(InvalidRuntimeEnvError, match="reserved for Batch Events runtime"):
+        resolve_runtime_env(job_id, job_db)
+
+    secrets_client.get_secret_value.assert_not_called()
 
 
 def test_resolve_runtime_env_requires_allowed_secret_key_to_exist():

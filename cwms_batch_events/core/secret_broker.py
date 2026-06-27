@@ -11,7 +11,11 @@ import boto3
 from botocore.exceptions import ClientError
 
 from cwms_batch_events.core.job_database.base import JobDatabase
-from cwms_batch_events.core.models import RuntimeEnvResponse
+from cwms_batch_events.core.models import (
+    RuntimeEnvResponse,
+    _reject_aws_batch_reserved_env_names,
+    _reject_batch_events_reserved_env_names,
+)
 from cwms_batch_events.core.settings import settings
 from cwms_batch_events.lambdas.dispatch_job.utils import OFFICES
 
@@ -26,6 +30,18 @@ class MissingJobError(SecretBrokerError):
 
 class MissingSecretError(SecretBrokerError):
     pass
+
+
+class InvalidRuntimeEnvError(SecretBrokerError):
+    pass
+
+
+def _reject_reserved_runtime_env_names(names: list[str]) -> None:
+    try:
+        _reject_aws_batch_reserved_env_names(names)
+        _reject_batch_events_reserved_env_names(names)
+    except ValueError as e:
+        raise InvalidRuntimeEnvError(str(e)) from e
 
 
 def _secret_name_for_office(office: str) -> str:
@@ -137,11 +153,14 @@ def resolve_runtime_env(job_id: UUID, job_db: JobDatabase) -> RuntimeEnvResponse
         raise MissingJobError(f"Job {job_id} does not exist")
 
     env_vars = dict(job.env_vars)
+    _reject_reserved_runtime_env_names(list(env_vars))
+
     job_context_token = _sign_job_context(job)
     if job_context_token:
         env_vars["BATCH_JOB_CONTEXT_TOKEN"] = job_context_token
 
     requested_secret_names = list(dict.fromkeys(job.secret_env_names))
+    _reject_reserved_runtime_env_names(requested_secret_names)
     if not requested_secret_names:
         return RuntimeEnvResponse(env_vars=env_vars)
 
