@@ -443,15 +443,26 @@ export const ScriptForm = ({
                               updateEnvVarRow(row.id, "value", e.target.value)
                             }
                           />
-                          <Button
+                          <button
                             aria-label={`Delete ${row.key || "environment variable"}`}
-                            className="flex h-9 w-11 items-center justify-center rounded bg-red-700 p-0 text-white hover:bg-red-800 focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+                            className="focus:gw-ring-2 focus:gw-ring-red-700 focus:gw-ring-offset-2"
+                            style={{
+                              alignItems: "center",
+                              backgroundColor: "#b91c1c",
+                              borderRadius: "0.25rem",
+                              color: "#ffffff",
+                              display: "flex",
+                              height: "2.25rem",
+                              justifyContent: "center",
+                              padding: 0,
+                              width: "2.75rem",
+                            }}
                             title="Delete environment variable"
                             type="button"
                             onClick={() => deleteEnvVarRow(row.id)}
                           >
-                            <MdDelete className="size-5" />
-                          </Button>
+                            <MdDelete style={{ fontSize: "1.25rem" }} />
+                          </button>
                         </div>
                       );
                     })}
