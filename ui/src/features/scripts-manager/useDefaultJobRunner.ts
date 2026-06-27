@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import fetchWithAuth from "../../utils/fetchWithAuth";
+import type { components } from "../../generated/api-types";
 
-type DefaultJobRunner = {
-  id: string;
-  slug: string;
-};
+type DefaultJobRunner = components["schemas"]["DefaultJobRunner"];
 
 export const useDefaultJobRunner = () => {
   const auth = useAuth();

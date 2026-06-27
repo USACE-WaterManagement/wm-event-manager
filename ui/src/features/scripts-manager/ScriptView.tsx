@@ -93,7 +93,7 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
             <RoleList roles={script.secretEnvNames ?? []} />
           </ViewField>
           <ViewField label="Roles">
-            <RoleList roles={script.roles} />
+            <RoleList roles={script.roles ?? []} />
           </ViewField>
           <ViewField label="Active">
             {script.active ? "true" : "false"}

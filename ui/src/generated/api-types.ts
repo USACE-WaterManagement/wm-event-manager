@@ -4,20 +4,35 @@
  */
 
 export interface paths {
-    "/jobs/": {
+    "/job-runners/default": {
         parameters: {
-            query?: {
-                office?: string | null;
-            };
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Default Job Runner */
+        get: operations["get_default_job_runner_job_runners_default_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs": {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         /** Get Jobs For User */
-        get: operations["get_jobs_for_user_jobs__get"];
+        get: operations["get_jobs_for_user_jobs_get"];
         put?: never;
         /** Post Job */
-        post: operations["post_job_jobs__post"];
+        post: operations["post_job_jobs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -76,7 +91,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scripts/": {
+    "/scripts": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,10 +99,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Scripts For Office Endpoint */
-        get: operations["get_scripts_for_office_endpoint_scripts__get"];
+        get: operations["get_scripts_for_office_endpoint_scripts_get"];
         put?: never;
         /** Post Script */
-        post: operations["post_script_scripts__post"];
+        post: operations["post_script_scripts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -149,6 +164,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** DefaultJobRunner */
+        DefaultJobRunner: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -181,38 +206,43 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string | null;
-            /** Runtime */
-            runtime: string;
-            /** Resourceprofile */
-            resourceProfile: string;
             /**
-             * Commandargs
-             * @default []
+             * Runtime
+             * @default python
              */
-            commandArgs: string[];
+            runtime: string;
+            /**
+             * Resourceprofile
+             * @default small
+             */
+            resourceProfile: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /**
              * Timeoutminutes
              * @default 30
              */
             timeoutMinutes: number;
-            /** Scheduleenabled */
+            /**
+             * Scheduleenabled
+             * @default false
+             */
             scheduleEnabled: boolean;
-            /** Scheduletype */
+            /**
+             * Scheduletype
+             * @default manual
+             */
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
-            /**
-             * Envvars
-             * @default {}
-             */
-            envVars: Record<string, string>;
-            /**
-             * Secretenvnames
-             * @default []
-             */
-            secretEnvNames: string[];
+            /** Envvars */
+            envVars?: {
+                [key: string]: string;
+            };
+            /** Secretenvnames */
+            secretEnvNames?: string[];
             /**
              * Createdtime
              * Format: date-time
@@ -245,53 +275,52 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string;
-            /** Runtime */
-            runtime: string;
-            /** Resourceprofile */
-            resourceProfile: string;
             /**
-             * Commandargs
-             * @default []
+             * Runtime
+             * @default python
              */
-            commandArgs: string[];
+            runtime: string;
+            /**
+             * Resourceprofile
+             * @default small
+             */
+            resourceProfile: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /**
              * Timeoutminutes
              * @default 30
              */
             timeoutMinutes: number;
-            /** Scheduleenabled */
+            /**
+             * Scheduleenabled
+             * @default false
+             */
             scheduleEnabled: boolean;
-            /** Scheduletype */
+            /**
+             * Scheduletype
+             * @default manual
+             */
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
-            /**
-             * Envvars
-             * @default {}
-             */
-            envVars: Record<string, string>;
-            /**
-             * Secretenvnames
-             * @default []
-             */
-            secretEnvNames: string[];
+            /** Envvars */
+            envVars?: {
+                [key: string]: string;
+            };
+            /** Secretenvnames */
+            secretEnvNames?: string[];
             /**
              * Active
              * @default true
              */
             active: boolean;
-            /**
-             * Roles
-             * @default []
-             */
-            roles: string[];
-            /**
-             * Jobrunners
-             * @default []
-             */
-            jobRunners: string[];
+            /** Roles */
+            roles?: string[];
+            /** Jobrunners */
+            jobRunners?: string[];
             /** Office */
             office: string;
         };
@@ -305,53 +334,52 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string;
-            /** Runtime */
-            runtime: string;
-            /** Resourceprofile */
-            resourceProfile: string;
             /**
-             * Commandargs
-             * @default []
+             * Runtime
+             * @default python
              */
-            commandArgs: string[];
+            runtime: string;
+            /**
+             * Resourceprofile
+             * @default small
+             */
+            resourceProfile: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /**
              * Timeoutminutes
              * @default 30
              */
             timeoutMinutes: number;
-            /** Scheduleenabled */
+            /**
+             * Scheduleenabled
+             * @default false
+             */
             scheduleEnabled: boolean;
-            /** Scheduletype */
+            /**
+             * Scheduletype
+             * @default manual
+             */
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
-            /**
-             * Envvars
-             * @default {}
-             */
-            envVars: Record<string, string>;
-            /**
-             * Secretenvnames
-             * @default []
-             */
-            secretEnvNames: string[];
+            /** Envvars */
+            envVars?: {
+                [key: string]: string;
+            };
+            /** Secretenvnames */
+            secretEnvNames?: string[];
             /**
              * Active
              * @default true
              */
             active: boolean;
-            /**
-             * Roles
-             * @default []
-             */
-            roles: string[];
-            /**
-             * Jobrunners
-             * @default []
-             */
-            jobRunners: string[];
+            /** Roles */
+            roles?: string[];
+            /** Jobrunners */
+            jobRunners?: string[];
             /**
              * Id
              * Format: uuid
@@ -390,53 +418,52 @@ export interface components {
             repoPath: string;
             /** Executiontype */
             executionType: string;
-            /** Runtime */
-            runtime: string;
-            /** Resourceprofile */
-            resourceProfile: string;
             /**
-             * Commandargs
-             * @default []
+             * Runtime
+             * @default python
              */
-            commandArgs: string[];
+            runtime: string;
+            /**
+             * Resourceprofile
+             * @default small
+             */
+            resourceProfile: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /**
              * Timeoutminutes
              * @default 30
              */
             timeoutMinutes: number;
-            /** Scheduleenabled */
+            /**
+             * Scheduleenabled
+             * @default false
+             */
             scheduleEnabled: boolean;
-            /** Scheduletype */
+            /**
+             * Scheduletype
+             * @default manual
+             */
             scheduleType: string;
             /** Scheduleminute */
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
-            /**
-             * Envvars
-             * @default {}
-             */
-            envVars: Record<string, string>;
-            /**
-             * Secretenvnames
-             * @default []
-             */
-            secretEnvNames: string[];
+            /** Envvars */
+            envVars?: {
+                [key: string]: string;
+            };
+            /** Secretenvnames */
+            secretEnvNames?: string[];
             /**
              * Active
              * @default true
              */
             active: boolean;
-            /**
-             * Roles
-             * @default []
-             */
-            roles: string[];
-            /**
-             * Jobrunners
-             * @default []
-             */
-            jobRunners: string[];
+            /** Roles */
+            roles?: string[];
+            /** Jobrunners */
+            jobRunners?: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -446,6 +473,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -456,7 +487,27 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_jobs_for_user_jobs__get: {
+    get_default_job_runner_job_runners_default_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefaultJobRunner"];
+                };
+            };
+        };
+    };
+    get_jobs_for_user_jobs_get: {
         parameters: {
             query?: {
                 office?: string | null;
@@ -476,9 +527,18 @@ export interface operations {
                     "application/json": components["schemas"]["JobRecord"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    post_job_jobs__post: {
+    post_job_jobs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -637,7 +697,7 @@ export interface operations {
             };
         };
     };
-    get_scripts_for_office_endpoint_scripts__get: {
+    get_scripts_for_office_endpoint_scripts_get: {
         parameters: {
             query: {
                 office: string;
@@ -668,7 +728,7 @@ export interface operations {
             };
         };
     };
-    post_script_scripts__post: {
+    post_script_scripts_post: {
         parameters: {
             query?: never;
             header?: never;
