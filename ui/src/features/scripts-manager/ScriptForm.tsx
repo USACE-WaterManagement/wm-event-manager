@@ -73,6 +73,7 @@ const envVarsToRows = (envVars?: Record<string, string>): EnvVarRow[] =>
 const isAwsBatchReservedEnvName = (name: string) =>
   name.trim().toUpperCase().startsWith("AWS_BATCH");
 
+// Mirror API/runtime reserved names and surface conflicts before submit.
 const batchEventsReservedEnvNames = new Set([
   "BATCH_JOB_CONTEXT_TOKEN",
   "ENVIRONMENT",

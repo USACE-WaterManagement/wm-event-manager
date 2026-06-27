@@ -8,6 +8,8 @@ from uuid import UUID
 
 AWS_BATCH_RESERVED_PREFIX = "AWS_BATCH"
 BATCH_EVENTS_RESERVED_PREFIXES = ("AWS_BATCH", "BATCH_EVENTS_")
+# These names are owned by AWS Batch or by the Batch Events runner contract;
+# script env cannot override them without changing job identity or auth context.
 BATCH_EVENTS_RESERVED_ENV_NAMES = {
     "BATCH_JOB_CONTEXT_TOKEN",
     "ENVIRONMENT",

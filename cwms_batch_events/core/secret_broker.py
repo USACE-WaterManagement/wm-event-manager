@@ -157,6 +157,8 @@ def resolve_runtime_env(job_id: UUID, job_db: JobDatabase) -> RuntimeEnvResponse
 
     job_context_token = _sign_job_context(job)
     if job_context_token:
+        # Trusted run context is derived from the accepted job record, not from
+        # user-managed registry environment.
         env_vars["BATCH_JOB_CONTEXT_TOKEN"] = job_context_token
 
     requested_secret_names = list(dict.fromkeys(job.secret_env_names))
