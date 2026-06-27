@@ -35,6 +35,12 @@ def test_script_form_env_vars_are_row_based_and_guard_duplicates():
     assert "deleteEnvVarRow" in source
     assert "Environment variable keys cannot be blank" in source
     assert 'Environment variable key "${key}" is duplicated' in source
+    assert "isAwsBatchReservedEnvName" in source
+    assert 'Environment variable key "${key}" cannot start with AWS_BATCH' in source
+    assert (
+        'Secret environment variable "${reservedSecretEnvName}" cannot start with AWS_BATCH'
+        in source
+    )
     assert "border-red-500" in source
 
 

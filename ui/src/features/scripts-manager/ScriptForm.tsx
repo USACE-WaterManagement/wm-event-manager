@@ -50,6 +50,9 @@ const envVarsToRows = (envVars?: Record<string, string>): EnvVarRow[] =>
     value: value ?? "",
   }));
 
+const isAwsBatchReservedEnvName = (name: string) =>
+  name.trim().toUpperCase().startsWith("AWS_BATCH");
+
 const InputLabel = ({
   htmlFor,
   children,
@@ -128,6 +131,13 @@ export const ScriptForm = ({
         return;
       }
 
+      if (isAwsBatchReservedEnvName(key)) {
+        setFormError(
+          `Environment variable key "${key}" cannot start with AWS_BATCH`,
+        );
+        return;
+      }
+
       usedKeys.add(key);
       envVars[key] = value;
     }
@@ -140,6 +150,13 @@ export const ScriptForm = ({
       .split(/\n/)
       .map((value) => value.trim())
       .filter(Boolean);
+    const reservedSecretEnvName = secretEnvNames.find(isAwsBatchReservedEnvName);
+    if (reservedSecretEnvName) {
+      setFormError(
+        `Secret environment variable "${reservedSecretEnvName}" cannot start with AWS_BATCH`,
+      );
+      return;
+    }
 
     setFormError(null);
     onSave({
