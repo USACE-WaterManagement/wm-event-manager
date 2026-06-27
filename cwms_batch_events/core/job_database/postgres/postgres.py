@@ -117,15 +117,15 @@ class PostgresJobDatabase:
         return JobRecord.model_validate(job_model)
 
     def get_jobs_for_user(
-        self, user_id: str, admin_offices: list[str] | None = None
+        self, user_id: str, offices: list[str] | None = None
     ) -> list[JobRecord]:
-        admin_offices = admin_offices or []
+        offices = offices or []
         job_models = self.db.scalars(
             select(JobModel)
             .where(
                 or_(
                     JobModel.username == user_id,
-                    JobModel.office.in_(admin_offices),
+                    JobModel.office.in_(offices),
                 )
             )
             .order_by(JobModel.created_time.desc())

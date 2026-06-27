@@ -33,21 +33,21 @@ def get_jobs_for_user(
 ) -> list[JobRecord]:
     if office:
         office = office.upper()
-        if office not in user.admin_offices:
+        if office not in user.offices:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"User does not have job list access for office '{office}'",
             )
         return job_db.get_jobs_for_office(office)
 
-    job_list = job_db.get_jobs_for_user(user.username, user.admin_offices)
+    job_list = job_db.get_jobs_for_user(user.username, user.offices)
     return job_list
 
 
 def _authorize_job_access(job: JobRecord, user: User):
     if job.username == user.username:
         return
-    if job.office in user.admin_offices:
+    if job.office in user.offices:
         return
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 

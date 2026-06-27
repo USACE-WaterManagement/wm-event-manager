@@ -1,10 +1,28 @@
 import pytest
 from uuid import uuid4
 
+from fastapi.testclient import TestClient
 from sqlalchemy.exc import NoResultFound
 
+from cwms_batch_events.api.dependencies import (
+    get_current_user,
+    get_job_database,
+    get_job_logger,
+    get_job_queue,
+)
+from cwms_batch_events.api.main import app
+from cwms_batch_events.core.auth.service.dependencies import require_internal_auth
 from cwms_batch_events.core.models import JobSource
-from tests.factories import make_job_record
+from tests.factories import make_job_record, make_user
+
+
+def make_client_for_user(user, job_db, job_logger, job_queue):
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_job_database] = lambda: job_db
+    app.dependency_overrides[get_job_logger] = lambda: job_logger
+    app.dependency_overrides[get_job_queue] = lambda: job_queue
+    app.dependency_overrides[require_internal_auth] = lambda: True
+    return TestClient(app)
 
 
 def test_get_jobs_for_user_returns_jobs(client, job_db, user):
@@ -15,15 +33,15 @@ def test_get_jobs_for_user_returns_jobs(client, job_db, user):
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == str(job.id)
-    job_db.get_jobs_for_user.assert_called_once_with(user.username, user.admin_offices)
+    job_db.get_jobs_for_user.assert_called_once_with(user.username, user.offices)
 
 
-def test_get_jobs_for_office_requires_admin_access(client, job_db):
-    response = client.get("/jobs", params={"office": "LRH"})
+def test_get_jobs_for_office_requires_office_membership(client, job_db):
+    response = client.get("/jobs", params={"office": "MVK"})
 
     assert response.status_code == 401
     assert response.json() == {
-        "detail": "User does not have job list access for office 'LRH'"
+        "detail": "User does not have job list access for office 'MVK'"
     }
     job_db.get_jobs_for_office.assert_not_called()
 
@@ -33,6 +51,22 @@ def test_get_jobs_for_office_returns_office_jobs(client, job_db):
     job_db.get_jobs_for_office.return_value = [job]
 
     response = client.get("/jobs", params={"office": "SWT"})
+
+    assert response.status_code == 200
+    assert response.json()[0]["office"] == "SWT"
+    job_db.get_jobs_for_office.assert_called_once_with("SWT")
+
+
+def test_get_jobs_for_office_allows_non_admin_office_member(job_db, job_logger, job_queue):
+    user = make_user(offices=["SWT"], admin_offices=[])
+    job = make_job_record(office="SWT")
+    job_db.get_jobs_for_office.return_value = [job]
+
+    try:
+        with make_client_for_user(user, job_db, job_logger, job_queue) as test_client:
+            response = test_client.get("/jobs", params={"office": "SWT"})
+    finally:
+        app.dependency_overrides.clear()
 
     assert response.status_code == 200
     assert response.json()[0]["office"] == "SWT"
@@ -99,8 +133,8 @@ def test_get_job_by_id_returns_job(client, job_db):
     job_db.get_job_by_id.assert_called_once_with(job.id)
 
 
-def test_get_job_by_id_allows_office_admin(client, job_db):
-    job = make_job_record(username="other-user", office="SWT")
+def test_get_job_by_id_allows_office_member(client, job_db):
+    job = make_job_record(username="other-user", office="LRH")
     job_db.get_job_by_id.return_value = job
 
     response = client.get(f"/jobs/{job.id}")
@@ -110,7 +144,7 @@ def test_get_job_by_id_allows_office_admin(client, job_db):
 
 
 def test_get_job_by_id_hides_job_from_unrelated_user(client, job_db):
-    job = make_job_record(username="other-user", office="LRH")
+    job = make_job_record(username="other-user", office="MVK")
     job_db.get_job_by_id.return_value = job
 
     response = client.get(f"/jobs/{job.id}")
@@ -139,11 +173,11 @@ def test_get_logs_for_job_returns_logs_for_owner(client, job_db, job_logger):
     assert response.status_code == 200
     assert response.json() == {"logs": "hello"}
     job_db.get_job_by_id.assert_called_once_with(job.id)
-    job_logger.get_logs_for_job.assert_called_once()
+    job_logger.get_logs_for_job.assert_called_once_with(job.id)
 
 
-def test_get_logs_for_job_allows_office_admin(client, job_db, job_logger):
-    job = make_job_record(username="other-user", office="SWT")
+def test_get_logs_for_job_allows_office_member(client, job_db, job_logger):
+    job = make_job_record(username="other-user", office="LRH")
     job_db.get_job_by_id.return_value = job
     job_logger.get_logs_for_job.return_value = "office logs"
 
@@ -155,7 +189,7 @@ def test_get_logs_for_job_allows_office_admin(client, job_db, job_logger):
 
 
 def test_get_logs_for_job_hides_logs_from_unrelated_user(client, job_db, job_logger):
-    job = make_job_record(username="other-user", office="LRH")
+    job = make_job_record(username="other-user", office="MVK")
     job_db.get_job_by_id.return_value = job
 
     response = client.get(f"/jobs/{job.id}/logs")

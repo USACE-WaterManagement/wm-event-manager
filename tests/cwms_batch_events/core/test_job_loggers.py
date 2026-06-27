@@ -198,6 +198,35 @@ def test_cloudwatch_job_logger_uses_configured_runtime_log_prefix(monkeypatch):
     )
 
 
+def test_cloudwatch_job_logger_uses_shared_runtime_group_not_office_group():
+    job_id = uuid4()
+    db = mock.Mock()
+    db.get_job_by_id.return_value = SimpleNamespace(
+        external_job_id="ext-123",
+        office="LRH",
+        runtime="python",
+    )
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {
+        "jobs": [{"attempts": [{"container": {"logStreamName": "stream"}}]}]
+    }
+    logs_client = mock.Mock()
+    logs_client.get_log_events.return_value = {"events": []}
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, logs_client],
+    ):
+        logger = CloudWatchJobLogger(db)
+        logger.get_logs_for_job(job_id)
+
+    logs_client.get_log_events.assert_called_once_with(
+        logGroupName="ecs/cwms-batch/python-runner",
+        logStreamName="stream",
+        startFromHead=True,
+    )
+
+
 def test_cloudwatch_job_logger_push_logs_not_supported():
     with mock.patch(
         "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
