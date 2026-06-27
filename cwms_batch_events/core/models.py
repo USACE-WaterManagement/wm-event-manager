@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
 
@@ -143,8 +143,8 @@ class ScriptBase(CamelModel):
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     active: bool = True
-    roles: list[str] = []
-    job_runners: list[UUID] = []
+    roles: list[str] = Field(default_factory=list)
+    job_runners: list[UUID] = Field(default_factory=list)
 
     @field_validator("runtime")
     def validate_runtime(cls, value: str) -> str:
@@ -187,6 +187,28 @@ class ScriptBase(CamelModel):
 
         return " ".join(fields)
 
+    @model_validator(mode="after")
+    def validate_enabled_schedule(self):
+        if not self.schedule_enabled:
+            return self
+
+        if self.schedule_type == "manual":
+            raise ValueError(
+                "scheduleType must be hourly or cron when scheduleEnabled is true"
+            )
+
+        if self.schedule_type == "hourly" and self.schedule_minute is None:
+            raise ValueError(
+                "scheduleMinute is required when scheduleEnabled is true and scheduleType is hourly"
+            )
+
+        if self.schedule_type == "cron" and not self.schedule_cron:
+            raise ValueError(
+                "scheduleCron is required when scheduleEnabled is true and scheduleType is cron"
+            )
+
+        return self
+
 
 class ScriptCreate(ScriptBase):
     office: str
@@ -200,7 +222,7 @@ class ScriptRead(ScriptBase):
     office: str
     created_time: datetime
     updated_time: datetime
-    job_runners: list[UUID] = []
+    job_runners: list[UUID] = Field(default_factory=list)
 
     @field_validator("job_runners", mode="before")
     def extract_job_runner_ids(cls, v):

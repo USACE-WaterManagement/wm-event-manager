@@ -43,6 +43,44 @@ def test_post_script_returns_created_script(client, job_db):
 
 
 @pytest.mark.parametrize(
+    ("payload", "expected_detail"),
+    [
+        (
+            make_script_create_payload(
+                scheduleEnabled=True,
+                scheduleType="hourly",
+                scheduleMinute=None,
+            ),
+            "scheduleMinute is required when scheduleEnabled is true and scheduleType is hourly",
+        ),
+        (
+            make_script_create_payload(
+                scheduleEnabled=True,
+                scheduleType="cron",
+                scheduleCron=None,
+            ),
+            "scheduleCron is required when scheduleEnabled is true and scheduleType is cron",
+        ),
+        (
+            make_script_create_payload(
+                scheduleEnabled=True,
+                scheduleType="manual",
+            ),
+            "scheduleType must be hourly or cron when scheduleEnabled is true",
+        ),
+    ],
+)
+def test_post_script_rejects_incomplete_enabled_schedules(
+    client, job_db, payload, expected_detail
+):
+    response = client.post("/scripts", json=payload)
+
+    assert response.status_code == 422
+    assert expected_detail in response.text
+    job_db.store_script.assert_not_called()
+
+
+@pytest.mark.parametrize(
     ("side_effect", "expected_status", "expected_detail"),
     [
         (ValueError("bad payload"), 422, "bad payload"),
@@ -69,6 +107,24 @@ def test_put_script_returns_updated_script(client, job_db):
     assert response.status_code == 200
     assert response.json()["id"] == str(script.id)
     job_db.update_script.assert_called_once()
+
+
+def test_put_script_rejects_incomplete_enabled_schedule(client, job_db):
+    response = client.put(
+        f"/scripts/{uuid4()}",
+        json=make_script_payload(
+            scheduleEnabled=True,
+            scheduleType="hourly",
+            scheduleMinute=None,
+        ),
+    )
+
+    assert response.status_code == 422
+    assert (
+        "scheduleMinute is required when scheduleEnabled is true and scheduleType is hourly"
+        in response.text
+    )
+    job_db.update_script.assert_not_called()
 
 
 def test_put_script_returns_404_when_missing(client, job_db):
