@@ -16,7 +16,7 @@ import { MdErrorOutline } from "react-icons/md";
 import { MdAdd, MdDelete } from "react-icons/md";
 import { useState } from "react";
 import { RoleMultiSelect } from "./RoleMultiSelect";
-import { allRoles } from "./utils";
+import { allRoles, resourceProfileLabels } from "./utils";
 
 const slugify = (str: string) => {
   return str
@@ -342,13 +342,13 @@ export const ScriptForm = ({
               }
               options={[
                 <option key="small" value="small">
-                  Small - 1 vCPU / 2 GB
+                  {resourceProfileLabels.small}
                 </option>,
                 <option key="medium" value="medium">
-                  Medium - 2 vCPU / 4 GB
+                  {resourceProfileLabels.medium}
                 </option>,
                 <option key="large" value="large">
-                  Large - 4 vCPU / 8 GB
+                  {resourceProfileLabels.large}
                 </option>,
               ]}
             />

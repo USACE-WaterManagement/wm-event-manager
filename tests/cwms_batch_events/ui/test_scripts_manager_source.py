@@ -3,6 +3,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_FORM = ROOT / "ui" / "src" / "features" / "scripts-manager" / "ScriptForm.tsx"
+SCRIPTS_LIST = ROOT / "ui" / "src" / "features" / "scripts-manager" / "ScriptsList.tsx"
+SCRIPT_VIEW = ROOT / "ui" / "src" / "features" / "scripts-manager" / "ScriptView.tsx"
+UTILS = ROOT / "ui" / "src" / "features" / "scripts-manager" / "utils.ts"
 
 
 def test_script_form_exposes_registry_runtime_schedule_and_size_controls():
@@ -15,9 +18,9 @@ def test_script_form_exposes_registry_runtime_schedule_and_size_controls():
     assert "Shell" in source
 
     assert 'id="resourceProfile"' in source
-    assert "Small - 1 vCPU / 2 GB" in source
-    assert "Medium - 2 vCPU / 4 GB" in source
-    assert "Large - 4 vCPU / 8 GB" in source
+    assert "resourceProfileLabels.small" in source
+    assert "resourceProfileLabels.medium" in source
+    assert "resourceProfileLabels.large" in source
 
     assert 'id="scheduleMinute"' in source
     assert 'max={59}' in source
@@ -69,3 +72,15 @@ def test_script_form_does_not_render_legacy_execution_type_control():
 
     assert "Execution Type" not in source
     assert 'id="executionType"' not in source
+
+
+def test_scripts_manager_shows_resource_profile_sizes_on_all_surfaces():
+    utils_source = UTILS.read_text(encoding="utf-8")
+    list_source = SCRIPTS_LIST.read_text(encoding="utf-8")
+    view_source = SCRIPT_VIEW.read_text(encoding="utf-8")
+
+    assert "Small - 1 vCPU / 2 GB" in utils_source
+    assert "Medium - 2 vCPU / 4 GB" in utils_source
+    assert "Large - 4 vCPU / 8 GB" in utils_source
+    assert "resourceProfileLabel(script.resourceProfile)" in list_source
+    assert "resourceProfileLabel(script.resourceProfile)" in view_source

@@ -8,6 +8,7 @@ import {
 } from "@usace/groundwork";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import type { Script } from "../scripts-manager/types";
+import { resourceProfileLabel } from "./utils";
 
 interface ActiveIconProps {
   isActive: boolean;
@@ -81,7 +82,7 @@ export const ScriptsList = ({
                 </button>
               </TableCell>
               <TableCell>{script.runtime}</TableCell>
-              <TableCell>{script.resourceProfile}</TableCell>
+              <TableCell>{resourceProfileLabel(script.resourceProfile)}</TableCell>
               <TableCell>{scheduleLabel(script)}</TableCell>
               <TableCell>{script.repoPath}</TableCell>
               <TableCell>

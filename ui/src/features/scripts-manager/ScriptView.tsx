@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { ViewField } from "./ViewField";
 import { Button, Text } from "@usace/groundwork";
 import type { Script } from "../scripts-manager/types";
+import { resourceProfileLabel } from "./utils";
 
 const scheduleLabel = (script: Script) => {
   if (!script.scheduleEnabled) {
@@ -77,7 +78,9 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Description">{script.description}</ViewField>
           <ViewField label="GitHub Repo Path">{script.repoPath}</ViewField>
           <ViewField label="Runtime">{script.runtime}</ViewField>
-          <ViewField label="Resource Profile">{script.resourceProfile}</ViewField>
+          <ViewField label="Resource Profile">
+            {resourceProfileLabel(script.resourceProfile)}
+          </ViewField>
           <ViewField label="Timeout">{script.timeoutMinutes} minutes</ViewField>
           <ViewField label="Command Args">
             <RoleList roles={script.commandArgs ?? []} />

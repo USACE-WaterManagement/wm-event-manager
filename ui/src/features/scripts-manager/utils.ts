@@ -16,3 +16,12 @@ export const allRoles = [
   "VT Mgr",
   "Viewer Users",
 ];
+
+export const resourceProfileLabels: Record<string, string> = {
+  small: "Small - 1 vCPU / 2 GB",
+  medium: "Medium - 2 vCPU / 4 GB",
+  large: "Large - 4 vCPU / 8 GB",
+};
+
+export const resourceProfileLabel = (profile: string) =>
+  resourceProfileLabels[profile] ?? profile;
