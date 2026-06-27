@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { ViewField } from "./ViewField";
 import { Button, Text } from "@usace/groundwork";
 import type { Script } from "../scripts-manager/types";
-import { resourceProfileLabel } from "./utils";
+import { resourceProfileLabel, scheduleTimezoneLabel } from "./utils";
 
 const scheduleLabel = (script: Script) => {
   if (!script.scheduleEnabled) {
@@ -10,15 +10,20 @@ const scheduleLabel = (script: Script) => {
   }
 
   if (script.scheduleType === "cron") {
-    return script.scheduleCron ? `Cron: ${script.scheduleCron}` : "Cron";
+    return script.scheduleCron
+      ? `Cron: ${script.scheduleCron} (${scheduleTimezoneLabel(script.scheduleTimezone)})`
+      : `Cron (${scheduleTimezoneLabel(script.scheduleTimezone)})`;
   }
 
   if (script.scheduleType === "hourly") {
-    return `Hourly at minute ${script.scheduleMinute}`;
+    return `Hourly at minute ${script.scheduleMinute} (${scheduleTimezoneLabel(script.scheduleTimezone)})`;
   }
 
   return script.scheduleType;
 };
+
+const sourceLabel = (script: Script) =>
+  script.executionType === "command" ? "Command" : "GitHub File Path";
 
 export const RoleList = ({ roles }: { roles: string[] }) => {
   if (roles) {
@@ -76,7 +81,8 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Name">{script.name}</ViewField>
           <ViewField label="Slug">{script.slug}</ViewField>
           <ViewField label="Description">{script.description}</ViewField>
-          <ViewField label="GitHub Repo Path">{script.repoPath}</ViewField>
+          <ViewField label="Source">{sourceLabel(script)}</ViewField>
+          <ViewField label={sourceLabel(script)}>{script.repoPath}</ViewField>
           <ViewField label="Runtime">{script.runtime}</ViewField>
           <ViewField label="Resource Profile">
             {resourceProfileLabel(script.resourceProfile)}
@@ -113,6 +119,10 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
       </div>
     );
   } else {
-    return <Text>No script has been selected.</Text>;
+    return (
+      <div className="flex min-h-28 items-center justify-center rounded bg-white text-gray-600">
+        <Text>No script has been selected.</Text>
+      </div>
+    );
   }
 };

@@ -35,6 +35,7 @@ def make_script_model(**overrides):
         schedule_type=overrides.pop("schedule_type", "manual"),
         schedule_minute=overrides.pop("schedule_minute", None),
         schedule_cron=overrides.pop("schedule_cron", None),
+        schedule_timezone=overrides.pop("schedule_timezone", "UTC"),
         env_vars=overrides.pop("env_vars", {}),
         secret_env_names=overrides.pop("secret_env_names", []),
         active=overrides.pop("active", True),
@@ -67,6 +68,7 @@ def test_create_job_copies_registry_fields_to_job_record(monkeypatch):
         schedule_type="hourly",
         schedule_minute=17,
         schedule_cron=None,
+        schedule_timezone="America/Chicago",
         env_vars={"CDA_API_ROOT": "https://cda"},
         secret_env_names=["CDA_CLIENT_ID", "CDA_CLIENT_SECRET"],
         job_runners=[],
@@ -106,6 +108,7 @@ def test_create_job_copies_registry_fields_to_job_record(monkeypatch):
     assert job.schedule_enabled is True
     assert job.schedule_type == "hourly"
     assert job.schedule_minute == 17
+    assert job.schedule_timezone == "America/Chicago"
     assert job.env_vars == {"CDA_API_ROOT": "https://cda"}
     assert job.secret_env_names == ["CDA_CLIENT_ID", "CDA_CLIENT_SECRET"]
     assert job.job_runner_id == runner_id
@@ -203,6 +206,7 @@ def test_retrieve_scheduled_script_catalog_filters_to_active_authorized_schedule
     assert scripts[0].schedule_enabled is True
     assert scripts[0].schedule_type == "hourly"
     assert scripts[0].schedule_minute == 15
+    assert scripts[0].schedule_timezone == "UTC"
 
 
 def test_retrieve_scheduled_script_catalog_includes_authorized_cron_schedules():

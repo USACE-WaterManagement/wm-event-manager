@@ -31,6 +31,13 @@ DEFAULT_RUNTIME_COMMANDS = {
     "shell": ["bash"],
 }
 
+DEFAULT_COMMAND_RUNTIME_COMMANDS = {
+    "python": ["bash", "-lc"],
+    "node": ["bash", "-lc"],
+    "java": ["bash", "-lc"],
+    "shell": ["bash", "-lc"],
+}
+
 
 def configured_map(defaults, overrides):
     return {**defaults, **overrides}
@@ -44,6 +51,25 @@ def configured_value(kind, values, key):
         raise ValueError(
             f"Unsupported {kind} '{key}'. Supported values: {supported}"
         ) from exc
+
+
+def command_for_payload(message: JobMessage, runtime_commands: dict[str, list[str]]) -> list[str]:
+    payload = message.payload
+    runtime = payload.runtime.lower()
+    execution_type = (payload.execution_type or "github_file").lower()
+
+    if execution_type == "command":
+        command = " ".join([payload.repo_path, *payload.command_args]).strip()
+        return [
+            *configured_value("runtime command", DEFAULT_COMMAND_RUNTIME_COMMANDS, runtime),
+            command,
+        ]
+
+    return [
+        *configured_value("runtime command", runtime_commands, runtime),
+        f"/jobs/{payload.repo_path}",
+        *payload.command_args,
+    ]
 
 
 class BatchJobRunner:
@@ -74,11 +100,7 @@ class BatchJobRunner:
         resources = configured_value(
             "resource profile", resource_profiles, resource_profile
         )
-        command = [
-            *configured_value("runtime command", runtime_commands, runtime),
-            f"/jobs/{repo_path}",
-            *command_args,
-        ]
+        command = command_for_payload(message, runtime_commands)
 
         job_name = (
             f"cwms-{office}-{runtime}-{script_slug}-{datetime.now().strftime('%Y%m%d-%H%M')}"
@@ -91,6 +113,7 @@ class BatchJobRunner:
             {"name": "SCRIPT_PATH", "value": repo_path},
             {"name": "SCRIPT_SLUG", "value": script_slug},
             {"name": "RUNTIME", "value": runtime},
+            {"name": "EXECUTION_TYPE", "value": message.payload.execution_type or "github_file"},
         ]
         if API_BASE_URL:
             environment.append(

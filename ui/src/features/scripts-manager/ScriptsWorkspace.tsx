@@ -69,7 +69,6 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     if (selectedScriptId) {
       const payload: ScriptUpdate = {
         ...data,
-        executionType: "python",
         jobRunners,
       };
       await updateScriptMutation.mutateAsync({
@@ -80,7 +79,6 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
       const payload: ScriptCreate = {
         ...data,
         office: office,
-        executionType: "python",
         jobRunners,
       };
       const script = await createScriptMutation.mutateAsync({
@@ -103,18 +101,25 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     deleteScriptMutation.error ||
     updateScriptMutation.error;
 
+  const selectorHeightClass =
+    selectedScript || panelMode === "edit"
+      ? "min-h-40 max-h-[20vh]"
+      : "min-h-64 max-h-[45vh]";
+
   return (
-    <div className="w-full grid grid-cols-2 gap-6 mt-4">
-      <div>
-        <header className="flex justify-between">
+    <div className="mt-4 flex w-full flex-col gap-5">
+      <div className="min-w-0">
+        <header className="mb-2 flex items-center justify-between gap-3">
           <H2>{office.toUpperCase()} Scripts</H2>
           <Button onClick={onNew}>New +</Button>
         </header>
-        <ScriptsList
-          scripts={scripts.data}
-          selectScript={onSelect}
-          selectedScriptId={selectedScriptId}
-        />
+        <div className={`${selectorHeightClass} overflow-y-auto`}>
+          <ScriptsList
+            scripts={scripts.data}
+            selectScript={onSelect}
+            selectedScriptId={selectedScriptId}
+          />
+        </div>
       </div>
       <ScriptDetailPanel
         script={selectedScript}

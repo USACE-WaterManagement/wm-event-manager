@@ -25,3 +25,23 @@ export const resourceProfileLabels: Record<string, string> = {
 
 export const resourceProfileLabel = (profile: string) =>
   resourceProfileLabels[profile] ?? profile;
+
+export const defaultScheduleTimezone = "UTC";
+
+const intlWithTimezones = Intl as typeof Intl & {
+  supportedValuesOf?: (key: "timeZone") => string[];
+};
+
+export const availableScheduleTimezones = Array.from(
+  new Set([
+    defaultScheduleTimezone,
+    ...(intlWithTimezones.supportedValuesOf?.("timeZone") ?? []),
+  ]),
+).sort((a, b) => a.localeCompare(b));
+
+export const isValidScheduleTimezone = (value?: string | null) =>
+  typeof value === "string" &&
+  availableScheduleTimezones.includes(value.trim());
+
+export const scheduleTimezoneLabel = (value?: string | null) =>
+  isValidScheduleTimezone(value) ? value!.trim() : defaultScheduleTimezone;

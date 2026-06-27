@@ -4,6 +4,7 @@ from uuid import uuid4
 from sqlalchemy.exc import NoResultFound
 
 from cwms_batch_events.core.job_database.postgres.postgres import SlugError
+from cwms_batch_events.core.settings import settings
 from tests.factories import (
     make_script_create_payload,
     make_script_payload,
@@ -29,6 +30,65 @@ def test_get_scripts_for_office_returns_scripts(client, job_db):
     assert response.status_code == 200
     assert response.json()[0]["id"] == str(script.id)
     job_db.get_scripts_for_office.assert_called_once_with("SWT")
+
+
+def test_get_repository_browser_entries_returns_runtime_matches(
+    client, tmp_path, monkeypatch
+):
+    scripts_dir = tmp_path / "python"
+    scripts_dir.mkdir()
+    (scripts_dir / "full_picture.PY").write_text("print('ok')", encoding="utf-8")
+    (scripts_dir / "notes.txt").write_text("notes", encoding="utf-8")
+    (tmp_path / "bin").mkdir()
+    monkeypatch.setattr(settings, "script_repository_root", str(tmp_path))
+
+    response = client.get(
+        "/scripts/repository",
+        params={"directory": "python", "runtime": "python"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["configured"] is True
+    assert body["scriptTypes"] == [".py"]
+    assert [entry["path"] for entry in body["entries"]] == [
+        "python/full_picture.PY"
+    ]
+
+
+def test_get_repository_browser_entries_can_include_all_files_for_browsing(
+    client, tmp_path, monkeypatch
+):
+    scripts_dir = tmp_path / "python"
+    scripts_dir.mkdir()
+    (scripts_dir / "full_picture.py").write_text("print('ok')", encoding="utf-8")
+    (scripts_dir / "README").write_text("docs", encoding="utf-8")
+    monkeypatch.setattr(settings, "script_repository_root", str(tmp_path))
+
+    response = client.get(
+        "/scripts/repository",
+        params={"directory": "python", "runtime": "python", "includeAll": "true"},
+    )
+
+    assert response.status_code == 200
+    assert [entry["path"] for entry in response.json()["entries"]] == [
+        "python/full_picture.py",
+        "python/README",
+    ]
+
+
+def test_get_repository_browser_entries_rejects_path_traversal(
+    client, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, "script_repository_root", str(tmp_path))
+
+    response = client.get(
+        "/scripts/repository",
+        params={"directory": "../outside", "runtime": "python"},
+    )
+
+    assert response.status_code == 422
+    assert "configured repository root" in response.text
 
 
 def test_post_script_returns_created_script(client, job_db):
@@ -106,6 +166,10 @@ def test_post_script_rejects_incomplete_enabled_schedules(
         (
             make_script_create_payload(scheduleCron="0 17 * *"),
             "scheduleCron must be a five-field cron expression",
+        ),
+        (
+            make_script_create_payload(scheduleTimezone="Mars/Base"),
+            "scheduleTimezone is not a valid timezone: Mars/Base",
         ),
         (
             make_script_create_payload(envVars={"AWS_BATCH_FOO": "bad"}),
@@ -271,6 +335,7 @@ def test_get_scheduled_scripts_catalog_returns_role_filtered_schedules(client, j
     assert response.json()[0]["scheduleEnabled"] is True
     assert response.json()[0]["scheduleType"] == "hourly"
     assert response.json()[0]["scheduleMinute"] == 15
+    assert response.json()[0]["scheduleTimezone"] == "UTC"
     job_db.retrieve_scheduled_script_catalog.assert_called_once_with(
         {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
     )
@@ -281,6 +346,7 @@ def test_get_scheduled_scripts_catalog_returns_cron_schedules(client, job_db):
         schedule_enabled=True,
         schedule_type="cron",
         schedule_cron="0 17 * * *",
+        schedule_timezone="America/Chicago",
     )
     job_db.retrieve_scheduled_script_catalog.return_value = [script]
 
@@ -290,3 +356,4 @@ def test_get_scheduled_scripts_catalog_returns_cron_schedules(client, job_db):
     assert response.json()[0]["scheduleEnabled"] is True
     assert response.json()[0]["scheduleType"] == "cron"
     assert response.json()[0]["scheduleCron"] == "0 17 * * *"
+    assert response.json()[0]["scheduleTimezone"] == "America/Chicago"

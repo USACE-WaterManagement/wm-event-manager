@@ -54,6 +54,7 @@ def test_batch_job_runner_submits_expected_batch_job():
                                 {"name": "SCRIPT_PATH", "value": "run.py"},
                                 {"name": "SCRIPT_SLUG", "value": "script"},
                                 {"name": "RUNTIME", "value": "python"},
+                                {"name": "EXECUTION_TYPE", "value": "github_file"},
                                 {
                                     "name": "BATCH_EVENTS_API_ROOT",
                                     "value": "http://events/api",
@@ -192,6 +193,38 @@ def test_batch_job_runner_passes_command_args_and_timeout():
         "KEYS",
     ]
     assert submit_kwargs["timeout"] == {"attemptDurationSeconds": 2700}
+
+
+def test_batch_job_runner_supports_command_execution_type():
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="swt",
+            repo_path="cwms-cli users list | grep Test",
+            script_slug="users-list",
+            execution_type="command",
+            runtime="shell",
+            command_args=["&&", "ls", "-l"],
+        )
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    submit_kwargs = batch_client.submit_job.call_args.kwargs
+    assert container_override(submit_kwargs)["command"] == [
+        "bash",
+        "-lc",
+        "cwms-cli users list | grep Test && ls -l",
+    ]
+    assert {"name": "EXECUTION_TYPE", "value": "command"} in container_override(
+        submit_kwargs
+    )["environment"]
 
 
 def test_batch_job_runner_supports_shell_runtime():

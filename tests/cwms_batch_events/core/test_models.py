@@ -98,3 +98,46 @@ def test_script_run_options_reject_invalid_dispatch_values(
 def test_script_create_rejects_invalid_runtime_submit_values(payload):
     with pytest.raises(ValidationError):
         ScriptCreate.model_validate(payload)
+
+
+def test_script_create_normalizes_legacy_execution_type():
+    script = ScriptCreate.model_validate(
+        make_script_create_payload(executionType="python")
+    )
+
+    assert script.execution_type == "github_file"
+
+
+def test_script_create_accepts_valid_schedule_timezone():
+    script = ScriptCreate.model_validate(
+        make_script_create_payload(scheduleTimezone="America/Chicago")
+    )
+
+    assert script.schedule_timezone == "America/Chicago"
+
+
+@pytest.mark.parametrize(
+    ("schedule_timezone", "expected_message"),
+    [
+        ("Mars/Base", "scheduleTimezone is not a valid timezone: Mars/Base"),
+        ("   ", "scheduleTimezone is required"),
+    ],
+)
+def test_script_create_rejects_invalid_schedule_timezone(
+    schedule_timezone,
+    expected_message,
+):
+    with pytest.raises(ValidationError, match=expected_message):
+        ScriptCreate.model_validate(
+            make_script_create_payload(scheduleTimezone=schedule_timezone)
+        )
+
+
+def test_script_run_options_rejects_invalid_execution_type():
+    with pytest.raises(ValidationError, match="executionType must be one of"):
+        ScriptRunOptions(
+            office="SWT",
+            repo_path="run.py",
+            script_slug="run",
+            executionType="inline",
+        )

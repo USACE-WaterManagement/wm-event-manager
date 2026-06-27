@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
@@ -19,6 +20,7 @@ BATCH_EVENTS_RESERVED_ENV_NAMES = {
     "SCRIPT_PATH",
     "SCRIPT_SLUG",
     "SKIP_GIT_CLONE",
+    "EXECUTION_TYPE",
 }
 
 
@@ -73,6 +75,27 @@ def _validate_timeout_minutes(value: int) -> int:
     return value
 
 
+def _validate_execution_type(value: str | None) -> str:
+    if value in {None, "", "python", "node", "java", "shell"}:
+        return "github_file"
+    if value not in {"github_file", "command"}:
+        raise ValueError("executionType must be one of: github_file, command")
+    return value
+
+
+def _validate_schedule_timezone(value: str | None) -> str:
+    timezone_name = (value or "UTC").strip()
+    if not timezone_name:
+        raise ValueError("scheduleTimezone is required")
+    try:
+        ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError(
+            f"scheduleTimezone is not a valid timezone: {timezone_name}"
+        ) from exc
+    return timezone_name
+
+
 class CamelModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel, validate_by_name=True, validate_by_alias=True
@@ -121,6 +144,7 @@ class JobRecord(CamelModel):
     schedule_type: str = "manual"
     schedule_minute: int | None = None
     schedule_cron: str | None = None
+    schedule_timezone: str = "UTC"
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     created_time: datetime
@@ -146,6 +170,21 @@ class DefaultJobRunner(CamelModel):
     slug: str
 
 
+class RepositoryBrowserEntry(CamelModel):
+    name: str
+    path: str
+    entry_type: str
+    selectable: bool
+    runtime_match: bool
+
+
+class RepositoryBrowserResponse(CamelModel):
+    directory: str
+    configured: bool
+    script_types: list[str]
+    entries: list[RepositoryBrowserEntry]
+
+
 class ScriptRunRequest(CamelModel):
     script_id: UUID
 
@@ -154,6 +193,7 @@ class ScriptRunOptions(CamelModel):
     office: str
     repo_path: str
     script_slug: str | None
+    execution_type: str = "github_file"
     runtime: str = "python"
     resource_profile: str = "small"
     command_args: list[str] = Field(default_factory=list)
@@ -174,6 +214,10 @@ class ScriptRunOptions(CamelModel):
     @field_validator("runtime")
     def validate_runtime(cls, value: str) -> str:
         return _validate_runtime(value)
+
+    @field_validator("execution_type")
+    def validate_execution_type(cls, value: str) -> str:
+        return _validate_execution_type(value)
 
     @field_validator("resource_profile")
     def validate_resource_profile(cls, value: str) -> str:
@@ -228,6 +272,7 @@ class ScriptBase(CamelModel):
     schedule_type: str = "manual"
     schedule_minute: int | None = None
     schedule_cron: str | None = None
+    schedule_timezone: str = "UTC"
     env_vars: dict[str, str] = Field(default_factory=dict)
     secret_env_names: list[str] = Field(default_factory=list)
     active: bool = True
@@ -254,6 +299,10 @@ class ScriptBase(CamelModel):
     @field_validator("runtime")
     def validate_runtime(cls, value: str) -> str:
         return _validate_runtime(value)
+
+    @field_validator("execution_type")
+    def validate_execution_type(cls, value: str) -> str:
+        return _validate_execution_type(value)
 
     @field_validator("resource_profile")
     def validate_resource_profile(cls, value: str) -> str:
@@ -285,6 +334,10 @@ class ScriptBase(CamelModel):
             raise ValueError("scheduleCron must be a five-field cron expression")
 
         return " ".join(fields)
+
+    @field_validator("schedule_timezone")
+    def validate_schedule_timezone(cls, value: str | None) -> str:
+        return _validate_schedule_timezone(value)
 
     @model_validator(mode="after")
     def validate_enabled_schedule(self):

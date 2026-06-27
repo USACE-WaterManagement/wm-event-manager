@@ -18,6 +18,27 @@ def test_enabled_schedule_shape_is_enforced_in_database_migration():
     assert "btrim(schedule_cron) <> ''" in migration
 
 
+def test_execution_source_modes_are_allowed_in_database_migration():
+    migration = read_migration("V1_01_11__Script_Execution_Source.sql")
+
+    assert "scripts_execution_type_check" in migration
+    assert "jobs_execution_type_check" in migration
+    assert "'github_file'" in migration
+    assert "'command'" in migration
+    assert "'python'" in migration
+
+
+def test_schedule_timezone_is_created_by_database_migration():
+    migration = read_migration("V1_01_12__Script_Schedule_Timezone.sql")
+
+    assert "ALTER TABLE scripts" in migration
+    assert "ALTER TABLE jobs" in migration
+    assert "schedule_timezone varchar DEFAULT 'UTC' NOT NULL" in migration
+    assert "scripts_schedule_timezone_check" in migration
+    assert "jobs_schedule_timezone_check" in migration
+    assert "btrim(schedule_timezone) <> ''" in migration
+
+
 def test_script_registry_fields_are_created_by_database_migrations():
     runtime_profiles = read_migration("V1_01_04__Runtime_Profiles.sql")
     runtime_env = read_migration("V1_01_05__Script_Runtime_Environment.sql")

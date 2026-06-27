@@ -53,6 +53,7 @@ class JobModel(Base):
     schedule_type: Mapped[str] = mapped_column(default="manual")
     schedule_minute: Mapped[int | None]
     schedule_cron: Mapped[str | None]
+    schedule_timezone: Mapped[str] = mapped_column(default="UTC")
     env_vars: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     secret_env_names: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     created_time: Mapped[datetime.datetime] = mapped_column(
@@ -105,6 +106,7 @@ class ScriptModel(Base):
     schedule_type: Mapped[str] = mapped_column(default="manual")
     schedule_minute: Mapped[int | None]
     schedule_cron: Mapped[str | None]
+    schedule_timezone: Mapped[str] = mapped_column(default="UTC")
     env_vars: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     secret_env_names: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     active: Mapped[bool]

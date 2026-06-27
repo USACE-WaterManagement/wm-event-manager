@@ -55,6 +55,39 @@ def test_local_executor_marks_failed_job_on_nonzero_status():
     assert db.update_job_status.call_args_list[-1].args[1] == JobStatus.FAILED
 
 
+def test_local_executor_stops_container_when_timeout_expires():
+    db = mock.Mock()
+    logger = mock.Mock()
+    message = make_job_message(
+        runner_type="docker-local",
+        payload=make_job_message().payload.model_copy(update={"timeout_minutes": 1}),
+    )
+    container = mock.Mock()
+    container.status = "running"
+    container.logs.return_value = b"started sleeping"
+    client = mock.Mock()
+    client.containers.run.return_value = container
+
+    with (
+        mock.patch("docker.client.from_env", return_value=client),
+        mock.patch(
+            "cwms_batch_events.local.executor.time.monotonic",
+            side_effect=[0, 61],
+        ),
+    ):
+        executor = LocalExecutor(db, logger)
+        executor.run_job(message)
+
+    container.reload.assert_called_once_with()
+    container.wait.assert_not_called()
+    container.stop.assert_called_once_with()
+    logger.push_logs_for_job.assert_called_once_with(
+        message.job_id,
+        "started sleeping\nLocal executor timeout after 60 seconds\n",
+    )
+    assert db.update_job_status.call_args_list[-1].args[1] == JobStatus.FAILED
+
+
 @pytest.mark.parametrize(
     ("runtime", "repo_path", "expected_command"),
     [
@@ -88,6 +121,39 @@ def test_local_executor_uses_shared_runner_runtime_commands(
         executor.run_job(message)
 
     assert client.containers.run.call_args.kwargs["command"] == expected_command
+
+
+def test_local_executor_uses_shell_for_command_execution_type():
+    db = mock.Mock()
+    logger = mock.Mock()
+    message = make_job_message(
+        runner_type="docker-local",
+        payload=make_job_message().payload.model_copy(
+            update={
+                "execution_type": "command",
+                "repo_path": "cwms-cli users list | grep Test",
+                "command_args": ["&&", "ls", "-l"],
+            }
+        ),
+    )
+    container = mock.Mock()
+    container.wait.return_value = {"StatusCode": 0}
+    container.logs.return_value = b"hello"
+    client = mock.Mock()
+    client.containers.run.return_value = container
+
+    with mock.patch("docker.client.from_env", return_value=client):
+        executor = LocalExecutor(db, logger)
+        executor.run_job(message)
+
+    assert client.containers.run.call_args.kwargs["command"] == [
+        "bash",
+        "-lc",
+        "cwms-cli users list | grep Test && ls -l",
+    ]
+    assert "EXECUTION_TYPE=command" in client.containers.run.call_args.kwargs[
+        "environment"
+    ]
 
 
 def test_local_executor_passes_runtime_broker_token_when_configured(monkeypatch):

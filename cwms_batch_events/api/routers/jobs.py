@@ -74,6 +74,7 @@ def post_job(
         office=job.office.lower(),
         repo_path=job.repo_path,
         script_slug=job.script_slug,
+        execution_type=job.execution_type or "github_file",
         runtime=job.runtime,
         resource_profile=job.resource_profile,
         command_args=job.command_args,

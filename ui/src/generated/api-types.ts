@@ -254,6 +254,11 @@ export interface components {
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Envvars */
             envVars?: {
                 [key: string]: string;
@@ -323,6 +328,11 @@ export interface components {
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Envvars */
             envVars?: {
                 [key: string]: string;
@@ -382,6 +392,11 @@ export interface components {
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Envvars */
             envVars?: {
                 [key: string]: string;
@@ -466,6 +481,11 @@ export interface components {
             scheduleMinute?: number | null;
             /** Schedulecron */
             scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Envvars */
             envVars?: {
                 [key: string]: string;
