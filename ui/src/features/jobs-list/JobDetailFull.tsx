@@ -13,13 +13,12 @@ const JobDetailFull = ({ jobId }: JobDetailFullProps) => {
   if (isError) return <span>Error!</span>;
   if (!data) return null;
 
-  const isFinished =
-    data.jobStatus === "Completed" || data.jobStatus === "Failed";
+  const logsAvailable = data.jobStatus !== "Pending";
 
   return (
     <>
       <JobDetail job={data} />
-      <JobLogs jobId={jobId} disabled={!isFinished} />
+      <JobLogs jobId={jobId} disabled={!logsAvailable} />
     </>
   );
 };

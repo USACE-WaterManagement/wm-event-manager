@@ -10,7 +10,7 @@ const JobLogs = ({ jobId, disabled = false }: JobLogsProps) => {
   const { data, isLoading, isError } = useJobLogs(jobId, !disabled);
 
   let message = "";
-  if (disabled) message = "Logs unavailable until job is finished";
+  if (disabled) message = "Logs unavailable until job has been submitted";
   else if (isLoading) message = "Loading logs...";
   else if (isError) message = "Error loading logs!";
   else if (!data) message = "No logs found!";
