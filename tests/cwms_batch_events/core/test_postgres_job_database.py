@@ -9,6 +9,43 @@ from cwms_batch_events.core.models import JobStatus, ScriptRunRequest
 from tests.factories import make_user
 
 
+class FakeScalars:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def all(self):
+        return self.rows
+
+
+def make_script_model(**overrides):
+    now = datetime.now(timezone.utc)
+    return SimpleNamespace(
+        id=overrides.pop("id", uuid4()),
+        slug=overrides.pop("slug", "test-script"),
+        office=overrides.pop("office", "SWT"),
+        name=overrides.pop("name", "Test Script"),
+        description=overrides.pop("description", "desc"),
+        repo_path=overrides.pop("repo_path", "run.py"),
+        execution_type=overrides.pop("execution_type", "python"),
+        runtime=overrides.pop("runtime", "python"),
+        resource_profile=overrides.pop("resource_profile", "small"),
+        command_args=overrides.pop("command_args", []),
+        timeout_minutes=overrides.pop("timeout_minutes", 30),
+        schedule_enabled=overrides.pop("schedule_enabled", False),
+        schedule_type=overrides.pop("schedule_type", "manual"),
+        schedule_minute=overrides.pop("schedule_minute", None),
+        schedule_cron=overrides.pop("schedule_cron", None),
+        env_vars=overrides.pop("env_vars", {}),
+        secret_env_names=overrides.pop("secret_env_names", []),
+        active=overrides.pop("active", True),
+        roles=overrides.pop("roles", ["CWMS Users"]),
+        job_runners=overrides.pop("job_runners", []),
+        created_time=overrides.pop("created_time", now),
+        updated_time=overrides.pop("updated_time", now),
+        **overrides,
+    )
+
+
 def test_create_job_copies_registry_fields_to_job_record(monkeypatch):
     script_id = uuid4()
     runner_id = uuid4()
@@ -114,3 +151,75 @@ def test_create_job_rejects_script_not_configured_for_current_runner(monkeypatch
         match="Requested script is not configured for the current job runner",
     ):
         job_db.create_job(ScriptRunRequest(script_id=script_id), make_user())
+
+
+def test_retrieve_scheduled_script_catalog_filters_to_active_authorized_schedules():
+    due_script = make_script_model(
+        id=uuid4(),
+        slug="swt-hourly",
+        office="SWT",
+        schedule_enabled=True,
+        schedule_type="hourly",
+        schedule_minute=15,
+    )
+    db_session = SimpleNamespace(
+        scalars=lambda _statement: FakeScalars(
+            [
+                due_script,
+                make_script_model(
+                    slug="inactive",
+                    active=False,
+                    schedule_enabled=True,
+                    schedule_type="hourly",
+                    schedule_minute=15,
+                ),
+                make_script_model(
+                    slug="manual",
+                    schedule_enabled=True,
+                    schedule_type="manual",
+                ),
+                make_script_model(
+                    slug="wrong-role",
+                    schedule_enabled=True,
+                    schedule_type="hourly",
+                    schedule_minute=15,
+                    roles=["Data Acquisition Mgr"],
+                ),
+                make_script_model(
+                    slug="wrong-office",
+                    office="LRL",
+                    schedule_enabled=True,
+                    schedule_type="hourly",
+                    schedule_minute=15,
+                ),
+            ]
+        )
+    )
+    job_db = PostgresJobDatabase(db_session)
+
+    scripts = job_db.retrieve_scheduled_script_catalog({"SWT": ["CWMS Users"]})
+
+    assert [script.slug for script in scripts] == ["swt-hourly"]
+    assert scripts[0].schedule_enabled is True
+    assert scripts[0].schedule_type == "hourly"
+    assert scripts[0].schedule_minute == 15
+
+
+def test_retrieve_scheduled_script_catalog_includes_authorized_cron_schedules():
+    cron_script = make_script_model(
+        slug="swt-cron",
+        office="SWT",
+        schedule_enabled=True,
+        schedule_type="cron",
+        schedule_cron="5 17 * * *",
+    )
+    db_session = SimpleNamespace(
+        scalars=lambda _statement: FakeScalars([cron_script])
+    )
+    job_db = PostgresJobDatabase(db_session)
+
+    scripts = job_db.retrieve_scheduled_script_catalog({"SWT": ["CWMS Users"]})
+
+    assert [script.slug for script in scripts] == ["swt-cron"]
+    assert scripts[0].schedule_type == "cron"
+    assert scripts[0].schedule_cron == "5 17 * * *"
