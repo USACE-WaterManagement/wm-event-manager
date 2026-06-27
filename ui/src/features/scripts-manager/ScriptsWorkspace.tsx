@@ -9,8 +9,6 @@ import { useCreateScript } from "./useCreateScript";
 import { useDeleteScript } from "./useDeleteScript";
 import { useDefaultJobRunner } from "./useDefaultJobRunner";
 
-const BATCH_RUNNER_UUID = "58600a09-f18e-42c5-9d3c-df52ebe409f9";
-
 interface ScriptsWorkspaceProps {
   office: string;
 }
@@ -29,8 +27,11 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
   const [panelMode, setPanelMode] = useState<"view" | "edit">("view");
 
   if (scripts.isLoading) return <span>Loading scripts...</span>;
+  if (defaultJobRunner.isLoading) return <span>Loading job runner...</span>;
   if (scripts.isError)
     return <span>Error occurred while loading scripts.</span>;
+  if (defaultJobRunner.isError || !defaultJobRunner.data)
+    return <span>Error occurred while loading the default job runner.</span>;
   if (!scripts.data) return <span>No scripts found!</span>;
 
   const selectedScript = scripts.data.find(
@@ -63,7 +64,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     const jobRunners =
       selectedScript?.jobRunners && selectedScript.jobRunners.length > 0
         ? selectedScript.jobRunners
-        : [defaultJobRunner.data?.id ?? BATCH_RUNNER_UUID];
+        : [defaultJobRunner.data.id];
 
     if (selectedScriptId) {
       const payload: ScriptUpdate = {
