@@ -76,7 +76,6 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Slug">{script.slug}</ViewField>
           <ViewField label="Description">{script.description}</ViewField>
           <ViewField label="GitHub Repo Path">{script.repoPath}</ViewField>
-          <ViewField label="Execution Type">{script.executionType}</ViewField>
           <ViewField label="Runtime">{script.runtime}</ViewField>
           <ViewField label="Resource Profile">{script.resourceProfile}</ViewField>
           <ViewField label="Timeout">{script.timeoutMinutes} minutes</ViewField>

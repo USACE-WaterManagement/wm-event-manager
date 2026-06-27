@@ -21,6 +21,22 @@ const ActiveIcon = ({ isActive }: ActiveIconProps) => {
   }
 };
 
+const scheduleLabel = (script: Script) => {
+  if (!script.scheduleEnabled) {
+    return "Manual";
+  }
+
+  if (script.scheduleType === "cron") {
+    return script.scheduleCron ?? "Cron";
+  }
+
+  if (script.scheduleType === "hourly") {
+    return `:${String(script.scheduleMinute ?? 0).padStart(2, "0")} hourly`;
+  }
+
+  return script.scheduleType;
+};
+
 interface ScriptsListProps {
   scripts: Script[];
   selectScript: (scriptId: string) => void;
@@ -37,7 +53,9 @@ export const ScriptsList = ({
       <TableHead>
         <TableRow>
           <TableHeader>Name</TableHeader>
-          <TableHeader>Type</TableHeader>
+          <TableHeader>Runtime</TableHeader>
+          <TableHeader>Size</TableHeader>
+          <TableHeader>Schedule</TableHeader>
           <TableHeader>Path</TableHeader>
           <TableHeader>Active</TableHeader>
         </TableRow>
@@ -62,7 +80,9 @@ export const ScriptsList = ({
                   <span className="font-bold">{script.name}</span>
                 </button>
               </TableCell>
-              <TableCell>{script.executionType}</TableCell>
+              <TableCell>{script.runtime}</TableCell>
+              <TableCell>{script.resourceProfile}</TableCell>
+              <TableCell>{scheduleLabel(script)}</TableCell>
               <TableCell>{script.repoPath}</TableCell>
               <TableCell>
                 <ActiveIcon isActive={script.active} />

@@ -250,9 +250,6 @@ export const ScriptForm = ({
               required
             />
           </FormRow>
-          <ViewField label="Execution Type">
-            {script?.executionType ?? "python"}
-          </ViewField>
           <FormRow>
             <InputLabel htmlFor="runtime">Runtime</InputLabel>
             <Dropdown
