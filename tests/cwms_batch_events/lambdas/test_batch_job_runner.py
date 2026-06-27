@@ -5,8 +5,14 @@ import pytest
 
 from cwms_batch_events.lambdas.dispatch_job.job_runner.batch import BatchJobRunner
 from cwms_batch_events.core.models import ScriptRunOptions
+from cwms_batch_events.core.runtime_auth import validate_runtime_token
 from cwms_batch_events.core.settings import settings
 from tests.factories import make_job_message
+
+
+@pytest.fixture(autouse=True)
+def reset_app_key(monkeypatch):
+    monkeypatch.setattr(settings, "app_key", "")
 
 
 def container_override(submit_kwargs):
@@ -126,6 +132,32 @@ def test_batch_job_runner_passes_broker_url_and_public_env_vars():
         "value": "http://internal-alb/api",
     } in environment
     assert {"name": "CDA_API_ROOT", "value": "https://cda"} in environment
+
+
+def test_batch_job_runner_passes_runtime_broker_token_when_app_key_is_configured(
+    monkeypatch,
+):
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message()
+    monkeypatch.setattr(settings, "app_key", "runtime-secret")
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    environment = container_override(batch_client.submit_job.call_args.kwargs)[
+        "environment"
+    ]
+    token = next(
+        item["value"]
+        for item in environment
+        if item["name"] == "BATCH_EVENTS_RUNTIME_TOKEN"
+    )
+    assert validate_runtime_token(token, message.job_id) == (True, None)
 
 
 def test_batch_job_runner_passes_command_args_and_timeout():
