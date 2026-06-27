@@ -84,6 +84,36 @@ def test_cloudwatch_job_logger_rejects_multiple_batch_jobs():
         logger.get_batch_log_name("ext-123")
 
 
+def test_cloudwatch_job_logger_reports_missing_batch_attempts():
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {"jobs": [{"attempts": []}]}
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, mock.Mock()],
+    ):
+        logger = CloudWatchJobLogger(mock.Mock())
+
+    with pytest.raises(ValueError, match="No Batch job attempts found"):
+        logger.get_batch_log_name("ext-123")
+
+
+def test_cloudwatch_job_logger_reports_missing_log_stream():
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {
+        "jobs": [{"attempts": [{"container": {}}]}]
+    }
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, mock.Mock()],
+    ):
+        logger = CloudWatchJobLogger(mock.Mock())
+
+    with pytest.raises(ValueError, match="No log stream found"):
+        logger.get_batch_log_name("ext-123")
+
+
 def test_cloudwatch_job_logger_requires_external_job_id():
     job_id = uuid4()
     db = mock.Mock()
