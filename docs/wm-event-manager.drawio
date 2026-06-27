@@ -37,7 +37,7 @@
         <mxCell id="k1J5Uft5zTIaOylSxwT3-12" parent="1" style="text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;" value="&lt;span&gt;Give API access to CloudWatch logs so that it can pull Batch job logs to serve to the front end&lt;/span&gt;" vertex="1">
           <mxGeometry height="55" width="450" x="1457" y="529.5" as="geometry" />
         </mxCell>
-        <mxCell id="k1J5Uft5zTIaOylSxwT3-13" parent="1" style="text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;" value="Script catalogs are currently stored as JSON in S3 but are being migrated to the internal database for better/faster management.&amp;nbsp; No infrastructure changes will be required." vertex="1">
+        <mxCell id="k1J5Uft5zTIaOylSxwT3-13" parent="1" style="text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;" value="Script registry entries are stored in the Batch Events database. The registry owns office, runtime, script path, schedule, timeout, sizing, env vars, and allowed secret names while AWS Batch job definitions stay shared by runtime." vertex="1">
           <mxGeometry height="68" width="450" x="1458" y="462" as="geometry" />
         </mxCell>
         <mxCell id="k1J5Uft5zTIaOylSxwT3-14" parent="1" style="text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;" value="SQS ensures that once a job is requested from the API it will be stored until successfully submitted. Lambda delivers job messages to downstream runners (Batch) and offers automated queue management with easier maintenance vs. polling from ECS." vertex="1">
