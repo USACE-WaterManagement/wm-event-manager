@@ -303,20 +303,10 @@ def test_batch_job_runner_uses_configured_runtime_and_resource_overrides(monkeyp
 
 
 def test_batch_job_runner_reports_unsupported_runtime():
-    batch_client = mock.Mock()
-    message = make_job_message(
-        payload=ScriptRunOptions(
+    with pytest.raises(ValueError, match="runtime must be one of"):
+        ScriptRunOptions(
             office="swt",
             repo_path="ruby/report.rb",
             script_slug="report",
             runtime="ruby",
         )
-    )
-
-    with mock.patch(
-        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
-        return_value=batch_client,
-    ):
-        runner = BatchJobRunner()
-        with pytest.raises(ValueError, match="Unsupported runtime 'ruby'"):
-            runner.run_job(message)

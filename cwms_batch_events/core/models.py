@@ -55,6 +55,24 @@ def _reject_blank_command_args(values: list[str]) -> None:
         raise ValueError("commandArgs cannot contain empty strings")
 
 
+def _validate_runtime(value: str) -> str:
+    if value not in {"python", "node", "java", "shell"}:
+        raise ValueError("runtime must be one of: python, node, java, shell")
+    return value
+
+
+def _validate_resource_profile(value: str) -> str:
+    if value not in {"small", "medium", "large"}:
+        raise ValueError("resourceProfile must be one of: small, medium, large")
+    return value
+
+
+def _validate_timeout_minutes(value: int) -> int:
+    if not 1 <= value <= 1440:
+        raise ValueError("timeoutMinutes must be between 1 and 1440")
+    return value
+
+
 class CamelModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel, validate_by_name=True, validate_by_alias=True
@@ -153,6 +171,18 @@ class ScriptRunOptions(CamelModel):
         _reject_blank_command_args(value)
         return value
 
+    @field_validator("runtime")
+    def validate_runtime(cls, value: str) -> str:
+        return _validate_runtime(value)
+
+    @field_validator("resource_profile")
+    def validate_resource_profile(cls, value: str) -> str:
+        return _validate_resource_profile(value)
+
+    @field_validator("timeout_minutes")
+    def validate_timeout_minutes(cls, value: int) -> int:
+        return _validate_timeout_minutes(value)
+
 
 class JobSource(str, Enum):
     API = "api"
@@ -223,21 +253,15 @@ class ScriptBase(CamelModel):
 
     @field_validator("runtime")
     def validate_runtime(cls, value: str) -> str:
-        if value not in {"python", "node", "java", "shell"}:
-            raise ValueError("runtime must be one of: python, node, java, shell")
-        return value
+        return _validate_runtime(value)
 
     @field_validator("resource_profile")
     def validate_resource_profile(cls, value: str) -> str:
-        if value not in {"small", "medium", "large"}:
-            raise ValueError("resourceProfile must be one of: small, medium, large")
-        return value
+        return _validate_resource_profile(value)
 
     @field_validator("timeout_minutes")
     def validate_timeout_minutes(cls, value: int) -> int:
-        if not 1 <= value <= 1440:
-            raise ValueError("timeoutMinutes must be between 1 and 1440")
-        return value
+        return _validate_timeout_minutes(value)
 
     @field_validator("schedule_type")
     def validate_schedule_type(cls, value: str) -> str:

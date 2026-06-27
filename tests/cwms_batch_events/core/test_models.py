@@ -52,6 +52,40 @@ def test_script_run_options_reject_blank_command_args():
 
 
 @pytest.mark.parametrize(
+    ("payload", "expected_message"),
+    [
+        (
+            {"runtime": "ruby"},
+            "runtime must be one of: python, node, java, shell",
+        ),
+        (
+            {"resource_profile": "huge"},
+            "resourceProfile must be one of: small, medium, large",
+        ),
+        (
+            {"timeout_minutes": 0},
+            "timeoutMinutes must be between 1 and 1440",
+        ),
+        (
+            {"timeout_minutes": 1441},
+            "timeoutMinutes must be between 1 and 1440",
+        ),
+    ],
+)
+def test_script_run_options_reject_invalid_dispatch_values(
+    payload,
+    expected_message,
+):
+    with pytest.raises(ValidationError, match=expected_message):
+        ScriptRunOptions(
+            office="SWT",
+            repo_path="run.py",
+            script_slug="run",
+            **payload,
+        )
+
+
+@pytest.mark.parametrize(
     "payload",
     [
         make_script_create_payload(envVars={"AWS_BATCH_FOO": "bad"}),
