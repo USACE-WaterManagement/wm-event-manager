@@ -7,6 +7,7 @@ import { Button, H2 } from "@usace/groundwork";
 import { useUpdateScript } from "./useUpdateScript";
 import { useCreateScript } from "./useCreateScript";
 import { useDeleteScript } from "./useDeleteScript";
+import { useDefaultJobRunner } from "./useDefaultJobRunner";
 
 const BATCH_RUNNER_UUID = "58600a09-f18e-42c5-9d3c-df52ebe409f9";
 
@@ -18,6 +19,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
   const scripts = useOfficeScripts(office);
   const createScriptMutation = useCreateScript(office);
   const deleteScriptMutation = useDeleteScript(office);
+  const defaultJobRunner = useDefaultJobRunner();
   const updateScriptMutation = useUpdateScript(office);
 
   const [selectedScriptId, setSelectedScriptId] = useState<
@@ -58,11 +60,16 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     setPanelMode("view");
   };
   const onSave = async (data: ScriptFormData) => {
+    const jobRunners =
+      selectedScript?.jobRunners && selectedScript.jobRunners.length > 0
+        ? selectedScript.jobRunners
+        : [defaultJobRunner.data?.id ?? BATCH_RUNNER_UUID];
+
     if (selectedScriptId) {
       const payload: ScriptUpdate = {
         ...data,
         executionType: "python",
-        jobRunners: [BATCH_RUNNER_UUID],
+        jobRunners,
       };
       await updateScriptMutation.mutateAsync({
         scriptId: selectedScriptId,
@@ -73,7 +80,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
         ...data,
         office: office,
         executionType: "python",
-        jobRunners: [BATCH_RUNNER_UUID],
+        jobRunners,
       };
       const script = await createScriptMutation.mutateAsync({
         payload: payload,

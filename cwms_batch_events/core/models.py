@@ -73,6 +73,11 @@ class JobRunner(CamelModel):
     created_time: datetime
 
 
+class DefaultJobRunner(CamelModel):
+    id: UUID
+    slug: str
+
+
 class ScriptRunRequest(CamelModel):
     script_id: UUID
 

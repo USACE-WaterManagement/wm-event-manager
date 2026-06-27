@@ -68,6 +68,13 @@ class PostgresJobDatabase:
         if set(script.roles).isdisjoint(user.roles.get(script.office, [])):
             raise PermissionError("Not authorized to run requested script")
 
+        runner_id = get_runner_id()
+        configured_runner_ids = {runner.id for runner in script.job_runners}
+        if configured_runner_ids and runner_id not in configured_runner_ids:
+            raise PermissionError(
+                "Requested script is not configured for the current job runner"
+            )
+
         job = JobModel()
         job.id = uuid.uuid4()
         job.script_id = script.id
@@ -88,7 +95,7 @@ class PostgresJobDatabase:
         job.schedule_cron = script.schedule_cron
         job.env_vars = script.env_vars or {}
         job.secret_env_names = script.secret_env_names or []
-        job.job_runner_id = get_runner_id()
+        job.job_runner_id = runner_id
 
         self.db.add(job)
         self.db.commit()
