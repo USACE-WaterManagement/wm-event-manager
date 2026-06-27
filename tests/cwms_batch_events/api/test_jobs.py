@@ -41,7 +41,11 @@ def test_get_jobs_for_office_returns_office_jobs(client, job_db):
 
 def test_post_job_creates_and_dispatches_message(client, job_db, job_queue):
     script_id = str(uuid4())
-    job = make_job_record()
+    job = make_job_record(
+        runtime="shell",
+        resource_profile="large",
+        env_vars={"CDA_API_ROOT": "https://cda"},
+    )
     job_db.create_job.return_value = job
     message = object()
     job_queue.create_job_message.return_value = message
@@ -59,8 +63,11 @@ def test_post_job_creates_and_dispatches_message(client, job_db, job_queue):
     assert create_call.args[3].office == "swt"
     assert create_call.args[3].repo_path == job.repo_path
     assert create_call.args[3].script_slug == job.script_slug
+    assert create_call.args[3].runtime == job.runtime
+    assert create_call.args[3].resource_profile == job.resource_profile
     assert create_call.args[3].command_args == job.command_args
     assert create_call.args[3].timeout_minutes == job.timeout_minutes
+    assert create_call.args[3].env_vars == job.env_vars
     job_queue.send_job_message.assert_called_once_with(message)
 
 
