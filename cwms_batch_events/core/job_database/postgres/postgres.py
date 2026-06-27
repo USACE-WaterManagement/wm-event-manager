@@ -62,6 +62,9 @@ class PostgresJobDatabase:
     def create_job(self, payload: ScriptRunRequest, user: User) -> JobRecord:
         script = self.db.get_one(ScriptModel, payload.script_id)
 
+        if not script.active:
+            raise PermissionError("Requested script is not active")
+
         if set(script.roles).isdisjoint(user.roles.get(script.office, [])):
             raise PermissionError("Not authorized to run requested script")
 
