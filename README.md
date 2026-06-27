@@ -47,7 +47,7 @@ Deployments can override the default AWS Batch runtime wiring with JSON environm
 | --- | --- |
 | `BATCH_RUNTIME_JOB_DEFINITIONS` | Maps registry runtimes to AWS Batch job definition names. Defaults to `cwms-python-runner-jobdef`, `cwms-node-runner-jobdef`, `cwms-java-runner-jobdef`, and `cwms-shell-runner-jobdef`. |
 | `BATCH_RESOURCE_PROFILES` | Maps registry resource profiles to AWS Batch `VCPU` and `MEMORY` overrides. Defaults to `small`, `medium`, and `large`. |
-| `BATCH_RUNTIME_COMMANDS` | Maps registry runtimes to the command prefix used in the shared runner container. Defaults to `python`, `node`, and `bash` for Java/shell entrypoints. |
+| `BATCH_RUNTIME_COMMANDS` | Maps registry runtimes to the command prefix used in the shared runner container. Defaults to `python`, `node`, `java`, and `bash` for shell entrypoints. |
 | `BATCH_LOG_GROUP_PREFIX` | Prefix for shared runtime CloudWatch log groups. Defaults to `ecs/cwms-batch`, producing groups such as `ecs/cwms-batch/shell-runner`. |
 
 For example: `BATCH_RUNTIME_JOB_DEFINITIONS={"python":"cwms-python-runner-jobdef"}`.
