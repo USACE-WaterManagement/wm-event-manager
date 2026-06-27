@@ -27,7 +27,7 @@ DEFAULT_RESOURCE_PROFILES = {
 DEFAULT_RUNTIME_COMMANDS = {
     "python": ["python"],
     "node": ["node"],
-    "java": ["bash"],
+    "java": ["java"],
     "shell": ["bash"],
 }
 

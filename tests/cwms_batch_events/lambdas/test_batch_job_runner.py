@@ -185,6 +185,42 @@ def test_batch_job_runner_supports_shell_runtime():
     ]
 
 
+@pytest.mark.parametrize(
+    ("runtime", "repo_path", "expected_command", "expected_job_definition"),
+    [
+        ("node", "node/report.js", ["node", "/jobs/node/report.js"], "cwms-node-runner-jobdef"),
+        ("java", "java/Report.java", ["java", "/jobs/java/Report.java"], "cwms-java-runner-jobdef"),
+    ],
+)
+def test_batch_job_runner_uses_runtime_command_defaults(
+    runtime,
+    repo_path,
+    expected_command,
+    expected_job_definition,
+):
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="swt",
+            repo_path=repo_path,
+            script_slug="report",
+            runtime=runtime,
+        )
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    submit_kwargs = batch_client.submit_job.call_args.kwargs
+    assert submit_kwargs["jobDefinition"] == expected_job_definition
+    assert container_override(submit_kwargs)["command"] == expected_command
+
+
 def test_batch_job_runner_uses_configured_runtime_and_resource_overrides(monkeypatch):
     batch_client = mock.Mock()
     batch_client.submit_job.return_value = {"jobId": "ext-123"}

@@ -32,6 +32,11 @@ Scheduled jobs are also registry-driven. Airflow calls `/scripts/scheduled`, fil
 #### Runtime Containers
 Production uses shared AWS Batch job definitions per runtime rather than per-office job definitions. The shared runner image is built from `cwbi-wm-images`, clones the office repository at runtime, asks Batch Events for the job's brokered runtime environment, and then runs the registered script path with the registry's command arguments and timeout.
 
+The dispatcher chooses the runtime command from the script registry runtime:
+`python`, `node`, `java`, or `bash` for `shell`. Shell entrypoints such as
+`bin/hourly.sh` should be registered with the `shell` runtime rather than
+depending on a language-specific job definition to invoke bash.
+
 AWS Batch container logs are written to shared runtime log groups. Batch Events keeps the office on each job record and exposes office-scoped job listing and log lookup for office admins, so district users can filter to their office in the Jobs List and open logs for individual jobs without requiring one CloudWatch log group or job definition per office.
 
 Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
