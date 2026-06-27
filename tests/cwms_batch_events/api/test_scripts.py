@@ -107,6 +107,14 @@ def test_post_script_rejects_incomplete_enabled_schedules(
             make_script_create_payload(scheduleCron="0 17 * *"),
             "scheduleCron must be a five-field cron expression",
         ),
+        (
+            make_script_create_payload(envVars={"AWS_BATCH_FOO": "bad"}),
+            "environment variable names cannot start with AWS_BATCH",
+        ),
+        (
+            make_script_create_payload(secretEnvNames=["AWS_BATCH_TOKEN"]),
+            "environment variable names cannot start with AWS_BATCH",
+        ),
     ],
 )
 def test_post_script_rejects_invalid_registry_controls(
