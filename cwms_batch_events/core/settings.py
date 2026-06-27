@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     batch_runtime_job_definitions: dict[str, str] = Field(default_factory=dict)
     batch_resource_profiles: dict[str, dict[str, str]] = Field(default_factory=dict)
     batch_runtime_commands: dict[str, list[str]] = Field(default_factory=dict)
+    batch_log_group_prefix: str = "ecs/cwms-batch"
 
     @property
     def authorized_auth_client_ids(self) -> set[str]:

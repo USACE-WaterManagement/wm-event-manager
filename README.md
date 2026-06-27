@@ -22,7 +22,7 @@ Redoc | http://localhost:8000/redoc
 For the best experience, [pyenv](https://github.com/pyenv/pyenv) is recommended for install instructions.  If pyenv is available, the `setup-pyenv.sh` script is provided to create a virtual environment and install the necessary local dev requirements. Be sure to install `gcc` for your environment.
 
 #### Authentication
-By default, the local instance of the API uses a mock user account.  This account has script-execute permissions for all districts.  As a result, the API will return scripts for all offices that contain a corresponding script catalog within the minio instance.
+By default, the local instance of the API can use a mock user account. This account has script-execute permissions for all districts. Available scripts come from the Batch Events database registry, so local development should seed or manage script rows through migrations, the "Scripts Manager" UI, or the `/scripts` API endpoints.
 
 #### Job Registry
 Available office jobs are managed in Batch Events using the "Scripts Manager" in the Web UI or the `/scripts` API endpoints. A registry entry defines the office, repository path, runtime (`python`, `node`, `java`, or `shell`), command arguments, resource profile (`small`, `medium`, or `large`), timeout, optional environment variables, allowed secret names, roles, and optional schedule. A script can run a direct file such as `python/my_job.py` or a shell entrypoint such as `bin/hourly.sh`; the registry owns the command and arguments, so the old `hourly.sh` convention is no longer required for every job.
@@ -43,6 +43,7 @@ Deployments can override the default AWS Batch runtime wiring with JSON environm
 | `BATCH_RUNTIME_JOB_DEFINITIONS` | Maps registry runtimes to AWS Batch job definition names. Defaults to `cwms-python-runner-jobdef`, `cwms-node-runner-jobdef`, `cwms-java-runner-jobdef`, and `cwms-shell-runner-jobdef`. |
 | `BATCH_RESOURCE_PROFILES` | Maps registry resource profiles to AWS Batch `VCPU` and `MEMORY` overrides. Defaults to `small`, `medium`, and `large`. |
 | `BATCH_RUNTIME_COMMANDS` | Maps registry runtimes to the command prefix used in the shared runner container. Defaults to `python`, `node`, and `bash` for Java/shell entrypoints. |
+| `BATCH_LOG_GROUP_PREFIX` | Prefix for shared runtime CloudWatch log groups. Defaults to `ecs/cwms-batch`, producing groups such as `ecs/cwms-batch/shell-runner`. |
 
 For example: `BATCH_RUNTIME_JOB_DEFINITIONS={"python":"cwms-python-runner-jobdef"}`.
 

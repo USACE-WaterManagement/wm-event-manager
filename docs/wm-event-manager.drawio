@@ -67,7 +67,7 @@
         <mxCell id="QxsduxK5l0AQasDu5CAV-32" parent="QxsduxK5l0AQasDu5CAV-22" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.html5" value="Front End" vertex="1">
           <mxGeometry height="74" width="52.400000000000006" x="48.8" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="y2mJkOawpu3WuBtuIcvy-34" parent="QxsduxK5l0AQasDu5CAV-22" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.json" value="Script Catalogs" vertex="1">
+        <mxCell id="y2mJkOawpu3WuBtuIcvy-34" parent="QxsduxK5l0AQasDu5CAV-22" style="dashed=0;outlineConnect=0;html=1;align=center;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;shape=mxgraph.weblogos.json" value="Script Registry" vertex="1">
           <mxGeometry height="75.8" width="70" x="40.5" y="175" as="geometry" />
         </mxCell>
         <mxCell id="-QjtrjUzRDEMRZ5MF8oH-28" parent="QxsduxK5l0AQasDu5CAV-22" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=none;fontColor=#FFFFFF;fontStyle=1;fontSize=22;" value="3" vertex="1">
@@ -217,7 +217,7 @@
         <mxCell id="gFOlDi6WZ6_27OxUQ-NJ-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=none;fontColor=#FFFFFF;fontStyle=1;fontSize=22;" value="7" vertex="1">
           <mxGeometry height="38" width="40" x="1409" y="750" as="geometry" />
         </mxCell>
-        <mxCell id="gFOlDi6WZ6_27OxUQ-NJ-9" parent="1" style="text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;" value="PostgreSQL stores event/job metadata internally.&amp;nbsp; Will also be used to store script catalogs after a refactoring process is complete." vertex="1">
+        <mxCell id="gFOlDi6WZ6_27OxUQ-NJ-9" parent="1" style="text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;" value="PostgreSQL stores event/job metadata and the script registry. Registry rows define office, runtime, script path, schedule, timeout, size, env vars, and allowed secrets." vertex="1">
           <mxGeometry height="49.5" width="449" x="1458" y="750" as="geometry" />
         </mxCell>
       </root>

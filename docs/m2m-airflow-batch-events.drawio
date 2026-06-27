@@ -45,7 +45,7 @@
         </mxCell>
         <mxCell id="yOy1WugJtw1jma-cY1r7-8" parent="1"
           style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;"
-          value="Batch Events DB&lt;br&gt;scripts + jobs&lt;br&gt;SWT hourly => bin/hourly.sh&lt;br&gt;runtime=shell"
+          value="Batch Events DB&lt;br&gt;scripts + jobs registry&lt;br&gt;path, schedule, runtime, size&lt;br&gt;no hourly.sh requirement"
           vertex="1">
           <mxGeometry height="120" width="220" x="890" y="420" as="geometry" />
         </mxCell>
@@ -97,7 +97,7 @@
         </mxCell>
         <mxCell id="yOy1WugJtw1jma-cY1r7-17" parent="1"
           style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;"
-          value="SWT office repo&lt;br&gt;swt-wm-cwbi-jobs&lt;br&gt;bin/hourly.sh&lt;br&gt;Python uses CDA_BEARER_TOKEN"
+          value="Office job repo&lt;br&gt;registered script path&lt;br&gt;SWT may use bin/hourly.sh&lt;br&gt;scripts use CDA_BEARER_TOKEN"
           vertex="1">
           <mxGeometry height="90" width="250" x="890" y="980" as="geometry" />
         </mxCell>
@@ -196,7 +196,7 @@
         </mxCell>
         <mxCell id="yOy1WugJtw1jma-cY1r7-31" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-14"
           style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
-          target="yOy1WugJtw1jma-cY1r7-17" value="13. run bin/hourly.sh with CDA_BEARER_TOKEN">
+          target="yOy1WugJtw1jma-cY1r7-17" value="13. run registered script with CDA_BEARER_TOKEN">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="yOy1WugJtw1jma-cY1r7-32" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-17"
