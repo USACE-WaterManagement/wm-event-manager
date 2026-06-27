@@ -22,6 +22,25 @@ def test_script_run_options_reject_aws_batch_reserved_env_names(env_vars):
         )
 
 
+@pytest.mark.parametrize(
+    "env_vars",
+    [
+        {"JOB_ID": "bad"},
+        {"office": "bad"},
+        {"BATCH_EVENTS_RUNTIME_TOKEN": "bad"},
+        {"BATCH_JOB_CONTEXT_TOKEN": "bad"},
+    ],
+)
+def test_script_run_options_reject_batch_events_reserved_env_names(env_vars):
+    with pytest.raises(ValidationError, match="reserved for Batch Events runtime"):
+        ScriptRunOptions(
+            office="SWT",
+            repo_path="python/report.py",
+            script_slug="report",
+            env_vars=env_vars,
+        )
+
+
 def test_script_run_options_reject_blank_command_args():
     with pytest.raises(ValidationError, match="commandArgs cannot contain empty strings"):
         ScriptRunOptions(
@@ -37,9 +56,11 @@ def test_script_run_options_reject_blank_command_args():
     [
         make_script_create_payload(envVars={"AWS_BATCH_FOO": "bad"}),
         make_script_create_payload(secretEnvNames=["AWS_BATCH_TOKEN"]),
+        make_script_create_payload(envVars={"SCRIPT_PATH": "bad"}),
+        make_script_create_payload(secretEnvNames=["BATCH_EVENTS_INTERNAL_TOKEN"]),
         make_script_create_payload(commandArgs=["--project", ""]),
     ],
 )
-def test_script_create_rejects_invalid_aws_batch_submit_values(payload):
+def test_script_create_rejects_invalid_runtime_submit_values(payload):
     with pytest.raises(ValidationError):
         ScriptCreate.model_validate(payload)

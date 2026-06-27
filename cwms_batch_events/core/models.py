@@ -6,6 +6,20 @@ from uuid import UUID
 
 
 AWS_BATCH_RESERVED_PREFIX = "AWS_BATCH"
+BATCH_EVENTS_RESERVED_PREFIXES = ("AWS_BATCH", "BATCH_EVENTS_")
+BATCH_EVENTS_RESERVED_ENV_NAMES = {
+    "BATCH_JOB_CONTEXT_TOKEN",
+    "ENVIRONMENT",
+    "GITHUB_BRANCH",
+    "GITHUB_TOKEN",
+    "JOB_ID",
+    "OFFICE",
+    "REPO_PATH",
+    "RUNTIME",
+    "SCRIPT_PATH",
+    "SCRIPT_SLUG",
+    "SKIP_GIT_CLONE",
+}
 
 
 def _reject_aws_batch_reserved_env_names(names: list[str]) -> None:
@@ -15,6 +29,23 @@ def _reject_aws_batch_reserved_env_names(names: list[str]) -> None:
     if reserved_names:
         raise ValueError(
             "environment variable names cannot start with AWS_BATCH: "
+            + ", ".join(reserved_names)
+        )
+
+
+def _reject_batch_events_reserved_env_names(names: list[str]) -> None:
+    reserved_names = [
+        name
+        for name in names
+        if name.upper() in BATCH_EVENTS_RESERVED_ENV_NAMES
+        or any(
+            name.upper().startswith(prefix)
+            for prefix in BATCH_EVENTS_RESERVED_PREFIXES
+        )
+    ]
+    if reserved_names:
+        raise ValueError(
+            "environment variable names are reserved for Batch Events runtime: "
             + ", ".join(reserved_names)
         )
 
@@ -114,6 +145,7 @@ class ScriptRunOptions(CamelModel):
     @field_validator("env_vars")
     def validate_env_vars(cls, value: dict[str, str]) -> dict[str, str]:
         _reject_aws_batch_reserved_env_names(list(value))
+        _reject_batch_events_reserved_env_names(list(value))
         return value
 
     @field_validator("command_args")
@@ -175,11 +207,13 @@ class ScriptBase(CamelModel):
     @field_validator("env_vars")
     def validate_env_vars(cls, value: dict[str, str]) -> dict[str, str]:
         _reject_aws_batch_reserved_env_names(list(value))
+        _reject_batch_events_reserved_env_names(list(value))
         return value
 
     @field_validator("secret_env_names")
     def validate_secret_env_names(cls, value: list[str]) -> list[str]:
         _reject_aws_batch_reserved_env_names(value)
+        _reject_batch_events_reserved_env_names(value)
         return value
 
     @field_validator("command_args")

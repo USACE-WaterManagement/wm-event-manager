@@ -53,6 +53,29 @@ const envVarsToRows = (envVars?: Record<string, string>): EnvVarRow[] =>
 const isAwsBatchReservedEnvName = (name: string) =>
   name.trim().toUpperCase().startsWith("AWS_BATCH");
 
+const batchEventsReservedEnvNames = new Set([
+  "BATCH_JOB_CONTEXT_TOKEN",
+  "ENVIRONMENT",
+  "GITHUB_BRANCH",
+  "GITHUB_TOKEN",
+  "JOB_ID",
+  "OFFICE",
+  "REPO_PATH",
+  "RUNTIME",
+  "SCRIPT_PATH",
+  "SCRIPT_SLUG",
+  "SKIP_GIT_CLONE",
+]);
+
+const isBatchEventsReservedEnvName = (name: string) => {
+  const normalizedName = name.trim().toUpperCase();
+  return (
+    normalizedName.startsWith("AWS_BATCH") ||
+    normalizedName.startsWith("BATCH_EVENTS_") ||
+    batchEventsReservedEnvNames.has(normalizedName)
+  );
+};
+
 const InputLabel = ({
   htmlFor,
   children,
@@ -138,6 +161,13 @@ export const ScriptForm = ({
         return;
       }
 
+      if (isBatchEventsReservedEnvName(key)) {
+        setFormError(
+          `Environment variable key "${key}" is reserved for Batch Events runtime`,
+        );
+        return;
+      }
+
       usedKeys.add(key);
       envVars[key] = value;
     }
@@ -154,6 +184,15 @@ export const ScriptForm = ({
     if (reservedSecretEnvName) {
       setFormError(
         `Secret environment variable "${reservedSecretEnvName}" cannot start with AWS_BATCH`,
+      );
+      return;
+    }
+    const batchEventsReservedSecretEnvName = secretEnvNames.find(
+      isBatchEventsReservedEnvName,
+    );
+    if (batchEventsReservedSecretEnvName) {
+      setFormError(
+        `Secret environment variable "${batchEventsReservedSecretEnvName}" is reserved for Batch Events runtime`,
       );
       return;
     }

@@ -116,6 +116,14 @@ def test_post_script_rejects_incomplete_enabled_schedules(
             "environment variable names cannot start with AWS_BATCH",
         ),
         (
+            make_script_create_payload(envVars={"JOB_ID": "bad"}),
+            "environment variable names are reserved for Batch Events runtime",
+        ),
+        (
+            make_script_create_payload(secretEnvNames=["BATCH_EVENTS_INTERNAL_TOKEN"]),
+            "environment variable names are reserved for Batch Events runtime",
+        ),
+        (
             make_script_create_payload(commandArgs=["--project", ""]),
             "commandArgs cannot contain empty strings",
         ),
