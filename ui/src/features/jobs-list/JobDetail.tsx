@@ -4,22 +4,29 @@ import { JobDetails } from "./useJobDetails";
 
 const jobFields: (keyof JobDetails)[] = [
   "scriptName",
+  "scriptSlug",
   "username",
   "jobStatus",
   "office",
+  "repoPath",
   "runtime",
   "resourceProfile",
+  "commandArgs",
   "timeoutMinutes",
   "createdTime",
   "runTime",
   "endTime",
+  "externalJobId",
   "id",
 ];
 
 const wideFields: (keyof JobDetails)[] = [
+  "repoPath",
+  "commandArgs",
   "createdTime",
   "runTime",
   "endTime",
+  "externalJobId",
   "id",
 ];
 
