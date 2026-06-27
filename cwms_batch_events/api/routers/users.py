@@ -12,3 +12,10 @@ def get_admin_offices(
     user: User = Depends(get_current_user),
 ) -> list[str]:
     return user.admin_offices
+
+
+@router.get("/me/offices")
+def get_offices(
+    user: User = Depends(get_current_user),
+) -> list[str]:
+    return user.offices

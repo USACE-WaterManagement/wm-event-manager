@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import JobDetail from "./JobDetail";
-import useAdminOffices from "../scripts-manager/useAdminOffices";
+import useUserOffices from "./useUserOffices";
 import { Dropdown } from "@usace/groundwork";
 import { useState } from "react";
 
@@ -14,7 +14,7 @@ dayjs.extend(relativeTime);
 const JobsList = () => {
   const auth = useAuth();
   const [office, setOffice] = useState("");
-  const adminOffices = useAdminOffices();
+  const userOffices = useUserOffices();
   const { data: jobs, isLoading, isError } = useJobsList(office || undefined);
 
   if (!auth.isAuth) return <span>Login required to view job details.</span>;
@@ -24,7 +24,7 @@ const JobsList = () => {
   if (isLoading) return <span>Loading jobs list...</span>;
 
   const officeFilter =
-    adminOffices.data && adminOffices.data.length > 0 ? (
+    userOffices.data && userOffices.data.length > 0 ? (
       <div className="mb-4 flex justify-end">
         <Dropdown
           className="w-48"
@@ -37,7 +37,7 @@ const JobsList = () => {
             <option key="" value="">
               All accessible jobs
             </option>,
-            ...adminOffices.data.sort().map((code) => (
+            ...userOffices.data.sort().map((code) => (
               <option key={code} value={code}>
                 {code}
               </option>
