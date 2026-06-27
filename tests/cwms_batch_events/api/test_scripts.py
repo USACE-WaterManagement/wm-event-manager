@@ -81,6 +81,45 @@ def test_post_script_rejects_incomplete_enabled_schedules(
 
 
 @pytest.mark.parametrize(
+    ("payload", "expected_detail"),
+    [
+        (
+            make_script_create_payload(runtime="ruby"),
+            "runtime must be one of: python, node, java, shell",
+        ),
+        (
+            make_script_create_payload(resourceProfile="huge"),
+            "resourceProfile must be one of: small, medium, large",
+        ),
+        (
+            make_script_create_payload(timeoutMinutes=0),
+            "timeoutMinutes must be between 1 and 1440",
+        ),
+        (
+            make_script_create_payload(timeoutMinutes=1441),
+            "timeoutMinutes must be between 1 and 1440",
+        ),
+        (
+            make_script_create_payload(scheduleMinute=60),
+            "scheduleMinute must be between 0 and 59",
+        ),
+        (
+            make_script_create_payload(scheduleCron="0 17 * *"),
+            "scheduleCron must be a five-field cron expression",
+        ),
+    ],
+)
+def test_post_script_rejects_invalid_registry_controls(
+    client, job_db, payload, expected_detail
+):
+    response = client.post("/scripts", json=payload)
+
+    assert response.status_code == 422
+    assert expected_detail in response.text
+    job_db.store_script.assert_not_called()
+
+
+@pytest.mark.parametrize(
     ("side_effect", "expected_status", "expected_detail"),
     [
         (ValueError("bad payload"), 422, "bad payload"),
