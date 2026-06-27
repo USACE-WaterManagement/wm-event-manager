@@ -4,7 +4,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from cwms_batch_events.core.models import JobStatus
-from cwms_batch_events.core.processing import update_batch_job_status
+from cwms_batch_events.core.processing import (
+    MissingBatchJobError,
+    update_batch_job_status,
+)
 
 
 @pytest.mark.parametrize(
@@ -63,7 +66,7 @@ def test_update_status_missing_batch_job():
     job.job_status = JobStatus.COMPLETED
     mock_db.get_job_by_external_id.return_value = None
 
-    with pytest.raises(ValueError):
+    with pytest.raises(MissingBatchJobError):
         update_batch_job_status(
             batch_job_id="abc",
             status=JobStatus.RUNNING,

@@ -101,6 +101,12 @@ def lambda_handler(event, context):
         raise
 
     if not (200 <= r.status_code < 300):
+        if r.status_code == 404:
+            logger.info(
+                "Events API has no job record for Batch job %s; ignoring status event",
+                batch_job_id,
+            )
+            return
         logger.error(
             "Events API rejected message: %s %s",
             r.status_code,

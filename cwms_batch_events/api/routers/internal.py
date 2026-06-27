@@ -12,7 +12,10 @@ from cwms_batch_events.core.models import (
     BindExternalJobIdRequest,
     RuntimeEnvResponse,
 )
-from cwms_batch_events.core.processing import update_batch_job_status
+from cwms_batch_events.core.processing import (
+    MissingBatchJobError,
+    update_batch_job_status,
+)
 from cwms_batch_events.core.runtime_auth import validate_runtime_token
 from cwms_batch_events.core.secret_broker import (
     MissingJobError,
@@ -37,6 +40,9 @@ def update_batch_job_status_endpoint(
         update_batch_job_status(
             batch_job_id, payload.status, payload.event_time, job_db
         )
+
+    except MissingBatchJobError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

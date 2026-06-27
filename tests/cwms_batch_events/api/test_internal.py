@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 
 from cwms_batch_events.core.models import RuntimeEnvResponse
+from cwms_batch_events.core.processing import MissingBatchJobError
 from cwms_batch_events.core.runtime_auth import create_runtime_token
 from cwms_batch_events.core.settings import settings
 from cwms_batch_events.core.secret_broker import MissingJobError, MissingSecretError
@@ -22,6 +23,7 @@ def test_update_batch_job_status_returns_no_content(client, job_db):
 @pytest.mark.parametrize(
     ("side_effect", "expected_status", "expected_detail"),
     [
+        (MissingBatchJobError("missing job"), 404, "missing job"),
         (ValueError("bad status"), 400, "bad status"),
         (RuntimeError("boom"), 500, "boom"),
     ],

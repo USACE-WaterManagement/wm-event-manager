@@ -156,6 +156,31 @@ def test_lambda_handler_re_raises_request_exceptions():
             )
 
 
+def test_lambda_handler_ignores_unknown_batch_jobs():
+    response = mock.Mock(status_code=404, text="not found")
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.get_internal_token",
+        return_value="secret",
+    ), mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.requests.post",
+        return_value=response,
+    ) as requests_post:
+        lambda_handler(
+            {
+                "detail": {
+                    "jobName": "cwms-swt-python-smoke-20260626-1715",
+                    "jobId": "batch-untracked",
+                    "status": "RUNNING",
+                },
+                "time": "2026-06-26T17:15:00Z",
+            },
+            None,
+        )
+
+    requests_post.assert_called_once()
+
+
 def test_lambda_handler_raises_when_events_api_rejects_message():
     response = mock.Mock(status_code=500, text="bad")
 
