@@ -22,13 +22,24 @@ def test_script_run_options_reject_aws_batch_reserved_env_names(env_vars):
         )
 
 
+def test_script_run_options_reject_blank_command_args():
+    with pytest.raises(ValidationError, match="commandArgs cannot contain empty strings"):
+        ScriptRunOptions(
+            office="SWT",
+            repo_path="python/report.py",
+            script_slug="report",
+            command_args=["--project", ""],
+        )
+
+
 @pytest.mark.parametrize(
     "payload",
     [
         make_script_create_payload(envVars={"AWS_BATCH_FOO": "bad"}),
         make_script_create_payload(secretEnvNames=["AWS_BATCH_TOKEN"]),
+        make_script_create_payload(commandArgs=["--project", ""]),
     ],
 )
-def test_script_create_rejects_aws_batch_reserved_env_names(payload):
-    with pytest.raises(ValidationError, match="cannot start with AWS_BATCH"):
+def test_script_create_rejects_invalid_aws_batch_submit_values(payload):
+    with pytest.raises(ValidationError):
         ScriptCreate.model_validate(payload)

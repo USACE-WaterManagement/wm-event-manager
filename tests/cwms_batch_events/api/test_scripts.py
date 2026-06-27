@@ -115,6 +115,10 @@ def test_post_script_rejects_incomplete_enabled_schedules(
             make_script_create_payload(secretEnvNames=["AWS_BATCH_TOKEN"]),
             "environment variable names cannot start with AWS_BATCH",
         ),
+        (
+            make_script_create_payload(commandArgs=["--project", ""]),
+            "commandArgs cannot contain empty strings",
+        ),
     ],
 )
 def test_post_script_rejects_invalid_registry_controls(

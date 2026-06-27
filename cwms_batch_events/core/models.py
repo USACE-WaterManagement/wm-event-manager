@@ -19,6 +19,11 @@ def _reject_aws_batch_reserved_env_names(names: list[str]) -> None:
         )
 
 
+def _reject_blank_command_args(values: list[str]) -> None:
+    if any(value == "" for value in values):
+        raise ValueError("commandArgs cannot contain empty strings")
+
+
 class CamelModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel, validate_by_name=True, validate_by_alias=True
@@ -111,6 +116,11 @@ class ScriptRunOptions(CamelModel):
         _reject_aws_batch_reserved_env_names(list(value))
         return value
 
+    @field_validator("command_args")
+    def validate_command_args(cls, value: list[str]) -> list[str]:
+        _reject_blank_command_args(value)
+        return value
+
 
 class JobSource(str, Enum):
     API = "api"
@@ -170,6 +180,11 @@ class ScriptBase(CamelModel):
     @field_validator("secret_env_names")
     def validate_secret_env_names(cls, value: list[str]) -> list[str]:
         _reject_aws_batch_reserved_env_names(value)
+        return value
+
+    @field_validator("command_args")
+    def validate_command_args(cls, value: list[str]) -> list[str]:
+        _reject_blank_command_args(value)
         return value
 
     @field_validator("runtime")
