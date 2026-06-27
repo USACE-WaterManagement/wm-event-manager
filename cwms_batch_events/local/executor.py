@@ -23,7 +23,7 @@ class LocalExecutor:
             command = {
                 "python": ["python", f"/jobs/{message.payload.repo_path}"],
                 "node": ["node", f"/jobs/{message.payload.repo_path}"],
-                "java": ["bash", f"/jobs/{message.payload.repo_path}"],
+                "java": ["java", f"/jobs/{message.payload.repo_path}"],
                 "shell": ["bash", f"/jobs/{message.payload.repo_path}"],
             }[message.payload.runtime]
             command = [*command, *message.payload.command_args]
