@@ -114,5 +114,11 @@ def get_logs_for_job(
             status_code=404, detail=f"No job found for jobId '{job_id}'"
         )
     _authorize_job_access(job, user)
-    logs = job_logger.get_logs_for_job(job_id)
+    try:
+        logs = job_logger.get_logs_for_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Logs are not available for job '{job_id}': {exc}",
+        ) from exc
     return JobLogs(logs=logs)

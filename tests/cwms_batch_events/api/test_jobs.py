@@ -156,3 +156,16 @@ def test_get_logs_for_job_hides_logs_from_unrelated_user(client, job_db, job_log
     assert response.status_code == 404
     assert response.json() == {"detail": "Job not found"}
     job_logger.get_logs_for_job.assert_not_called()
+
+
+def test_get_logs_for_job_reports_logs_unavailable(client, job_db, job_logger):
+    job = make_job_record()
+    job_db.get_job_by_id.return_value = job
+    job_logger.get_logs_for_job.side_effect = ValueError("No external_job_id found")
+
+    response = client.get(f"/jobs/{job.id}/logs")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": f"Logs are not available for job '{job.id}': No external_job_id found"
+    }
