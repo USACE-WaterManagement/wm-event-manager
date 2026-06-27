@@ -73,14 +73,6 @@ class JobRunner(CamelModel):
     created_time: datetime
 
 
-class OfficeCatalog(CamelModel):
-    scripts: list[str]
-
-
-class OfficeCatalogs(CamelModel):
-    catalogs: dict[str, OfficeCatalog]
-
-
 class ScriptRunRequest(CamelModel):
     script_id: UUID
 
