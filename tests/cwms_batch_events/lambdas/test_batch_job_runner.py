@@ -1,8 +1,11 @@
 from datetime import datetime
 from unittest import mock
 
+import pytest
+
 from cwms_batch_events.lambdas.dispatch_job.job_runner.batch import BatchJobRunner
 from cwms_batch_events.core.models import ScriptRunOptions
+from cwms_batch_events.core.settings import settings
 from tests.factories import make_job_message
 
 
@@ -73,7 +76,9 @@ def test_batch_job_runner_uses_repo_path_name_when_slug_missing():
     batch_client.submit_job.return_value = {"jobId": "ext-123"}
     fixed_now = datetime(2026, 4, 16, 12, 30)
     message = make_job_message(
-        payload=make_job_message().payload.model_copy(update={"script_slug": None, "repo_path": "folder/my.script.py"})
+        payload=make_job_message().payload.model_copy(
+            update={"script_slug": None, "repo_path": "folder/my.script.py"}
+        )
     )
 
     with mock.patch(
@@ -116,7 +121,10 @@ def test_batch_job_runner_passes_broker_url_and_public_env_vars():
     environment = container_override(batch_client.submit_job.call_args.kwargs)[
         "environment"
     ]
-    assert {"name": "BATCH_EVENTS_API_ROOT", "value": "http://internal-alb/api"} in environment
+    assert {
+        "name": "BATCH_EVENTS_API_ROOT",
+        "value": "http://internal-alb/api",
+    } in environment
     assert {"name": "CDA_API_ROOT", "value": "https://cda"} in environment
 
 
@@ -175,3 +183,72 @@ def test_batch_job_runner_supports_shell_runtime():
     assert {"name": "RUNTIME", "value": "shell"} in container_override(submit_kwargs)[
         "environment"
     ]
+
+
+def test_batch_job_runner_uses_configured_runtime_and_resource_overrides(monkeypatch):
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="swt",
+            repo_path="python/report.py",
+            script_slug="report",
+            runtime="python",
+            resource_profile="large",
+        )
+    )
+    monkeypatch.setattr(
+        settings,
+        "batch_runtime_job_definitions",
+        {"python": "dev-cwms-python-runner-jobdef"},
+    )
+    monkeypatch.setattr(
+        settings,
+        "batch_resource_profiles",
+        {"large": {"VCPU": "8", "MEMORY": "16384"}},
+    )
+    monkeypatch.setattr(
+        settings,
+        "batch_runtime_commands",
+        {"python": ["uv", "run", "python"]},
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    submit_kwargs = batch_client.submit_job.call_args.kwargs
+    assert submit_kwargs["jobDefinition"] == "dev-cwms-python-runner-jobdef"
+    assert container_override(submit_kwargs)["command"] == [
+        "uv",
+        "run",
+        "python",
+        "/jobs/python/report.py",
+    ]
+    assert container_override(submit_kwargs)["resourceRequirements"] == [
+        {"type": "VCPU", "value": "8"},
+        {"type": "MEMORY", "value": "16384"},
+    ]
+
+
+def test_batch_job_runner_reports_unsupported_runtime():
+    batch_client = mock.Mock()
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="swt",
+            repo_path="ruby/report.rb",
+            script_slug="report",
+            runtime="ruby",
+        )
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        with pytest.raises(ValueError, match="Unsupported runtime 'ruby'"):
+            runner.run_job(message)

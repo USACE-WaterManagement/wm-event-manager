@@ -36,5 +36,15 @@ AWS Batch container logs are written to shared runtime log groups. Batch Events 
 
 Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
 
+Deployments can override the default AWS Batch runtime wiring with JSON environment values:
+
+| Variable | Purpose |
+| --- | --- |
+| `BATCH_RUNTIME_JOB_DEFINITIONS` | Maps registry runtimes to AWS Batch job definition names. Defaults to `cwms-python-runner-jobdef`, `cwms-node-runner-jobdef`, `cwms-java-runner-jobdef`, and `cwms-shell-runner-jobdef`. |
+| `BATCH_RESOURCE_PROFILES` | Maps registry resource profiles to AWS Batch `VCPU` and `MEMORY` overrides. Defaults to `small`, `medium`, and `large`. |
+| `BATCH_RUNTIME_COMMANDS` | Maps registry runtimes to the command prefix used in the shared runner container. Defaults to `python`, `node`, and `bash` for Java/shell entrypoints. |
+
+For example: `BATCH_RUNTIME_JOB_DEFINITIONS={"python":"cwms-python-runner-jobdef"}`.
+
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.

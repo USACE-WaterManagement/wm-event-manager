@@ -11,25 +11,39 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 API_BASE_URL = os.getenv("ALB_DNS_NAME")
 
-RUNTIME_JOB_DEFINITIONS = {
+DEFAULT_RUNTIME_JOB_DEFINITIONS = {
     "python": "cwms-python-runner-jobdef",
     "node": "cwms-node-runner-jobdef",
     "java": "cwms-java-runner-jobdef",
     "shell": "cwms-shell-runner-jobdef",
 }
 
-RESOURCE_PROFILES = {
+DEFAULT_RESOURCE_PROFILES = {
     "small": {"VCPU": "1", "MEMORY": "2048"},
     "medium": {"VCPU": "2", "MEMORY": "4096"},
     "large": {"VCPU": "4", "MEMORY": "8192"},
 }
 
-RUNTIME_COMMANDS = {
+DEFAULT_RUNTIME_COMMANDS = {
     "python": ["python"],
     "node": ["node"],
     "java": ["bash"],
     "shell": ["bash"],
 }
+
+
+def configured_map(defaults, overrides):
+    return {**defaults, **overrides}
+
+
+def configured_value(kind, values, key):
+    try:
+        return values[key]
+    except KeyError as exc:
+        supported = ", ".join(sorted(values))
+        raise ValueError(
+            f"Unsupported {kind} '{key}'. Supported values: {supported}"
+        ) from exc
 
 
 class BatchJobRunner:
@@ -46,9 +60,25 @@ class BatchJobRunner:
         if script_slug is None:
             script_slug = repo_path.split("/")[-1]
 
-        job_definition = RUNTIME_JOB_DEFINITIONS[runtime]
-        resources = RESOURCE_PROFILES[resource_profile]
-        command = [*RUNTIME_COMMANDS[runtime], f"/jobs/{repo_path}", *command_args]
+        runtime_job_definitions = configured_map(
+            DEFAULT_RUNTIME_JOB_DEFINITIONS, settings.batch_runtime_job_definitions
+        )
+        resource_profiles = configured_map(
+            DEFAULT_RESOURCE_PROFILES, settings.batch_resource_profiles
+        )
+        runtime_commands = configured_map(
+            DEFAULT_RUNTIME_COMMANDS, settings.batch_runtime_commands
+        )
+
+        job_definition = configured_value("runtime", runtime_job_definitions, runtime)
+        resources = configured_value(
+            "resource profile", resource_profiles, resource_profile
+        )
+        command = [
+            *configured_value("runtime command", runtime_commands, runtime),
+            f"/jobs/{repo_path}",
+            *command_args,
+        ]
 
         job_name = (
             f"cwms-{office}-{runtime}-{script_slug}-{datetime.now().strftime('%Y%m%d-%H%M')}"
@@ -89,8 +119,7 @@ class BatchJobRunner:
             "environment": environment,
             "command": command,
             "resourceRequirements": [
-                {"type": kind, "value": value}
-                for kind, value in resources.items()
+                {"type": kind, "value": value} for kind, value in resources.items()
             ],
         }
 

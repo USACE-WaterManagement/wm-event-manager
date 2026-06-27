@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -36,6 +37,9 @@ class Settings(BaseSettings):
     batch_job_context_audience: str = "cwms-data-api"
     batch_job_context_ttl_seconds: int = 300
     batch_runtime_token_ttl_seconds: int = 300
+    batch_runtime_job_definitions: dict[str, str] = Field(default_factory=dict)
+    batch_resource_profiles: dict[str, dict[str, str]] = Field(default_factory=dict)
+    batch_runtime_commands: dict[str, list[str]] = Field(default_factory=dict)
 
     @property
     def authorized_auth_client_ids(self) -> set[str]:
