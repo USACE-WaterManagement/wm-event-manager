@@ -70,9 +70,11 @@ def test_batch_job_runner_submits_expected_batch_job():
         timeout={"attemptDurationSeconds": 1800},
         tags={
             "Office": "swt",
+            "OfficeGroup": "swd",
             "Runtime": "python",
             "ResourceProfile": "small",
             "JobId": str(message.job_id),
+            "ScriptSlug": "script",
         },
     )
 
@@ -215,6 +217,33 @@ def test_batch_job_runner_supports_shell_runtime():
     assert {"name": "RUNTIME", "value": "shell"} in container_override(submit_kwargs)[
         "environment"
     ]
+
+
+def test_batch_job_runner_routes_and_tags_jobs_by_office_group():
+    batch_client = mock.Mock()
+    batch_client.submit_job.return_value = {"jobId": "ext-123"}
+    message = make_job_message(
+        payload=ScriptRunOptions(
+            office="lrl",
+            repo_path="bin/hourly.sh",
+            script_slug="hourly",
+            runtime="shell",
+            resource_profile="medium",
+        )
+    )
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.job_runner.batch.boto3.client",
+        return_value=batch_client,
+    ):
+        runner = BatchJobRunner()
+        runner.run_job(message)
+
+    submit_kwargs = batch_client.submit_job.call_args.kwargs
+    assert submit_kwargs["jobQueue"] == "cwms-lrd-jq"
+    assert submit_kwargs["tags"]["Office"] == "lrl"
+    assert submit_kwargs["tags"]["OfficeGroup"] == "lrd"
+    assert submit_kwargs["tags"]["ScriptSlug"] == "hourly"
 
 
 @pytest.mark.parametrize(

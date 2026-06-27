@@ -141,9 +141,11 @@ class BatchJobRunner:
             },
             tags={
                 "Office": office,
+                "OfficeGroup": OFFICES[office]["division"],
                 "Runtime": runtime,
                 "ResourceProfile": resource_profile,
                 "JobId": str(message.job_id),
+                "ScriptSlug": script_slug,
             },
         )
 

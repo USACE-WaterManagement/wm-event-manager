@@ -42,7 +42,7 @@ per-job resource override. If an AWS environment cannot support that override
 shape, the intended fallback is shared runtime-by-size job definitions, not
 office-specific job definitions.
 
-AWS Batch container logs are written to shared runtime log groups. Batch Events keeps the office on each job record and exposes office-scoped job listing and log lookup for office members, so district users can filter to their office in the Jobs List and open logs for individual jobs without requiring one CloudWatch log group or job definition per office.
+AWS Batch container logs are written to shared runtime log groups. Batch Events keeps the office on each job record and tags submitted jobs with office, office group, runtime, resource profile, job id, and script slug. It exposes office-scoped job listing and log lookup for office members, so district users can filter to their office in the Jobs List and open logs for individual jobs without requiring one CloudWatch log group or job definition per office.
 
 Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
 
