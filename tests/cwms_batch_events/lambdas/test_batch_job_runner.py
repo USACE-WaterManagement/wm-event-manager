@@ -1,6 +1,8 @@
 from datetime import datetime
+from pathlib import Path
 from unittest import mock
 
+import botocore.session
 import pytest
 
 from cwms_batch_events.lambdas.dispatch_job.job_runner.batch import BatchJobRunner
@@ -329,6 +331,22 @@ def test_batch_job_runner_uses_configured_runtime_and_resource_overrides(monkeyp
         {"type": "VCPU", "value": "8"},
         {"type": "MEMORY", "value": "16384"},
     ]
+
+
+def test_dispatcher_lambda_pins_batch_submit_model_support():
+    requirements = Path(
+        "cwms_batch_events/lambdas/dispatch_job/requirements.txt"
+    ).read_text(encoding="utf-8")
+    submit_shape = (
+        botocore.session.get_session()
+        .get_service_model("batch")
+        .operation_model("SubmitJob")
+        .input_shape
+    )
+
+    assert "boto3>=" in requirements
+    assert "botocore>=" in requirements
+    assert "ecsPropertiesOverride" in submit_shape.members
 
 
 def test_batch_job_runner_reports_unsupported_runtime():
