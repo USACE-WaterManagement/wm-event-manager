@@ -201,7 +201,7 @@ def test_batch_job_runner_supports_command_execution_type():
     message = make_job_message(
         payload=ScriptRunOptions(
             office="swt",
-            repo_path="cwms-cli users list | grep Test",
+            repo_path="cwms-cli users user-ids | grep Test",
             script_slug="users-list",
             execution_type="command",
             runtime="shell",
@@ -220,7 +220,7 @@ def test_batch_job_runner_supports_command_execution_type():
     assert container_override(submit_kwargs)["command"] == [
         "bash",
         "-lc",
-        "cwms-cli users list | grep Test && ls -l",
+        "cwms-cli users user-ids | grep Test && ls -l",
     ]
     assert {"name": "EXECUTION_TYPE", "value": "command"} in container_override(
         submit_kwargs

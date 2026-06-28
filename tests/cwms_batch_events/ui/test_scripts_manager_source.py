@@ -77,7 +77,7 @@ def test_script_form_exposes_source_type_and_cron_helper():
     assert 'id="executionType"' in source
     assert "GitHub File Path" in source
     assert "Command" in source
-    assert "cwms-cli users list | grep Test" in source
+    assert "cwms-cli users user-ids | grep Test" in source
     assert "crontab.guru" in source
     assert 'target="_blank"' in source
     assert 'title="Open cron expression helper in a new tab"' in source

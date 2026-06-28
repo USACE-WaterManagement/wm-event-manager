@@ -131,7 +131,7 @@ def test_local_executor_uses_shell_for_command_execution_type():
         payload=make_job_message().payload.model_copy(
             update={
                 "execution_type": "command",
-                "repo_path": "cwms-cli users list | grep Test",
+                "repo_path": "cwms-cli users user-ids | grep Test",
                 "command_args": ["&&", "ls", "-l"],
             }
         ),
@@ -149,7 +149,7 @@ def test_local_executor_uses_shell_for_command_execution_type():
     assert client.containers.run.call_args.kwargs["command"] == [
         "bash",
         "-lc",
-        "cwms-cli users list | grep Test && ls -l",
+        "cwms-cli users user-ids | grep Test && ls -l",
     ]
     assert "EXECUTION_TYPE=command" in client.containers.run.call_args.kwargs[
         "environment"

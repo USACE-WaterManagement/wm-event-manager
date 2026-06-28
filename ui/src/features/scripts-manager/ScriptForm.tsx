@@ -507,7 +507,7 @@ export const ScriptForm = ({
                   className="min-w-0 flex-1"
                   placeholder={
                     isCommandExecution
-                      ? "cwms-cli users list | grep Test"
+                      ? "cwms-cli users user-ids | grep Test"
                       : "bin/hourly.sh"
                   }
                   value={form.repoPath}
