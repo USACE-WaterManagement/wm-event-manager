@@ -4,7 +4,6 @@ import {
   Button,
   Checkboxes,
   DeleteConfirm,
-  Dropdown,
   Field,
   Fieldset,
   Input,
@@ -148,6 +147,29 @@ const InputLabel = ({
   );
 };
 
+const selectClassName =
+  "gw-mt-2 gw-block gw-rounded-md gw-border-0 gw-py-1.5 gw-pl-3 gw-pr-10 gw-text-gray-900 gw-ring-1 gw-ring-inset gw-ring-gray-300 focus:gw-ring-2 focus:gw-ring-indigo-600 sm:gw-text-sm sm:gw-leading-6";
+
+const scriptToFormData = (script?: Script): ScriptFormData => ({
+  name: script?.name ?? "",
+  description: script?.description ?? "",
+  active: script?.active ?? true,
+  executionType: normalizedExecutionType(script?.executionType),
+  repoPath: script?.repoPath ?? "",
+  runtime: script?.runtime ?? "python",
+  resourceProfile: script?.resourceProfile ?? "small",
+  commandArgs: script?.commandArgs ?? [],
+  timeoutMinutes: script?.timeoutMinutes ?? 30,
+  scheduleEnabled: script?.scheduleEnabled ?? false,
+  scheduleType: script?.scheduleType ?? "manual",
+  scheduleMinute: script?.scheduleMinute ?? 15,
+  scheduleCron: script?.scheduleCron ?? "",
+  scheduleTimezone: script?.scheduleTimezone ?? defaultScheduleTimezone,
+  envVars: script?.envVars ?? {},
+  secretEnvNames: script?.secretEnvNames ?? [],
+  roles: script?.roles ?? ["CWMS Users"],
+});
+
 interface ScriptFormProps {
   script?: Script;
   isPending: boolean;
@@ -166,25 +188,7 @@ export const ScriptForm = ({
   onCancelEdit,
 }: ScriptFormProps) => {
   const auth = useAuth();
-  const [form, setForm] = useState<ScriptFormData>({
-    name: script?.name ?? "",
-    description: script?.description ?? "",
-    active: script?.active ?? true,
-    executionType: normalizedExecutionType(script?.executionType),
-    repoPath: script?.repoPath ?? "",
-    runtime: script?.runtime ?? "python",
-    resourceProfile: script?.resourceProfile ?? "small",
-    commandArgs: script?.commandArgs ?? [],
-    timeoutMinutes: script?.timeoutMinutes ?? 30,
-    scheduleEnabled: script?.scheduleEnabled ?? false,
-    scheduleType: script?.scheduleType ?? "manual",
-    scheduleMinute: script?.scheduleMinute ?? 15,
-    scheduleCron: script?.scheduleCron ?? "",
-    scheduleTimezone: script?.scheduleTimezone ?? defaultScheduleTimezone,
-    envVars: script?.envVars ?? {},
-    secretEnvNames: script?.secretEnvNames ?? [],
-    roles: script?.roles ?? ["CWMS Users"],
-  });
+  const [form, setForm] = useState<ScriptFormData>(() => scriptToFormData(script));
   const [envVarRows, setEnvVarRows] = useState<EnvVarRow[]>(
     envVarsToRows(script?.envVars),
   );
@@ -205,6 +209,18 @@ export const ScriptForm = ({
     directoryFromPath(script?.repoPath ?? ""),
   );
   const [repoBrowserOpen, setRepoBrowserOpen] = useState(false);
+
+  useEffect(() => {
+    setForm(scriptToFormData(script));
+    setEnvVarRows(envVarsToRows(script?.envVars));
+    setSecretEnvNamesText((script?.secretEnvNames ?? []).join("\n"));
+    setCommandArgsText((script?.commandArgs ?? []).join("\n"));
+    setRepoBrowserDirectory(directoryFromPath(script?.repoPath ?? ""));
+    setRepoBrowserOpen(false);
+    setRepoSuggestions(null);
+    setRepoBrowser(null);
+    setFormError(null);
+  }, [script]);
 
   const fetchRepositoryEntries = async (
     directory: string,
@@ -476,23 +492,22 @@ export const ScriptForm = ({
           <FormRow>
             <InputLabel htmlFor="executionType">Source</InputLabel>
             <div className="max-w-56 min-w-0">
-              <Dropdown
+              <select
                 id="executionType"
                 name="executionType"
-                className="w-full"
+                className={`${selectClassName} w-full`}
                 value={normalizedExecutionType(form.executionType)}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   update("executionType", e.target.value)
                 }
-                options={[
+              >
                   <option key="github_file" value="github_file">
                     GitHub File Path
-                  </option>,
+                  </option>
                   <option key="command" value="command">
                     Command
-                  </option>,
-                ]}
-              />
+                  </option>
+              </select>
             </div>
           </FormRow>
           <FormRow>
@@ -646,54 +661,52 @@ export const ScriptForm = ({
           <FormRow>
             <InputLabel htmlFor="runtime">Runtime</InputLabel>
             <div className="max-w-44 min-w-0">
-              <Dropdown
+              <select
                 id="runtime"
                 name="runtime"
-                className="w-full"
+                className={`${selectClassName} w-full`}
                 value={form.runtime}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   update("runtime", e.target.value)
                 }
-                options={[
+              >
                   <option key="python" value="python">
                     Python
-                  </option>,
+                  </option>
                   <option key="node" value="node">
                     Node
-                  </option>,
+                  </option>
                   <option key="java" value="java">
                     Java
-                  </option>,
+                  </option>
                   <option key="shell" value="shell">
                     Shell
-                  </option>,
-                ]}
-              />
+                  </option>
+              </select>
             </div>
           </FormRow>
           <FormRow>
             <InputLabel htmlFor="resourceProfile">Resource Profile</InputLabel>
             <div className="max-w-80 min-w-0">
-              <Dropdown
+              <select
                 id="resourceProfile"
                 name="resourceProfile"
-                className="w-full"
+                className={`${selectClassName} w-full`}
                 value={form.resourceProfile}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   update("resourceProfile", e.target.value)
                 }
-                options={[
+              >
                   <option key="small" value="small">
                     {resourceProfileLabels.small}
-                  </option>,
+                  </option>
                   <option key="medium" value="medium">
                     {resourceProfileLabels.medium}
-                  </option>,
+                  </option>
                   <option key="large" value="large">
                     {resourceProfileLabels.large}
-                  </option>,
-                ]}
-              />
+                  </option>
+              </select>
             </div>
           </FormRow>
           <FormRow>
@@ -765,23 +778,22 @@ export const ScriptForm = ({
               <FormRow>
                 <InputLabel htmlFor="scheduleType">Schedule Type</InputLabel>
                 <div className="max-w-56 min-w-0">
-                  <Dropdown
+                  <select
                     id="scheduleType"
                     name="scheduleType"
-                    className="w-full"
+                    className={`${selectClassName} w-full`}
                     value={form.scheduleType}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                       update("scheduleType", e.target.value)
                     }
-                    options={[
+                  >
                       <option key="hourly" value="hourly">
                         Hourly
-                      </option>,
+                      </option>
                       <option key="cron" value="cron">
                         Cron
-                      </option>,
-                    ]}
-                  />
+                      </option>
+                  </select>
                 </div>
               </FormRow>
               {form.scheduleType === "hourly" && (
