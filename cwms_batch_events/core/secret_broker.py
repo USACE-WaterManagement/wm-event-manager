@@ -8,6 +8,7 @@ from functools import lru_cache
 from uuid import UUID
 
 import boto3
+import jwt
 from botocore.exceptions import ClientError
 
 from cwms_batch_events.core.job_database.base import JobDatabase
@@ -106,11 +107,10 @@ def _base64url(value: bytes) -> str:
 
 
 def _sign_job_context(job) -> str | None:
+    private_key = settings.batch_job_context_private_key
     secret = settings.batch_job_context_secret
-    if not secret:
+    if not private_key and not secret:
         return None
-    if len(secret) < 32:
-        raise SecretBrokerError("BATCH_JOB_CONTEXT_SECRET must be at least 32 characters")
 
     now = int(time.time())
     payload = {
@@ -132,7 +132,19 @@ def _sign_job_context(job) -> str | None:
         "command_args": job.command_args,
         "timeout_minutes": job.timeout_minutes,
     }
-    header = {"alg": "HS256", "typ": "JWT", "kid": settings.batch_job_context_key_id}
+    header = {"typ": "JWT", "kid": settings.batch_job_context_key_id}
+    if private_key:
+        return jwt.encode(
+            payload,
+            private_key,
+            algorithm="RS256",
+            headers=header,
+        )
+
+    if len(secret) < 32:
+        raise SecretBrokerError("BATCH_JOB_CONTEXT_SECRET must be at least 32 characters")
+
+    header["alg"] = "HS256"
     signing_input = ".".join(
         [
             _base64url(json.dumps(header, separators=(",", ":")).encode("utf-8")),

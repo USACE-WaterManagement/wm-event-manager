@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     sqs_endpoint_url: str | None = None
     batch_events_api_root: str = ""
     batch_events_internal_token: str = ""
+    batch_job_context_private_key: str = ""
     batch_job_context_secret: str = ""
     batch_job_context_previous_secret: str = ""
     batch_job_context_key_id: str = "current"

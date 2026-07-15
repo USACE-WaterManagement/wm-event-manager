@@ -46,6 +46,8 @@ AWS Batch container logs are written to shared runtime log groups. Batch Events 
 
 Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
 
+For CDA machine requests, Batch Events signs the per-job run context from the accepted job record and returns it to the runner as `BATCH_JOB_CONTEXT_TOKEN`. Production should configure `BATCH_JOB_CONTEXT_PRIVATE_KEY` with an RS256 private key and configure CDA with the matching public key. `BATCH_JOB_CONTEXT_SECRET` remains a legacy HS256 fallback for local/bootstrap use when no private key is configured.
+
 Deployments can override the default AWS Batch runtime wiring with JSON environment values:
 
 | Variable | Purpose |

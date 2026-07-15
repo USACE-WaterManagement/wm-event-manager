@@ -14,6 +14,36 @@ from cwms_batch_events.core.secret_broker import (
 from tests.factories import make_job_record
 
 
+TEST_PRIVATE_KEY = """-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC218vsXdIz+dgs
+NDS7l6SI4U37aS5t/t9ig2soZjXV4PABqPZmPRQagutoZjDR4H+0dQMvOWcVQkMb
+rwr3L07TaG1Kuwx5aw4YeaPZ4xrcotUARu4CvJIOdObCIP24WatDGRyVY+j1Hgvz
+cbTimS3L9P0sp+feCL2lvceefMBxGRvftRMwTALHjrKwKV5CX8a6mSvrsinclXPG
+HNxAqsgKhmOz3tjKbRjxLoMm/r57qlI4zLRuXasI3qjuJAuFYggqkM9zmF5wucjx
+PZNP0YbYbHuQqOZ54BmFLoPNrueGvWJVMvF8QqrfK+hO9xJWqTze/l0F3an3BD0D
+z3Lm74KRAgMBAAECgf8rQUHs2QUxZpnNW0xeVLGH8EUShP+G5hTSqWRgWk3CG0Ss
+H9yqsyheXTpzqDlEbWfIuSXXtiy8ysA1fGOLtpVfTgUM+NMqpjjfcWdh1Gg2ag8Z
+0a3c1991rBIrOsLLKetqJDau4MPruP/6x5uTP8mlxn9eYRppXIgA/bSLudeM6Y0c
+giEdmnAh4UI730TtLdWHIaDD0PLTXK1y17as+VLAQtkSeELEC84uLwg1Av7/6wT7
+jXASljGwMVt6RvwXJ0Q/5BvR9WJJ5t1jvG6nDLv9YyhQu+uUmI5kRZ6P+GoGWPG+
+vNxC55ObC/BJpnt4JyuaLexl7I3zhP3aS2jd6eECgYEA6JKs31oVY0QQrhUo52e8
+O4kfWiJGNgBMrgGshywR6RuIbAvnv92g9bXK2Z3QbgE+rq3XEOYzsYnY/8i5Y8Sk
+EYAT1QucYkdaKp5BxT3RCokdC+ARVm/JhyFafZy/vYAcG5pv+3ztWIzVFNpK4d9e
+pVeNaTUgs6BdyBEXv8CO2nECgYEAyUK9vXvvEKXQYJdHQQSZdbY+xlY05DO9RFJ8
+2zYmN4sJLGgCXv8M089htRfsM16D3QcWvBnkr66GqClWvGP0ugxdWJ8uHGeSOPbi
+I5w/10nGwYZAcNtCHSRbPhtrbrxX9kn5uxZBIrlheHtuBSlP0E6/TuW5ul28GQWW
+GHHj+iECgYB6sZZ9pjqOScQ68nLH0ZQeHHLrzBUaPAI38i4giYFRZvMLfSRftf5K
+YgOH1pe00PdOk+tXwPoYeU5/cldLaNvdV6IezKdNubK5tQ+hjMERO9CVCTpcTVEV
+9uSUS/Njd4hcj5bwJ7HW+0UWYSsMChkWRSAXFq4P1VRkTZAn2uACIQKBgQCWxXDv
+KpEFn7JjKfEvPArarBSK8Lne2wPG0yTF8+LdaUMOCTz9fYRWiN1hlPJV6VBPnKfj
+cmJnWg92msFnkFodpnWnllgs30ojcpAmrT8GQTasc66C3T7CJiJUfKYW5vHeh7yV
+8y4InWfvokfhhflMzDF1IZPpkZ7//7dZyLhJAQKBgQDbzH5WXPc78+m0cyYTWDXQ
+FuAQILhy5KDvz5QTycndU5NByXQinEFqXarffQHMDZmlQKAx3qQ1pcMTdrttKqBR
+mzLHWkYoY/G8SUUvSSv8Xj5Sd1otE+X8DgtyHCXoqtpuifQlVrDoVtgWuPGRJqIe
+WrTwt9EtWQ/rmg/UnGm8ig==
+-----END PRIVATE KEY-----"""
+
+
 def _decode_payload(token: str) -> dict:
     payload = token.split(".")[1]
     payload += "=" * (-len(payload) % 4)
@@ -120,8 +150,8 @@ def test_resolve_runtime_env_adds_signed_job_context_when_configured(monkeypatch
         timeout_minutes=45,
     )
     monkeypatch.setattr(
-        "cwms_batch_events.core.secret_broker.settings.batch_job_context_secret",
-        "test-batch-job-context-secret-32chars",
+        "cwms_batch_events.core.secret_broker.settings.batch_job_context_private_key",
+        TEST_PRIVATE_KEY,
     )
 
     response = resolve_runtime_env(job_id, job_db)
@@ -130,6 +160,7 @@ def test_resolve_runtime_env_adds_signed_job_context_when_configured(monkeypatch
     payload = _decode_payload(token)
     header = _decode_header(token)
     assert header["kid"] == "current"
+    assert header["alg"] == "RS256"
     assert payload["job_id"] == str(job_id)
     assert payload["run_as_office"] == "SWT"
     assert payload["office"] == "SWT"
@@ -139,6 +170,25 @@ def test_resolve_runtime_env_adds_signed_job_context_when_configured(monkeypatch
     assert payload["timeout_minutes"] == 45
     assert payload["iss"] == "cwms-batch-events"
     assert payload["aud"] == "cwms-data-api"
+
+
+def test_resolve_runtime_env_can_use_legacy_hmac_job_context(monkeypatch):
+    job_id = uuid4()
+    job_db = mock.Mock()
+    job_db.get_job_by_id.return_value = make_job_record(id=job_id, office="SWT")
+    monkeypatch.setattr(
+        "cwms_batch_events.core.secret_broker.settings.batch_job_context_private_key",
+        "",
+    )
+    monkeypatch.setattr(
+        "cwms_batch_events.core.secret_broker.settings.batch_job_context_secret",
+        "test-batch-job-context-secret-32chars",
+    )
+
+    response = resolve_runtime_env(job_id, job_db)
+
+    header = _decode_header(response.env_vars["BATCH_JOB_CONTEXT_TOKEN"])
+    assert header["alg"] == "HS256"
 
 
 def test_resolve_runtime_env_requires_existing_job():
