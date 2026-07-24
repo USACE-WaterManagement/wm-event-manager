@@ -57,11 +57,12 @@ def map_write_error(e: Exception):
 
 @router.get("/templates")
 def get_templates(
-    office: str,
+    office: str | None = None,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[NotificationTemplateRead]:
-    check_user_office_admin(user, office)
+    if office is not None:
+        check_user_office_admin(user, office)
     return job_db.get_notification_templates_for_office(office)
 
 
@@ -71,7 +72,8 @@ def post_template(
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> NotificationTemplateRead:
-    check_user_office_admin(user, payload.office)
+    if payload.office is not None:
+        check_user_office_admin(user, payload.office)
     try:
         return job_db.store_notification_template(payload)
     except Exception as e:
@@ -131,8 +133,8 @@ def preview_template(
         data = build_job_failure_data(job) | data
 
     return render_notification(
-        subject_template=template.subject_template,
-        body_template=template.body_template,
+        subject_template=payload.subject_template or template.subject_template,
+        body_template=payload.body_template or template.body_template,
         recipients=[],
         data=data,
     )
@@ -140,11 +142,12 @@ def preview_template(
 
 @router.get("/groups")
 def get_groups(
-    office: str,
+    office: str | None = None,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[NotificationGroupRead]:
-    check_user_office_admin(user, office)
+    if office is not None:
+        check_user_office_admin(user, office)
     return job_db.get_notification_groups_for_office(office)
 
 
@@ -154,7 +157,8 @@ def post_group(
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> NotificationGroupRead:
-    check_user_office_admin(user, payload.office)
+    if payload.office is not None:
+        check_user_office_admin(user, payload.office)
     try:
         return job_db.store_notification_group(payload)
     except Exception as e:

@@ -165,6 +165,7 @@ services:
       FLYWAY_URL: jdbc:postgresql://db:5432/postgres
       FLYWAY_USER: postgres
       FLYWAY_VALIDATE_MIGRATION_NAMING: true
+      FLYWAY_OUT_OF_ORDER: true
       FLYWAY_PLACEHOLDERS_APP_USER: *application_user
       FLYWAY_PLACEHOLDERS_APP_PASSWORD: *application_password
     volumes:

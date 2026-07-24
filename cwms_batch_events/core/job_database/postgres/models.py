@@ -112,7 +112,7 @@ class NotificationTemplateModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    office: Mapped[str]
+    office: Mapped[str | None]
     slug: Mapped[str]
     subject_template: Mapped[str]
     body_template: Mapped[str]
@@ -134,7 +134,7 @@ class NotificationGroupModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    office: Mapped[str]
+    office: Mapped[str | None]
     slug: Mapped[str]
     name: Mapped[str]
     active: Mapped[bool]
@@ -184,7 +184,6 @@ class ScriptNotificationRuleModel(Base):
             "script_id",
             "event_type",
             "template_id",
-            "group_id",
             name="script_notification_rules_unique_rule",
         ),
     )
@@ -199,9 +198,10 @@ class ScriptNotificationRuleModel(Base):
     template_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("notification_templates.id", ondelete="CASCADE")
     )
-    group_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("notification_groups.id", ondelete="CASCADE")
-    )
+    cda_user_list_id: Mapped[str | None]
+    manual_recipients: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    subject_template: Mapped[str | None]
+    body_template: Mapped[str | None]
     active: Mapped[bool]
     created_time: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp()
@@ -212,4 +212,3 @@ class ScriptNotificationRuleModel(Base):
 
     script: Mapped["ScriptModel"] = relationship(lazy="selectin")
     template: Mapped["NotificationTemplateModel"] = relationship(lazy="selectin")
-    group: Mapped["NotificationGroupModel"] = relationship(lazy="selectin")

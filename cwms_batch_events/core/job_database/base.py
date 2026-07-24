@@ -50,11 +50,8 @@ class JobDatabase(Protocol):
     def get_active_job_failed_notification_rules(
         self, script_id: UUID
     ) -> list[ScriptNotificationRuleDetails]: ...
-    def get_active_notification_group_member_emails(
-        self, group_id: UUID
-    ) -> list[str]: ...
     def get_notification_templates_for_office(
-        self, office: str
+        self, office: str | None = None
     ) -> list[NotificationTemplateRead]: ...
     def store_notification_template(
         self, payload: NotificationTemplateCreate
@@ -72,7 +69,7 @@ class JobDatabase(Protocol):
         self, template_id: UUID, admin_offices: list[str]
     ) -> NotificationTemplateRead: ...
     def get_notification_groups_for_office(
-        self, office: str
+        self, office: str | None = None
     ) -> list[NotificationGroupRead]: ...
     def store_notification_group(
         self, payload: NotificationGroupCreate

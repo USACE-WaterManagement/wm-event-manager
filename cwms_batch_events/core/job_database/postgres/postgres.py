@@ -66,7 +66,8 @@ class PostgresJobDatabase:
         self, group_id: uuid.UUID, admin_offices: list[str]
     ) -> NotificationGroupModel:
         group = self.db.get_one(NotificationGroupModel, group_id)
-        self._ensure_admin_office(group.office, admin_offices)
+        if group.office is not None:
+            self._ensure_admin_office(group.office, admin_offices)
         return group
 
     def _load_script_for_admin(
@@ -267,13 +268,11 @@ class PostgresJobDatabase:
         rules = self.db.scalars(
             select(ScriptNotificationRuleModel)
             .join(ScriptNotificationRuleModel.template)
-            .join(ScriptNotificationRuleModel.group)
             .where(
                 ScriptNotificationRuleModel.script_id == script_id,
                 ScriptNotificationRuleModel.event_type == NotificationEventType.JOB_FAILED,
                 ScriptNotificationRuleModel.active.is_(True),
                 NotificationTemplateModel.active.is_(True),
-                NotificationGroupModel.active.is_(True),
             )
         ).all()
         return [ScriptNotificationRuleDetails.model_validate(rule) for rule in rules]
@@ -292,11 +291,16 @@ class PostgresJobDatabase:
         return [member.email for member in members]
 
     def get_notification_templates_for_office(
-        self, office: str
+        self, office: str | None = None
     ) -> list[NotificationTemplateRead]:
         templates = self.db.scalars(
             select(NotificationTemplateModel)
-            .where(NotificationTemplateModel.office == office)
+            .where(
+                (NotificationTemplateModel.office == office)
+                | (NotificationTemplateModel.office.is_(None))
+                if office is not None
+                else NotificationTemplateModel.office.is_(None)
+            )
             .order_by(NotificationTemplateModel.slug)
         ).all()
         return [NotificationTemplateRead.model_validate(model) for model in templates]
@@ -324,8 +328,10 @@ class PostgresJobDatabase:
         try:
             with self.db.begin():
                 template = self.db.get_one(NotificationTemplateModel, template_id)
-                self._ensure_admin_office(template.office, admin_offices)
-                self._ensure_admin_office(payload.office, admin_offices)
+                if template.office is not None:
+                    self._ensure_admin_office(template.office, admin_offices)
+                if payload.office is not None:
+                    self._ensure_admin_office(payload.office, admin_offices)
                 for field, value in payload.model_dump(by_alias=False).items():
                     setattr(template, field, value)
                 template.updated_time = datetime.now(timezone.utc)
@@ -341,22 +347,27 @@ class PostgresJobDatabase:
     ) -> None:
         with self.db.begin():
             template = self.db.get_one(NotificationTemplateModel, template_id)
-            self._ensure_admin_office(template.office, admin_offices)
+            if template.office is not None:
+                self._ensure_admin_office(template.office, admin_offices)
             self.db.delete(template)
 
     def get_notification_template_if_allowed(
         self, template_id: uuid.UUID, admin_offices: list[str]
     ) -> NotificationTemplateRead:
         template = self.db.get_one(NotificationTemplateModel, template_id)
-        self._ensure_admin_office(template.office, admin_offices)
+        if template.office is not None:
+            self._ensure_admin_office(template.office, admin_offices)
         return NotificationTemplateRead.model_validate(template)
 
-    def get_notification_groups_for_office(
-        self, office: str
-    ) -> list[NotificationGroupRead]:
+    def get_notification_groups_for_office(self, office: str | None = None) -> list[NotificationGroupRead]:
         groups = self.db.scalars(
             select(NotificationGroupModel)
-            .where(NotificationGroupModel.office == office)
+            .where(
+                (NotificationGroupModel.office == office)
+                | (NotificationGroupModel.office.is_(None))
+                if office is not None
+                else NotificationGroupModel.office.is_(None)
+            )
             .order_by(NotificationGroupModel.slug)
         ).all()
         return [NotificationGroupRead.model_validate(model) for model in groups]
@@ -384,8 +395,10 @@ class PostgresJobDatabase:
         try:
             with self.db.begin():
                 group = self.db.get_one(NotificationGroupModel, group_id)
-                self._ensure_admin_office(group.office, admin_offices)
-                self._ensure_admin_office(payload.office, admin_offices)
+                if group.office is not None:
+                    self._ensure_admin_office(group.office, admin_offices)
+                if payload.office is not None:
+                    self._ensure_admin_office(payload.office, admin_offices)
                 for field, value in payload.model_dump(by_alias=False).items():
                     setattr(group, field, value)
                 group.updated_time = datetime.now(timezone.utc)
@@ -444,7 +457,8 @@ class PostgresJobDatabase:
         try:
             with self.db.begin():
                 member = self.db.get_one(NotificationGroupMemberModel, member_id)
-                self._ensure_admin_office(member.group.office, admin_offices)
+                if member.group.office is not None:
+                    self._ensure_admin_office(member.group.office, admin_offices)
                 for field, value in payload.model_dump(by_alias=False).items():
                     setattr(member, field, value)
                 member.updated_time = datetime.now(timezone.utc)
@@ -460,7 +474,8 @@ class PostgresJobDatabase:
     ) -> None:
         with self.db.begin():
             member = self.db.get_one(NotificationGroupMemberModel, member_id)
-            self._ensure_admin_office(member.group.office, admin_offices)
+            if member.group.office is not None:
+                self._ensure_admin_office(member.group.office, admin_offices)
             self.db.delete(member)
 
     def get_script_notification_rules(
@@ -480,6 +495,10 @@ class PostgresJobDatabase:
         try:
             with self.db.begin():
                 self._validate_rule_payload(payload, admin_offices)
+                if payload.active:
+                    self._deactivate_active_script_notification_rules(
+                        payload.script_id, payload.event_type
+                    )
                 rule = ScriptNotificationRuleModel(**payload.model_dump(by_alias=False))
                 self.db.add(rule)
                 self.db.flush()
@@ -500,6 +519,10 @@ class PostgresJobDatabase:
                 self._validate_rule_payload(payload, admin_offices)
                 rule = self.db.get_one(ScriptNotificationRuleModel, rule_id)
                 self._ensure_admin_office(rule.script.office, admin_offices)
+                if payload.active:
+                    self._deactivate_active_script_notification_rules(
+                        payload.script_id, payload.event_type, exclude_rule_id=rule_id
+                    )
                 for field, value in payload.model_dump(by_alias=False).items():
                     setattr(rule, field, value)
                 rule.updated_time = datetime.now(timezone.utc)
@@ -525,11 +548,28 @@ class PostgresJobDatabase:
     ) -> None:
         script = self._load_script_for_admin(payload.script_id, admin_offices)
         template = self.db.get_one(NotificationTemplateModel, payload.template_id)
-        group = self.db.get_one(NotificationGroupModel, payload.group_id)
-
         if payload.event_type != NotificationEventType.JOB_FAILED:
             raise ValueError("Only job_failed notification rules are supported")
-        if template.office != script.office:
+        if template.office is not None and template.office != script.office:
             raise ValueError("Notification template office must match script office")
-        if group.office != script.office:
-            raise ValueError("Notification group office must match script office")
+        if not payload.cda_user_list_id and not payload.manual_recipients:
+            raise ValueError(
+                "A CDA user list or at least one manual recipient is required"
+            )
+
+    def _deactivate_active_script_notification_rules(
+        self,
+        script_id: uuid.UUID,
+        event_type: NotificationEventType,
+        exclude_rule_id: uuid.UUID | None = None,
+    ) -> None:
+        statement = select(ScriptNotificationRuleModel).where(
+            ScriptNotificationRuleModel.script_id == script_id,
+            ScriptNotificationRuleModel.event_type == event_type,
+            ScriptNotificationRuleModel.active.is_(True),
+        )
+        if exclude_rule_id is not None:
+            statement = statement.where(ScriptNotificationRuleModel.id != exclude_rule_id)
+        for rule in self.db.scalars(statement).all():
+            rule.active = False
+            rule.updated_time = datetime.now(timezone.utc)

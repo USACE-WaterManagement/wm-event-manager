@@ -58,7 +58,8 @@ def make_rule(**overrides):
         scriptId=overrides.pop("script_id", uuid4()),
         eventType=overrides.pop("event_type", "job_failed"),
         templateId=overrides.pop("template_id", uuid4()),
-        groupId=overrides.pop("group_id", uuid4()),
+        cdaUserListId=overrides.pop("cda_user_list_id", "data-admins"),
+        manualRecipients=overrides.pop("manual_recipients", ["one@example.mil"]),
         active=overrides.pop("active", True),
         createdTime=overrides.pop("created_time", now),
         updatedTime=overrides.pop("updated_time", now),
@@ -176,7 +177,8 @@ def test_create_and_manage_rules(client, job_db):
         "scriptId": str(rule.script_id),
         "eventType": "job_failed",
         "templateId": str(rule.template_id),
-        "groupId": str(rule.group_id),
+        "cdaUserListId": rule.cda_user_list_id,
+        "manualRecipients": rule.manual_recipients,
         "active": True,
     }
     create_response = client.post("/notifications/rules", json=payload)

@@ -122,7 +122,7 @@ class NotificationEventType(str, Enum):
 
 
 class NotificationTemplateBase(CamelModel):
-    office: str
+    office: str | None = None
     slug: str
     subject_template: str
     body_template: str
@@ -146,7 +146,7 @@ class NotificationTemplateRead(NotificationTemplateBase):
 
 
 class NotificationGroupBase(CamelModel):
-    office: str
+    office: str | None = None
     slug: str
     name: str
     active: bool = True
@@ -194,7 +194,10 @@ class ScriptNotificationRuleBase(CamelModel):
     script_id: UUID
     event_type: NotificationEventType = NotificationEventType.JOB_FAILED
     template_id: UUID
-    group_id: UUID
+    cda_user_list_id: str | None = None
+    manual_recipients: list[str] = Field(default_factory=list)
+    subject_template: str | None = None
+    body_template: str | None = None
     active: bool = True
 
 
@@ -216,12 +219,13 @@ class ScriptNotificationRuleRead(ScriptNotificationRuleBase):
 
 class ScriptNotificationRuleDetails(ScriptNotificationRuleRead):
     template: NotificationTemplateRead
-    group: NotificationGroupRead
 
 
 class NotificationPreviewRequest(CamelModel):
     job_id: UUID | None = None
     data: dict[str, str | None] = {}
+    subject_template: str | None = None
+    body_template: str | None = None
 
 
 class RenderedNotification(CamelModel):
