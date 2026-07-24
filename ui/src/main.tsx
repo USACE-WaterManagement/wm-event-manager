@@ -9,6 +9,8 @@ import {
 } from "@usace-watermanagement/groundwork-water";
 import createMockAuthMethod from "./features/auth/mockAuthMethod.ts";
 import { Link, RouterProvider, createRouter } from "@tanstack/react-router";
+import { AppErrorBoundary } from "./shared/components/AppErrorBoundary.tsx";
+import { Toaster } from "react-hot-toast";
 
 // TanStack Router setup
 import { routeTree } from "./routeTree.gen";
@@ -53,12 +55,15 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider method={authMethod}>
-        <LinkProvider component={Link} hrefMap="to">
-          <RouterProvider router={router} />
-        </LinkProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider method={authMethod}>
+          <LinkProvider component={Link} hrefMap="to">
+            <RouterProvider router={router} />
+          </LinkProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </AppErrorBoundary>
+    <Toaster position="top-right" />
   </StrictMode>,
 );

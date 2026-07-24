@@ -353,7 +353,7 @@ export interface components {
         /** NotificationGroupCreate */
         NotificationGroupCreate: {
             /** Office */
-            office: string;
+            office?: string | null;
             /** Slug */
             slug: string;
             /** Name */
@@ -417,7 +417,7 @@ export interface components {
         /** NotificationGroupRead */
         NotificationGroupRead: {
             /** Office */
-            office: string;
+            office?: string | null;
             /** Slug */
             slug: string;
             /** Name */
@@ -446,7 +446,7 @@ export interface components {
         /** NotificationGroupUpdate */
         NotificationGroupUpdate: {
             /** Office */
-            office: string;
+            office?: string | null;
             /** Slug */
             slug: string;
             /** Name */
@@ -468,11 +468,15 @@ export interface components {
             data: {
                 [key: string]: string | null;
             };
+            /** Subjecttemplate */
+            subjectTemplate?: string | null;
+            /** Bodytemplate */
+            bodyTemplate?: string | null;
         };
         /** NotificationTemplateCreate */
         NotificationTemplateCreate: {
             /** Office */
-            office: string;
+            office?: string | null;
             /** Slug */
             slug: string;
             /** Subjecttemplate */
@@ -488,7 +492,7 @@ export interface components {
         /** NotificationTemplateRead */
         NotificationTemplateRead: {
             /** Office */
-            office: string;
+            office?: string | null;
             /** Slug */
             slug: string;
             /** Subjecttemplate */
@@ -519,7 +523,7 @@ export interface components {
         /** NotificationTemplateUpdate */
         NotificationTemplateUpdate: {
             /** Office */
-            office: string;
+            office?: string | null;
             /** Slug */
             slug: string;
             /** Subjecttemplate */
@@ -587,11 +591,14 @@ export interface components {
              * Format: uuid
              */
             templateId: string;
-            /**
-             * Groupid
-             * Format: uuid
-             */
-            groupId: string;
+            /** CDA user list id */
+            cdaUserListId?: string | null;
+            /** Manual recipients */
+            manualRecipients: string[];
+            /** Subjecttemplate */
+            subjectTemplate?: string | null;
+            /** Bodytemplate */
+            bodyTemplate?: string | null;
             /**
              * Active
              * @default true
@@ -612,11 +619,14 @@ export interface components {
              * Format: uuid
              */
             templateId: string;
-            /**
-             * Groupid
-             * Format: uuid
-             */
-            groupId: string;
+            /** CDA user list id */
+            cdaUserListId?: string | null;
+            /** Manual recipients */
+            manualRecipients: string[];
+            /** Subjecttemplate */
+            subjectTemplate?: string | null;
+            /** Bodytemplate */
+            bodyTemplate?: string | null;
             /**
              * Active
              * @default true
@@ -652,11 +662,14 @@ export interface components {
              * Format: uuid
              */
             templateId: string;
-            /**
-             * Groupid
-             * Format: uuid
-             */
-            groupId: string;
+            /** CDA user list id */
+            cdaUserListId?: string | null;
+            /** Manual recipients */
+            manualRecipients: string[];
+            /** Subjecttemplate */
+            subjectTemplate?: string | null;
+            /** Bodytemplate */
+            bodyTemplate?: string | null;
             /**
              * Active
              * @default true
@@ -881,8 +894,8 @@ export interface operations {
     };
     get_templates_notifications_templates_get: {
         parameters: {
-            query: {
-                office: string;
+            query?: {
+                office?: string | null;
             };
             header?: never;
             path?: never;
@@ -1044,8 +1057,8 @@ export interface operations {
     };
     get_groups_notifications_groups_get: {
         parameters: {
-            query: {
-                office: string;
+            query?: {
+                office?: string | null;
             };
             header?: never;
             path?: never;

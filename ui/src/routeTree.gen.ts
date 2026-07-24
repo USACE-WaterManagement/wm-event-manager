@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ScriptsManagerRouteImport } from './routes/scripts-manager'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
@@ -18,6 +19,11 @@ import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScriptsManagerRoute = ScriptsManagerRouteImport.update({
@@ -44,6 +50,7 @@ const JobsJobIdRoute = JobsJobIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/scripts-manager': typeof ScriptsManagerRoute
+  '/setup': typeof SetupRoute
   '/submit': typeof SubmitRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/jobs/': typeof JobsIndexRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/scripts-manager': typeof ScriptsManagerRoute
+  '/setup': typeof SetupRoute
   '/submit': typeof SubmitRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/jobs': typeof JobsIndexRoute
@@ -59,19 +67,27 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/scripts-manager': typeof ScriptsManagerRoute
+  '/setup': typeof SetupRoute
   '/submit': typeof SubmitRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/jobs/': typeof JobsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/scripts-manager' | '/submit' | '/jobs/$jobId' | '/jobs/'
+  fullPaths:
+    | '/'
+    | '/scripts-manager'
+    | '/setup'
+    | '/submit'
+    | '/jobs/$jobId'
+    | '/jobs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/scripts-manager' | '/submit' | '/jobs/$jobId' | '/jobs'
+  to: '/' | '/scripts-manager' | '/setup' | '/submit' | '/jobs/$jobId' | '/jobs'
   id:
     | '__root__'
     | '/'
     | '/scripts-manager'
+    | '/setup'
     | '/submit'
     | '/jobs/$jobId'
     | '/jobs/'
@@ -80,6 +96,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ScriptsManagerRoute: typeof ScriptsManagerRoute
+  SetupRoute: typeof SetupRoute
   SubmitRoute: typeof SubmitRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   JobsIndexRoute: typeof JobsIndexRoute
@@ -92,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/submit'
       fullPath: '/submit'
       preLoaderRoute: typeof SubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scripts-manager': {
@@ -128,6 +152,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ScriptsManagerRoute: ScriptsManagerRoute,
+  SetupRoute: SetupRoute,
   SubmitRoute: SubmitRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   JobsIndexRoute: JobsIndexRoute,

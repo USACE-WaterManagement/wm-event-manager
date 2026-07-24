@@ -7,7 +7,7 @@ import { Button, H2 } from "@usace/groundwork";
 import { useUpdateScript } from "./useUpdateScript";
 import { useCreateScript } from "./useCreateScript";
 import { useDeleteScript } from "./useDeleteScript";
-import { NotificationAdminPanel } from "../notifications-manager/NotificationAdminPanel";
+import { ScriptNotificationEditor } from "../notifications-manager/ScriptNotificationEditor";
 
 const BATCH_RUNNER_UUID = "58600a09-f18e-42c5-9d3c-df52ebe409f9";
 
@@ -26,6 +26,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
   >();
 
   const [panelMode, setPanelMode] = useState<"view" | "edit">("view");
+  const [selectedTab, setSelectedTab] = useState<"details" | "notify">("details");
 
   if (scripts.isLoading) return <span>Loading scripts...</span>;
   if (scripts.isError)
@@ -38,6 +39,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
 
   const onSelect = (scriptId: string) => {
     setPanelMode("view");
+    setSelectedTab("details");
     setSelectedScriptId(scriptId);
   };
   const onNew = () => {
@@ -45,6 +47,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     deleteScriptMutation.reset();
     updateScriptMutation.reset();
     setPanelMode("edit");
+    setSelectedTab("details");
     setSelectedScriptId(undefined);
   };
   const onEdit = () => {
@@ -52,6 +55,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     deleteScriptMutation.reset();
     updateScriptMutation.reset();
     setPanelMode("edit");
+    setSelectedTab("details");
   };
   const onDelete = async (scriptId: string) => {
     await deleteScriptMutation.mutateAsync({ scriptId });
@@ -110,18 +114,45 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
             selectedScriptId={selectedScriptId}
           />
         </div>
-        <ScriptDetailPanel
-          script={selectedScript}
-          mode={panelMode}
-          isPending={isPending}
-          mutationError={mutationError}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          onSave={onSave}
-          onCancelEdit={onCancelEdit}
-        />
+        <section className="rounded-lg bg-gray-100 p-4">
+          {selectedScript && panelMode === "view" && (
+            <div className="mb-4 flex gap-2 border-b border-gray-300">
+              <button
+                type="button"
+                className={`px-4 py-2 font-semibold ${
+                  selectedTab === "details" ? "bg-white" : "hover:bg-gray-200"
+                }`}
+                onClick={() => setSelectedTab("details")}
+              >
+                Details
+              </button>
+              <button
+                type="button"
+                className={`px-4 py-2 font-semibold ${
+                  selectedTab === "notify" ? "bg-white" : "hover:bg-gray-200"
+                }`}
+                onClick={() => setSelectedTab("notify")}
+              >
+                Notify
+              </button>
+            </div>
+          )}
+          {selectedScript && selectedTab === "notify" && panelMode === "view" ? (
+            <ScriptNotificationEditor script={selectedScript} />
+          ) : (
+            <ScriptDetailPanel
+              script={selectedScript}
+              mode={panelMode}
+              isPending={isPending}
+              mutationError={mutationError}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onSave={onSave}
+              onCancelEdit={onCancelEdit}
+            />
+          )}
+        </section>
       </div>
-      <NotificationAdminPanel office={office} selectedScript={selectedScript} />
     </>
   );
 };

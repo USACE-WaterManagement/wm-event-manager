@@ -41,7 +41,5 @@ export const ScriptDetailPanel = ({
     );
   }
 
-  return (
-    <section className="p-4 rounded-xl bg-gray-200">{innerComponent}</section>
-  );
+  return <div>{innerComponent}</div>;
 };

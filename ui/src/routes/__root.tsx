@@ -7,6 +7,7 @@ const navLinks = [
   { id: "jobs", text: "Jobs List", href: "/jobs" },
   { id: "submit", text: "Submit Job", href: "/submit" },
   { id: "manager", text: "Scripts Manager", href: "/scripts-manager" },
+  { id: "setup", text: "Setup", href: "/setup" },
 ];
 
 export const Route = createRootRoute({

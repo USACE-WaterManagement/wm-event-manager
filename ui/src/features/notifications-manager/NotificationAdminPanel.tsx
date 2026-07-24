@@ -135,7 +135,8 @@ export const NotificationAdminPanel = ({
       scriptId: selectedScript.id,
       eventType: "job_failed",
       templateId: selectedTemplateId || activeTemplates[0]?.id,
-      groupId: selectedGroupId || activeGroups[0]?.id,
+      cdaUserListId: null,
+      manualRecipients: members.data?.map((member) => member.email) ?? [],
       active: true,
     });
   };
