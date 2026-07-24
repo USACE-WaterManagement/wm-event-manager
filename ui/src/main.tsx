@@ -27,16 +27,43 @@ const authRealm = import.meta.env.VITE_AUTH_REALM;
 const authUser = import.meta.env.VITE_AUTH_USER;
 const authPassword = import.meta.env.VITE_AUTH_PASSWORD;
 
+function createLocalAuthMethod() {
+  let token: string | undefined;
+  return {
+    async login() {
+      const response = await fetch(
+        `${authHost}/realms/${authRealm}/protocol/openid-connect/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "password",
+            client_id: "cwms",
+            username: authUser,
+            password: authPassword,
+          }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Local Keycloak login failed (${response.status})`);
+      }
+      token = (await response.json()).access_token;
+    },
+    async logout() {
+      token = undefined;
+    },
+    async isAuth() {
+      return !!token;
+    },
+    get token() {
+      return token;
+    },
+  };
+}
+
 const authMethod = (() => {
   if (buildMode === "dev-cda-compose") {
-    return createKeycloakAuthMethod({
-      host: authHost,
-      realm: authRealm,
-      client: "cwms",
-      flow: "direct-grant",
-      username: authUser,
-      password: authPassword,
-    });
+    return createLocalAuthMethod();
   } else if (["dev", "test", "prod"].includes(buildMode)) {
     return createKeycloakAuthMethod({
       host: authHost,
