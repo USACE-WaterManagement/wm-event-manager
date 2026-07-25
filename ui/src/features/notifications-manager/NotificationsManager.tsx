@@ -1,507 +1,421 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  Badge,
   Button,
+  Card,
+  Checkboxes,
+  Description,
   Field,
   Fieldset,
   H2,
   H3,
   Input,
   Label,
-  Sidebar,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Skeleton,
   Text,
 } from "@usace/groundwork";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import toast from "react-hot-toast";
-import { FaCopy, FaPlus, FaTrash } from "react-icons/fa6";
+import { FaEnvelope, FaPlus } from "react-icons/fa6";
+import { OfficeSelector } from "../../shared/components/OfficeSelector";
+import { useRememberedOffice } from "../../shared/hooks/useRememberedOffice";
+import useAdminOffices from "../scripts-manager/useAdminOffices";
 import {
-  useCreateNotificationGroup,
-  useCreateNotificationGroupMember,
   useCreateNotificationTemplate,
-  useDeleteNotificationGroup,
-  useDeleteNotificationGroupMember,
   useDeleteNotificationTemplate,
-  useNotificationGroupMembers,
-  useNotificationGroups,
   useNotificationTemplates,
-  useUpdateNotificationGroup,
+  usePreviewNotificationTemplate,
   useUpdateNotificationTemplate,
 } from "./api";
 import { JinjaTemplateField } from "./JinjaTemplateField";
-import type { NotificationGroup, NotificationTemplate } from "./types";
+import type { NotificationTemplate } from "./types";
 
-const slugify = (str: string) =>
-  str
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-const emptyTemplate = () => ({
+const emptyTemplate = (office: string) => ({
   id: "",
-  office: "",
+  office,
   slug: "job_failure_v1",
   subjectTemplate: "Batch job {{ scriptName }} failed",
   bodyTemplate:
-    "Job {{ jobId }} failed for {{ office }}.\nError: {{ errorMessage }}\nLogs: {{ logs }}",
+    "Job {{ jobId }} failed for {{ office }}.\nError: {{ errorMessage }}\n\nReview the job and logs in Batch Events.",
   active: true,
 });
 
-const emptyGroup = () => ({
-  id: "",
-  slug: "",
-  name: "",
-  active: true,
+const formFromTemplate = (template: NotificationTemplate) => ({
+  id: template.id,
+  office: template.office ?? "",
+  slug: template.slug,
+  subjectTemplate: template.subjectTemplate,
+  bodyTemplate: template.bodyTemplate,
+  active: template.active,
 });
-
-const FieldRow = ({ children }: React.PropsWithChildren) => (
-  <Field className="grid grid-cols-[120px_1fr] gap-4">{children}</Field>
-);
-
-const setupSidebarLinks = [
-  { id: "setup-groups", text: "Groups", href: "" },
-  {
-    id: "setup-notifications",
-    text: "Notifications",
-    href: "",
-  },
-];
 
 export const NotificationsManager = () => {
   const auth = useAuth();
-  const [pane, setPane] = useState<"groups" | "templates">("groups");
-
-  const templates = useNotificationTemplates();
-  const groups = useNotificationGroups();
-  const createTemplate = useCreateNotificationTemplate();
-  const updateTemplate = useUpdateNotificationTemplate();
-  const deleteTemplate = useDeleteNotificationTemplate();
-  const createGroup = useCreateNotificationGroup();
-  const updateGroup = useUpdateNotificationGroup();
-  const deleteGroup = useDeleteNotificationGroup();
-
+  const adminOffices = useAdminOffices();
+  const [office, setOffice] = useRememberedOffice(adminOffices.data ?? []);
+  const selectedOffice = office ?? "";
+  const templates = useNotificationTemplates(selectedOffice);
+  const createTemplate = useCreateNotificationTemplate(selectedOffice);
+  const updateTemplate = useUpdateNotificationTemplate(selectedOffice);
+  const deleteTemplate = useDeleteNotificationTemplate(selectedOffice);
+  const preview = usePreviewNotificationTemplate();
+  const resetPreview = preview.reset;
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
-  const [selectedGroupId, setSelectedGroupId] = useState("");
-  const [templateForm, setTemplateForm] = useState(emptyTemplate);
-  const [groupForm, setGroupForm] = useState(emptyGroup);
-  const [memberEmail, setMemberEmail] = useState("");
-
-  const selectedTemplate = templates.data?.find(
-    (template) => template.id === selectedTemplateId,
-  );
-  const selectedGroup = groups.data?.find((group) => group.id === selectedGroupId);
-  const groupMembers = useNotificationGroupMembers(selectedGroupId);
-  const createMember = useCreateNotificationGroupMember(selectedGroupId);
-  const deleteMember = useDeleteNotificationGroupMember(selectedGroupId);
+  const [templateForm, setTemplateForm] = useState(() => emptyTemplate(""));
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const sortedTemplates = useMemo(
     () => [...(templates.data ?? [])].sort((a, b) => a.slug.localeCompare(b.slug)),
     [templates.data],
   );
-  const sortedGroups = useMemo(
-    () => [...(groups.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
-    [groups.data],
+  const selectedTemplate = sortedTemplates.find(
+    (template) => template.id === selectedTemplateId,
   );
+  const initialForm = selectedTemplate
+    ? formFromTemplate(selectedTemplate)
+    : emptyTemplate(selectedOffice);
+  const dirty = JSON.stringify(templateForm) !== JSON.stringify(initialForm);
+  const pending =
+    createTemplate.isPending ||
+    updateTemplate.isPending ||
+    deleteTemplate.isPending ||
+    preview.isPending;
+  const error =
+    adminOffices.error ||
+    templates.error ||
+    createTemplate.error ||
+    updateTemplate.error ||
+    deleteTemplate.error ||
+    preview.error;
 
-  if (!auth.isAuth) return <span>Login required to edit notifications.</span>;
+  useEffect(() => {
+    setSelectedTemplateId("");
+    setTemplateForm(emptyTemplate(selectedOffice));
+    setDeleteConfirm(false);
+    resetPreview();
+  }, [selectedOffice, resetPreview]);
+
+  if (!auth.isAuth) {
+    return (
+      <Card className="mx-auto max-w-xl p-8 text-center">
+        <H2>Email templates</H2>
+        <Text className="mt-2">Log in to manage notification templates.</Text>
+        <Button className="mt-5" type="button" onClick={auth.login}>
+          Log in
+        </Button>
+      </Card>
+    );
+  }
+  if (adminOffices.isLoading) {
+    return <Skeleton className="h-48 w-full" />;
+  }
+  if (!adminOffices.data?.length) {
+    return (
+      <Card className="p-6">
+        <H2>Email templates</H2>
+        <Text className="mt-2">
+          You do not have script administrator access for any offices.
+        </Text>
+      </Card>
+    );
+  }
 
   const selectTemplate = (template: NotificationTemplate) => {
     setSelectedTemplateId(template.id);
-    setTemplateForm({
-      id: template.id,
-      office: template.office ?? "",
-      slug: template.slug,
-      subjectTemplate: template.subjectTemplate,
-      bodyTemplate: template.bodyTemplate,
-      active: template.active,
-    });
+    setTemplateForm(formFromTemplate(template));
+    setDeleteConfirm(false);
+    resetPreview();
   };
 
-  const selectGroup = (group: NotificationGroup) => {
-    setSelectedGroupId(group.id);
-    setGroupForm({
-      id: group.id,
-      slug: group.slug,
-      name: group.name,
-      active: group.active,
-    });
+  const startNew = () => {
+    if (dirty && !window.confirm("Discard unsaved template changes?")) return;
+    setSelectedTemplateId("");
+    setTemplateForm(emptyTemplate(selectedOffice));
+    setDeleteConfirm(false);
+    preview.reset();
   };
 
-  const startNewGroup = () => {
-    setSelectedGroupId("");
-    setGroupForm({ ...emptyGroup(), name: "New Group", slug: "new-group" });
-  };
-
-  const copySelectedGroup = () => {
-    if (!selectedGroup) return;
-    setSelectedGroupId("");
-    setGroupForm({
-      id: "",
-      name: `${selectedGroup.name} Copy`,
-      slug: `${selectedGroup.slug}-copy`,
-      active: true,
-    });
-  };
-
-  const saveTemplate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveTemplate = async (event: React.FormEvent) => {
+    event.preventDefault();
     const payload = {
-      office: templateForm.office || null,
-      slug: templateForm.slug || slugify(templateForm.subjectTemplate),
+      office: selectedOffice,
+      slug: templateForm.slug.trim(),
       subjectTemplate: templateForm.subjectTemplate,
       bodyTemplate: templateForm.bodyTemplate,
       active: templateForm.active,
     };
-    if (templateForm.id) {
-      const template = await updateTemplate.mutateAsync({
+    try {
+      const saved = templateForm.id
+        ? await updateTemplate.mutateAsync({
+            templateId: templateForm.id,
+            payload,
+          })
+        : await createTemplate.mutateAsync(payload);
+      selectTemplate(saved);
+      toast.success(templateForm.id ? "Template updated" : "Template created");
+    } catch {
+      // The shared request helper displays the API error.
+    }
+  };
+
+  const renderPreview = async () => {
+    if (!templateForm.id) return;
+    try {
+      await preview.mutateAsync({
         templateId: templateForm.id,
-        payload,
+        data: {
+          jobId: "preview-job-id",
+          scriptId: "preview-script-id",
+          scriptName: "Hourly data load",
+          scriptSlug: "hourly-data-load",
+          repoPath: "bin/hourly.sh",
+          executionType: "shell",
+          username: "preview.user",
+          office: selectedOffice,
+          externalJobId: "preview-external-id",
+          errorMessage: "Example failure message",
+          logs: "Open Batch Events to review the job log.",
+          status: "Failed",
+        },
+        subjectTemplate: templateForm.subjectTemplate,
+        bodyTemplate: templateForm.bodyTemplate,
       });
-      selectTemplate(template);
-      toast.success("Template updated");
-    } else {
-      const template = await createTemplate.mutateAsync(payload);
-      selectTemplate(template);
-      toast.success("Template created");
+    } catch {
+      // The shared request helper displays the API error.
     }
-  };
-
-  const saveGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      office: null,
-      slug: groupForm.slug || slugify(groupForm.name),
-      name: groupForm.name,
-      active: groupForm.active,
-    };
-    if (groupForm.id) {
-      const group = await updateGroup.mutateAsync({ groupId: groupForm.id, payload });
-      selectGroup(group);
-      toast.success("Group updated");
-    } else {
-      const group = await createGroup.mutateAsync(payload);
-      if (selectedGroup && groupMembers.data) {
-        await Promise.all(
-          groupMembers.data.map((member) =>
-            createMember.mutateAsync({
-              groupId: group.id,
-              email: member.email,
-              active: member.active,
-            }),
-          ),
-        );
-      }
-      selectGroup(group);
-      toast.success("Group created");
-    }
-  };
-
-  const addMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedGroupId || !memberEmail) return;
-    await createMember.mutateAsync({ email: memberEmail, active: true });
-    setMemberEmail("");
-    toast.success("Member added");
-  };
-
-  const removeGroup = async () => {
-    if (!selectedGroup) return;
-    await deleteGroup.mutateAsync(selectedGroup.id);
-    setSelectedGroupId("");
-    setGroupForm(emptyGroup());
-    toast.success("Group deleted");
-  };
-
-  const removeTemplate = async () => {
-    if (!selectedTemplate) return;
-    await deleteTemplate.mutateAsync(selectedTemplate.id);
-    setSelectedTemplateId("");
-    setTemplateForm(emptyTemplate());
-    toast.success("Notification template deleted");
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <H2>Setup</H2>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_320px_1fr]">
-        <aside
-          onClickCapture={(event) => {
-            const target = event.target as HTMLElement;
-            const anchor = target.closest("a");
-            const text = anchor?.textContent?.trim();
-            if (text !== "Groups" && text !== "Notifications") return;
-            event.preventDefault();
-            event.stopPropagation();
-            setPane(text === "Groups" ? "groups" : "templates");
-          }}
+    <section className="flex min-w-0 flex-col gap-6 pb-10">
+      <header className="flex flex-col gap-4 border-b border-zinc-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <Badge color="blue">Setup</Badge>
+          <H2 className="mt-2">Email templates</H2>
+          <Text className="mt-2 max-w-3xl">
+            Define office-scoped messages for failed-job notifications. Recipient
+            lists are created and maintained in CDA.
+          </Text>
+        </div>
+        <Button type="button" onClick={startNew}>
+          <FaPlus aria-hidden="true" />
+          New template
+        </Button>
+      </header>
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
         >
-          <Sidebar
-            title="Setup"
-            selectedPath=""
-            sidebarLinks={setupSidebarLinks}
+          {error.message}
+        </div>
+      )}
+
+      <Card className="p-5">
+        <Field className="max-w-sm">
+          <Label>Office</Label>
+          <Description>Templates can only be used by scripts in this office.</Description>
+          <OfficeSelector
+            offices={adminOffices.data}
+            value={selectedOffice}
+            onChange={setOffice}
           />
-        </aside>
+        </Field>
+      </Card>
 
-        {pane === "groups" ? (
-          <>
-            <section className="flex flex-col gap-3">
-              <div className="flex items-center justify-between border-b border-gray-300 pb-2">
-                <H3>Groups</H3>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    title="Add group"
-                    aria-label="Add group"
-                    onClick={startNewGroup}
-                  >
-                    <FaPlus />
-                  </button>
-                  <button
-                    type="button"
-                    title="Copy selected group"
-                    aria-label="Copy selected group"
-                    disabled={!selectedGroup}
-                    onClick={copySelectedGroup}
-                  >
-                    <FaCopy />
-                  </button>
-                </div>
-              </div>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Name</TableHeader>
-                    <TableHeader>Slug</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedGroups.map((group) => (
-                    <TableRow
-                      key={group.id}
-                      className={
-                        group.id === selectedGroupId
-                          ? "cursor-pointer bg-blue-100"
-                          : "cursor-pointer hover:bg-gray-100"
-                      }
-                      onClick={() => selectGroup(group)}
-                    >
-                      <TableCell>{group.name}</TableCell>
-                      <TableCell>{group.slug}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </section>
-
-            <section className="flex flex-col gap-4 rounded-lg bg-gray-100 p-4">
-              <div className="flex items-center justify-between">
-                <H3>{groupForm.id ? "Edit Group" : "New Group"}</H3>
-                {selectedGroup && (
-                  <button
-                    type="button"
-                    title="Delete group"
-                    aria-label="Delete group"
-                    onClick={removeGroup}
-                  >
-                    <FaTrash className="text-red-600" />
-                  </button>
-                )}
-              </div>
-              <form onSubmit={saveGroup}>
-                <Fieldset className="flex flex-col gap-3">
-                  <FieldRow>
-                    <Label htmlFor="group-name">Name</Label>
-                    <Input
-                      id="group-name"
-                      value={groupForm.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setGroupForm((prev) => ({
-                          ...prev,
-                          name: e.target.value,
-                          slug: prev.slug || slugify(e.target.value),
-                        }))
-                      }
-                    />
-                  </FieldRow>
-                  <FieldRow>
-                    <Label htmlFor="group-slug">Slug</Label>
-                    <Input
-                      id="group-slug"
-                      value={groupForm.slug}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setGroupForm((prev) => ({ ...prev, slug: e.target.value }))
-                      }
-                    />
-                  </FieldRow>
-                  <Button type="submit">{groupForm.id ? "Update" : "Create"}</Button>
-                </Fieldset>
-              </form>
-              {selectedGroup ? (
-                <form onSubmit={addMember} className="flex flex-col gap-3">
-                  <Text>Members</Text>
-                  <div className="flex gap-2">
-                    <Input
-                      aria-label="Member email"
-                      value={memberEmail}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setMemberEmail(e.target.value)
-                      }
-                    />
-                    <Button type="submit" disabled={!memberEmail}>
-                      Add
-                    </Button>
-                  </div>
-                  <ul className="flex flex-col gap-2">
-                    {groupMembers.data?.map((member) => (
-                      <li
-                        key={member.id}
-                        className="flex items-center justify-between rounded-lg bg-white px-3 py-2"
-                      >
-                        <span>{member.email}</span>
-                        <button
-                          type="button"
-                          aria-label={`Remove ${member.email}`}
-                          onClick={() => deleteMember.mutate(member.id)}
-                        >
-                          <FaTrash className="text-red-600" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </form>
-              ) : (
-                <Text>Create or select a group to manage members.</Text>
-              )}
-            </section>
-          </>
-        ) : (
-          <>
-            <section className="flex flex-col gap-3">
-              <div className="flex items-center justify-between border-b border-gray-300 pb-2">
-                <H3>Notifications</H3>
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(16rem,0.7fr)_minmax(0,1.5fr)]">
+        <Card className="min-w-0 p-0">
+          <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
+            <H3>Templates</H3>
+            <Badge color="blue">{sortedTemplates.length}</Badge>
+          </div>
+          <div className="space-y-2 p-3">
+            {templates.isLoading ? (
+              <>
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </>
+            ) : sortedTemplates.length ? (
+              sortedTemplates.map((template) => (
                 <button
+                  key={template.id}
                   type="button"
-                  title="Add template"
-                  aria-label="Add template"
-                  onClick={() => {
-                    setSelectedTemplateId("");
-                    setTemplateForm(emptyTemplate());
-                  }}
+                  aria-current={
+                    template.id === selectedTemplateId ? "true" : undefined
+                  }
+                  className={`w-full rounded-lg border p-4 text-left ${
+                    template.id === selectedTemplateId
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-zinc-200 hover:border-blue-300"
+                  }`}
+                  onClick={() => selectTemplate(template)}
                 >
-                  <FaPlus />
+                  <div className="flex items-center justify-between gap-2">
+                    <strong>{template.slug}</strong>
+                    <Badge color={template.active ? "green" : "zinc"}>
+                      {template.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                  <Text className="mt-1 line-clamp-2">
+                    {template.subjectTemplate}
+                  </Text>
                 </button>
+              ))
+            ) : (
+              <div className="p-5 text-center">
+                <FaEnvelope className="mx-auto mb-3 text-2xl text-zinc-500" />
+                <Text>No email templates exist for {selectedOffice}.</Text>
               </div>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Slug</TableHeader>
-                    <TableHeader>Scope</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedTemplates.map((template) => (
-                    <TableRow
-                      key={template.id}
-                      className={
-                        template.id === selectedTemplateId
-                          ? "cursor-pointer bg-blue-100"
-                          : "cursor-pointer hover:bg-gray-100"
-                      }
-                      onClick={() => selectTemplate(template)}
-                    >
-                      <TableCell>{template.slug}</TableCell>
-                      <TableCell>{template.office ?? "Default"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </section>
+            )}
+          </div>
+        </Card>
 
-            <section className="flex flex-col gap-4 rounded-lg bg-gray-100 p-4">
-              <div className="flex items-center justify-between">
-                <H3>{templateForm.id ? "Edit Template" : "New Template"}</H3>
-                {selectedTemplate && (
-                  <button
+        <Card className="min-w-0 p-5">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <H3>{templateForm.id ? "Edit template" : "New template"}</H3>
+              <Text>
+                {dirty ? "Unsaved changes" : `Office: ${selectedOffice}`}
+              </Text>
+            </div>
+            {templateForm.id &&
+              (deleteConfirm ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Text>Delete this template?</Text>
+                  <Button
                     type="button"
-                    title="Delete template"
-                    aria-label="Delete template"
-                    onClick={removeTemplate}
+                    color="danger"
+                    disabled={pending}
+                    onClick={async () => {
+                      await deleteTemplate.mutateAsync(templateForm.id);
+                      setSelectedTemplateId("");
+                      setTemplateForm(emptyTemplate(selectedOffice));
+                      setDeleteConfirm(false);
+                      resetPreview();
+                      toast.success("Template deleted");
+                    }}
                   >
-                    <FaTrash className="text-red-600" />
-                  </button>
-                )}
-              </div>
-              <form onSubmit={saveTemplate}>
-                <Fieldset className="flex flex-col gap-3">
-                  <FieldRow>
-                    <Label htmlFor="template-office">Office</Label>
-                    <Input
-                      id="template-office"
-                      placeholder="Default"
-                      value={templateForm.office}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setTemplateForm((prev) => ({
-                          ...prev,
-                          office: e.target.value.toUpperCase(),
-                        }))
-                      }
-                    />
-                  </FieldRow>
-                  <FieldRow>
-                    <Label htmlFor="template-slug">Slug</Label>
-                    <Input
-                      id="template-slug"
-                      value={templateForm.slug}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setTemplateForm((prev) => ({
-                          ...prev,
-                          slug: e.target.value,
-                        }))
-                      }
-                    />
-                  </FieldRow>
-                  <FieldRow>
-                    <Label htmlFor="template-subject">Subject</Label>
-                    <JinjaTemplateField
-                      id="template-subject"
-                      value={templateForm.subjectTemplate}
-                      className="h-20"
-                      onChange={(value) =>
-                        setTemplateForm((prev) => ({
-                          ...prev,
-                          subjectTemplate: value,
-                        }))
-                      }
-                    />
-                  </FieldRow>
-                  <FieldRow>
-                    <Label htmlFor="template-body">Body</Label>
-                    <JinjaTemplateField
-                      id="template-body"
-                      value={templateForm.bodyTemplate}
-                      onChange={(value) =>
-                        setTemplateForm((prev) => ({
-                          ...prev,
-                          bodyTemplate: value,
-                        }))
-                      }
-                    />
-                  </FieldRow>
-                  <Button type="submit">
-                    {templateForm.id ? "Update" : "Create"}
+                    Confirm delete
                   </Button>
-                </Fieldset>
-              </form>
+                  <Button
+                    type="button"
+                    color="light"
+                    onClick={() => setDeleteConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  color="danger"
+                  style="outline"
+                  onClick={() => setDeleteConfirm(true)}
+                >
+                  Delete template
+                </Button>
+              ))}
+          </div>
+
+          <form onSubmit={saveTemplate}>
+            <Fieldset className="flex flex-col gap-5">
+              <Field>
+                <Label htmlFor="template-slug">Template ID</Label>
+                <Description>
+                  A stable identifier such as job_failure_v1.
+                </Description>
+                <Input
+                  required
+                  id="template-slug"
+                  maxLength={128}
+                  value={templateForm.slug}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                    setTemplateForm((current) => ({
+                      ...current,
+                      slug: event.target.value.toLowerCase(),
+                    }))
+                  }
+                />
+              </Field>
+              <Field>
+                <Label htmlFor="template-subject">Subject</Label>
+                <JinjaTemplateField
+                  id="template-subject"
+                  value={templateForm.subjectTemplate}
+                  className="h-20"
+                  onChange={(subjectTemplate) =>
+                    setTemplateForm((current) => ({
+                      ...current,
+                      subjectTemplate,
+                    }))
+                  }
+                />
+              </Field>
+              <Field>
+                <Label htmlFor="template-body">Body</Label>
+                <JinjaTemplateField
+                  id="template-body"
+                  value={templateForm.bodyTemplate}
+                  onChange={(bodyTemplate) =>
+                    setTemplateForm((current) => ({
+                      ...current,
+                      bodyTemplate,
+                    }))
+                  }
+                />
+              </Field>
+              <Checkboxes
+                key={`template-active-${templateForm.id || "new"}`}
+                legend="Template status"
+                content={[
+                  {
+                    id: "template-active",
+                    label: "Active",
+                    defaultChecked: templateForm.active,
+                    onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+                      setTemplateForm((current) => ({
+                        ...current,
+                        active: event.target.checked,
+                      })),
+                  },
+                ]}
+              />
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="submit"
+                  disabled={
+                    pending ||
+                    !dirty ||
+                    !templateForm.slug.trim() ||
+                    !templateForm.subjectTemplate.trim() ||
+                    !templateForm.bodyTemplate.trim()
+                  }
+                >
+                  {templateForm.id ? "Save changes" : "Create template"}
+                </Button>
+                <Button
+                  type="button"
+                  color="light"
+                  disabled={!templateForm.id || pending}
+                  onClick={renderPreview}
+                >
+                  Preview email
+                </Button>
+              </div>
+            </Fieldset>
+          </form>
+
+          {preview.data && (
+            <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-5">
+              <Badge color="blue">Preview</Badge>
+              <H3 className="mt-3 text-lg">{preview.data.subject}</H3>
+              <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 font-sans text-sm">
+                {preview.data.body}
+              </pre>
             </section>
-          </>
-        )}
+          )}
+        </Card>
       </div>
-    </div>
+    </section>
   );
 };

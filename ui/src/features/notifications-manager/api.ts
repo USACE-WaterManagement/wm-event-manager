@@ -3,10 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import fetchWithAuth from "../../utils/fetchWithAuth";
 import type {
-  NotificationGroup,
-  NotificationGroupCreate,
-  NotificationGroupMember,
-  NotificationGroupUpdate,
   NotificationTemplate,
   NotificationTemplateCreate,
   NotificationTemplateUpdate,
@@ -62,7 +58,10 @@ export const useCdaUserLists = (office?: string) => {
     queryFn: async () => {
       const response = await fetch(
         `${cdaRoot}/user/list?office=${encodeURIComponent(office!)}`,
-        { headers: { Authorization: `Bearer ${auth.token}` } },
+        {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${auth.token}` },
+        },
       );
       if (!response.ok) {
         throw new Error(`CDA user lists are unavailable (${response.status})`);
@@ -77,12 +76,11 @@ export const useNotificationTemplates = (office?: string) => {
   const auth = useAuth();
   return useQuery({
     queryKey: ["notification-templates", office],
+    enabled: !!office && auth.isAuth,
     queryFn: () =>
       requestJson<NotificationTemplate[]>(
-        office
-          ? `/api/notifications/templates?office=${office}`
-          : `/api/notifications/templates`,
-        {},
+        `/api/notifications/templates?office=${encodeURIComponent(office!)}`,
+        { cache: "no-store" },
         auth.token,
       ),
   });
@@ -153,142 +151,6 @@ export const useDeleteNotificationTemplate = (office?: string) => {
   });
 };
 
-export const useNotificationGroups = (office?: string) => {
-  const auth = useAuth();
-  return useQuery({
-    queryKey: ["notification-groups", office],
-    queryFn: () =>
-      requestJson<NotificationGroup[]>(
-        office
-          ? `/api/notifications/groups?office=${office}`
-          : `/api/notifications/groups`,
-        {},
-        auth.token,
-      ),
-  });
-};
-
-export const useCreateNotificationGroup = (office?: string) => {
-  const auth = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: NotificationGroupCreate) =>
-      requestJson<NotificationGroup>(
-        `/api/notifications/groups`,
-        {
-          method: "POST",
-          headers: jsonHeaders,
-          body: JSON.stringify(payload),
-        },
-        auth.token,
-      ),
-    onSuccess: (group) => {
-      queryClient.setQueryData<NotificationGroup[]>(
-        ["notification-groups", office],
-        (old) => (old ? [...old, group] : [group]),
-      );
-    },
-  });
-};
-
-export const useUpdateNotificationGroup = (office?: string) => {
-  const auth = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (args: { groupId: string; payload: NotificationGroupUpdate }) =>
-      requestJson<NotificationGroup>(
-        `/api/notifications/groups/${args.groupId}`,
-        {
-          method: "PUT",
-          headers: jsonHeaders,
-          body: JSON.stringify(args.payload),
-        },
-        auth.token,
-      ),
-    onSuccess: (group) => {
-      queryClient.setQueryData<NotificationGroup[]>(
-        ["notification-groups", office],
-        (old) => old?.map((item) => (item.id === group.id ? group : item)),
-      );
-    },
-  });
-};
-
-export const useDeleteNotificationGroup = (office?: string) => {
-  const auth = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (groupId: string) =>
-      requestNoContent(
-        `/api/notifications/groups/${groupId}`,
-        { method: "DELETE" },
-        auth.token,
-      ),
-    onSuccess: (_data, groupId) => {
-      queryClient.setQueryData<NotificationGroup[]>(
-        ["notification-groups", office],
-        (old) => old?.filter((group) => group.id !== groupId),
-      );
-    },
-  });
-};
-
-export const useNotificationGroupMembers = (groupId?: string) => {
-  const auth = useAuth();
-  return useQuery({
-    queryKey: ["notification-group-members", groupId],
-    enabled: !!groupId,
-    queryFn: () =>
-      requestJson<NotificationGroupMember[]>(
-        `/api/notifications/groups/${groupId}/members`,
-        {},
-        auth.token,
-      ),
-  });
-};
-
-export const useCreateNotificationGroupMember = (groupId?: string) => {
-  const auth = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: { email: string; active: boolean; groupId?: string }) =>
-      requestJson<NotificationGroupMember>(
-        `/api/notifications/groups/${payload.groupId ?? groupId}/members`,
-        {
-          method: "POST",
-          headers: jsonHeaders,
-          body: JSON.stringify({ email: payload.email, active: payload.active }),
-        },
-        auth.token,
-      ),
-    onSuccess: (member) => {
-      queryClient.setQueryData<NotificationGroupMember[]>(
-        ["notification-group-members", member.groupId],
-        (old) => (old ? [...old, member] : [member]),
-      );
-    },
-  });
-};
-
-export const useDeleteNotificationGroupMember = (groupId?: string) => {
-  const auth = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (memberId: string) =>
-      requestNoContent(
-        `/api/notifications/groups/members/${memberId}`,
-        { method: "DELETE" },
-        auth.token,
-      ),
-    onSuccess: (_data, memberId) => {
-      queryClient.setQueryData<NotificationGroupMember[]>(
-        ["notification-group-members", groupId],
-        (old) => old?.filter((member) => member.id !== memberId),
-      );
-    },
-  });
-};
-
 export const useScriptNotificationRules = (scriptId?: string) => {
   const auth = useAuth();
   return useQuery({
@@ -297,7 +159,7 @@ export const useScriptNotificationRules = (scriptId?: string) => {
     queryFn: () =>
       requestJson<ScriptNotificationRule[]>(
         `/api/notifications/rules?script_id=${scriptId}`,
-        {},
+        { cache: "no-store" },
         auth.token,
       ),
   });

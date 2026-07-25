@@ -109,78 +109,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/notifications/groups": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Groups */
-        get: operations["get_groups_notifications_groups_get"];
-        put?: never;
-        /** Post Group */
-        post: operations["post_group_notifications_groups_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/groups/{group_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Put Group */
-        put: operations["put_group_notifications_groups__group_id__put"];
-        post?: never;
-        /** Delete Group */
-        delete: operations["delete_group_notifications_groups__group_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/groups/{group_id}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Group Members */
-        get: operations["get_group_members_notifications_groups__group_id__members_get"];
-        put?: never;
-        /** Post Group Member */
-        post: operations["post_group_member_notifications_groups__group_id__members_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notifications/groups/members/{member_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Put Group Member */
-        put: operations["put_group_member_notifications_groups_members__member_id__put"];
-        post?: never;
-        /** Delete Group Member */
-        delete: operations["delete_group_member_notifications_groups_members__member_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/notifications/rules": {
         parameters: {
             query?: never;
@@ -350,122 +278,12 @@ export interface components {
          * @enum {string}
          */
         NotificationEventType: "job_failed";
-        /** NotificationGroupCreate */
-        NotificationGroupCreate: {
-            /** Office */
-            office?: string | null;
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /** NotificationGroupMemberCreate */
-        NotificationGroupMemberCreate: {
-            /** Email */
-            email: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /** NotificationGroupMemberRead */
-        NotificationGroupMemberRead: {
-            /** Email */
-            email: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Groupid
-             * Format: uuid
-             */
-            groupId: string;
-            /**
-             * Createdtime
-             * Format: date-time
-             */
-            createdTime: string;
-            /**
-             * Updatedtime
-             * Format: date-time
-             */
-            updatedTime: string;
-        };
-        /** NotificationGroupMemberUpdate */
-        NotificationGroupMemberUpdate: {
-            /** Email */
-            email: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /** NotificationGroupRead */
-        NotificationGroupRead: {
-            /** Office */
-            office?: string | null;
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Createdtime
-             * Format: date-time
-             */
-            createdTime: string;
-            /**
-             * Updatedtime
-             * Format: date-time
-             */
-            updatedTime: string;
-        };
-        /** NotificationGroupUpdate */
-        NotificationGroupUpdate: {
-            /** Office */
-            office?: string | null;
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
         /** NotificationPreviewRequest */
         NotificationPreviewRequest: {
             /** Jobid */
             jobId?: string | null;
-            /**
-             * Data
-             * @default {}
-             */
-            data: {
+            /** Data */
+            data?: {
                 [key: string]: string | null;
             };
             /** Subjecttemplate */
@@ -476,7 +294,7 @@ export interface components {
         /** NotificationTemplateCreate */
         NotificationTemplateCreate: {
             /** Office */
-            office?: string | null;
+            office: string;
             /** Slug */
             slug: string;
             /** Subjecttemplate */
@@ -492,7 +310,7 @@ export interface components {
         /** NotificationTemplateRead */
         NotificationTemplateRead: {
             /** Office */
-            office?: string | null;
+            office: string;
             /** Slug */
             slug: string;
             /** Subjecttemplate */
@@ -523,7 +341,7 @@ export interface components {
         /** NotificationTemplateUpdate */
         NotificationTemplateUpdate: {
             /** Office */
-            office?: string | null;
+            office: string;
             /** Slug */
             slug: string;
             /** Subjecttemplate */
@@ -591,10 +409,10 @@ export interface components {
              * Format: uuid
              */
             templateId: string;
-            /** CDA user list id */
+            /** Cdauserlistid */
             cdaUserListId?: string | null;
-            /** Manual recipients */
-            manualRecipients: string[];
+            /** Manualrecipients */
+            manualRecipients?: string[];
             /** Subjecttemplate */
             subjectTemplate?: string | null;
             /** Bodytemplate */
@@ -619,10 +437,10 @@ export interface components {
              * Format: uuid
              */
             templateId: string;
-            /** CDA user list id */
+            /** Cdauserlistid */
             cdaUserListId?: string | null;
-            /** Manual recipients */
-            manualRecipients: string[];
+            /** Manualrecipients */
+            manualRecipients?: string[];
             /** Subjecttemplate */
             subjectTemplate?: string | null;
             /** Bodytemplate */
@@ -662,10 +480,10 @@ export interface components {
              * Format: uuid
              */
             templateId: string;
-            /** CDA user list id */
+            /** Cdauserlistid */
             cdaUserListId?: string | null;
-            /** Manual recipients */
-            manualRecipients: string[];
+            /** Manualrecipients */
+            manualRecipients?: string[];
             /** Subjecttemplate */
             subjectTemplate?: string | null;
             /** Bodytemplate */
@@ -894,8 +712,8 @@ export interface operations {
     };
     get_templates_notifications_templates_get: {
         parameters: {
-            query?: {
-                office?: string | null;
+            query: {
+                office: string;
             };
             header?: never;
             path?: never;
@@ -1043,264 +861,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RenderedNotification"];
                 };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_groups_notifications_groups_get: {
-        parameters: {
-            query?: {
-                office?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationGroupRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_group_notifications_groups_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotificationGroupCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationGroupRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    put_group_notifications_groups__group_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotificationGroupUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationGroupRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_group_notifications_groups__group_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_group_members_notifications_groups__group_id__members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationGroupMemberRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_group_member_notifications_groups__group_id__members_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotificationGroupMemberCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationGroupMemberRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    put_group_member_notifications_groups_members__member_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotificationGroupMemberUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationGroupMemberRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_group_member_notifications_groups_members__member_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Validation Error */
             422: {

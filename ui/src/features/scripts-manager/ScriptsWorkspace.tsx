@@ -102,11 +102,11 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
 
   return (
     <>
-      <div className="w-full grid grid-cols-2 gap-6 mt-4">
-        <div>
-          <header className="flex justify-between">
+      <div className="mt-4 grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="min-w-0">
+          <header className="flex flex-wrap items-center justify-between gap-3">
             <H2>{office.toUpperCase()} Scripts</H2>
-            <Button onClick={onNew}>New +</Button>
+            <Button onClick={onNew}>New script</Button>
           </header>
           <ScriptsList
             scripts={scripts.data}
@@ -114,11 +114,17 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
             selectedScriptId={selectedScriptId}
           />
         </div>
-        <section className="rounded-lg bg-gray-100 p-4">
+        <section className="min-w-0 rounded-lg bg-gray-100 p-4">
           {selectedScript && panelMode === "view" && (
-            <div className="mb-4 flex gap-2 border-b border-gray-300">
+            <div
+              className="mb-4 flex gap-2 border-b border-gray-300"
+              role="tablist"
+              aria-label="Script settings"
+            >
               <button
                 type="button"
+                role="tab"
+                aria-selected={selectedTab === "details"}
                 className={`px-4 py-2 font-semibold ${
                   selectedTab === "details" ? "bg-white" : "hover:bg-gray-200"
                 }`}
@@ -128,12 +134,14 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={selectedTab === "notify"}
                 className={`px-4 py-2 font-semibold ${
                   selectedTab === "notify" ? "bg-white" : "hover:bg-gray-200"
                 }`}
                 onClick={() => setSelectedTab("notify")}
               >
-                Notify
+                Email notification
               </button>
             </div>
           )}
