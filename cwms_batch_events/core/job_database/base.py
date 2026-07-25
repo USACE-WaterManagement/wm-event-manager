@@ -5,12 +5,6 @@ from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.models import (
     JobRecord,
     JobStatus,
-    NotificationGroupCreate,
-    NotificationGroupMemberCreate,
-    NotificationGroupMemberRead,
-    NotificationGroupMemberUpdate,
-    NotificationGroupRead,
-    NotificationGroupUpdate,
     NotificationTemplateCreate,
     NotificationTemplateRead,
     NotificationTemplateUpdate,
@@ -51,7 +45,7 @@ class JobDatabase(Protocol):
         self, script_id: UUID
     ) -> list[ScriptNotificationRuleDetails]: ...
     def get_notification_templates_for_office(
-        self, office: str | None = None
+        self, office: str
     ) -> list[NotificationTemplateRead]: ...
     def store_notification_template(
         self, payload: NotificationTemplateCreate
@@ -68,39 +62,6 @@ class JobDatabase(Protocol):
     def get_notification_template_if_allowed(
         self, template_id: UUID, admin_offices: list[str]
     ) -> NotificationTemplateRead: ...
-    def get_notification_groups_for_office(
-        self, office: str | None = None
-    ) -> list[NotificationGroupRead]: ...
-    def store_notification_group(
-        self, payload: NotificationGroupCreate
-    ) -> NotificationGroupRead: ...
-    def update_notification_group(
-        self,
-        group_id: UUID,
-        payload: NotificationGroupUpdate,
-        admin_offices: list[str],
-    ) -> NotificationGroupRead: ...
-    def remove_notification_group_if_allowed(
-        self, group_id: UUID, admin_offices: list[str]
-    ) -> None: ...
-    def get_notification_group_members(
-        self, group_id: UUID, admin_offices: list[str]
-    ) -> list[NotificationGroupMemberRead]: ...
-    def store_notification_group_member(
-        self,
-        group_id: UUID,
-        payload: NotificationGroupMemberCreate,
-        admin_offices: list[str],
-    ) -> NotificationGroupMemberRead: ...
-    def update_notification_group_member(
-        self,
-        member_id: UUID,
-        payload: NotificationGroupMemberUpdate,
-        admin_offices: list[str],
-    ) -> NotificationGroupMemberRead: ...
-    def remove_notification_group_member_if_allowed(
-        self, member_id: UUID, admin_offices: list[str]
-    ) -> None: ...
     def get_script_notification_rules(
         self, script_id: UUID, admin_offices: list[str]
     ) -> list[ScriptNotificationRuleRead]: ...

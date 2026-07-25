@@ -11,3 +11,4 @@ uvicorn[standard]
 pyjwt[crypto]
 httpx
 jinja2
+email-validator

@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
 
@@ -110,9 +110,9 @@ class NotificationMessage(BaseModel):
     template: str
     office: str
     severity: NotificationSeverity
-    recipients: list[str]
-    subject: str
-    body: str
+    recipients: list[EmailStr] = Field(min_length=1, max_length=100)
+    subject: str = Field(min_length=1, max_length=998)
+    body: str = Field(min_length=1, max_length=100_000)
     created_at: datetime
     data: dict[str, str | None]
 
@@ -122,10 +122,10 @@ class NotificationEventType(str, Enum):
 
 
 class NotificationTemplateBase(CamelModel):
-    office: str | None = None
-    slug: str
-    subject_template: str
-    body_template: str
+    office: str = Field(min_length=1, max_length=16)
+    slug: str = Field(pattern=r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$", max_length=128)
+    subject_template: str = Field(min_length=1, max_length=998)
+    body_template: str = Field(min_length=1, max_length=100_000)
     active: bool = True
 
 
@@ -145,60 +145,25 @@ class NotificationTemplateRead(NotificationTemplateBase):
     updated_time: datetime
 
 
-class NotificationGroupBase(CamelModel):
-    office: str | None = None
-    slug: str
-    name: str
-    active: bool = True
-
-
-class NotificationGroupCreate(NotificationGroupBase):
-    pass
-
-
-class NotificationGroupUpdate(NotificationGroupBase):
-    pass
-
-
-class NotificationGroupRead(NotificationGroupBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    created_time: datetime
-    updated_time: datetime
-
-
-class NotificationGroupMemberBase(CamelModel):
-    email: str
-    active: bool = True
-
-
-class NotificationGroupMemberCreate(NotificationGroupMemberBase):
-    pass
-
-
-class NotificationGroupMemberUpdate(NotificationGroupMemberBase):
-    pass
-
-
-class NotificationGroupMemberRead(NotificationGroupMemberBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    group_id: UUID
-    created_time: datetime
-    updated_time: datetime
-
-
 class ScriptNotificationRuleBase(CamelModel):
     script_id: UUID
     event_type: NotificationEventType = NotificationEventType.JOB_FAILED
     template_id: UUID
-    cda_user_list_id: str | None = None
-    manual_recipients: list[str] = Field(default_factory=list)
-    subject_template: str | None = None
-    body_template: str | None = None
+    cda_user_list_id: str | None = Field(default=None, max_length=128)
+    manual_recipients: list[EmailStr] = Field(default_factory=list, max_length=100)
+    subject_template: str | None = Field(default=None, max_length=998)
+    body_template: str | None = Field(default=None, max_length=100_000)
     active: bool = True
+
+    @field_validator("manual_recipients")
+    @classmethod
+    def normalize_recipients(cls, recipients):
+        return list(dict.fromkeys(str(recipient).lower() for recipient in recipients))
+
+    @field_validator("cda_user_list_id")
+    @classmethod
+    def normalize_user_list_id(cls, user_list_id):
+        return user_list_id.strip().upper() if user_list_id else None
 
 
 class ScriptNotificationRuleCreate(ScriptNotificationRuleBase):
@@ -223,13 +188,13 @@ class ScriptNotificationRuleDetails(ScriptNotificationRuleRead):
 
 class NotificationPreviewRequest(CamelModel):
     job_id: UUID | None = None
-    data: dict[str, str | None] = {}
+    data: dict[str, str | None] = Field(default_factory=dict)
     subject_template: str | None = None
     body_template: str | None = None
 
 
 class RenderedNotification(CamelModel):
-    recipients: list[str]
+    recipients: list[EmailStr]
     subject: str
     body: str
     data: dict[str, str | None]

@@ -4,8 +4,6 @@ from uuid import uuid4
 from sqlalchemy.exc import NoResultFound
 
 from cwms_batch_events.core.models import (
-    NotificationGroupMemberRead,
-    NotificationGroupRead,
     NotificationTemplateRead,
     ScriptNotificationRuleRead,
 )
@@ -20,31 +18,6 @@ def make_template(**overrides):
         slug=overrides.pop("slug", "job_failure_v1"),
         subjectTemplate=overrides.pop("subject_template", "Job {{ scriptName }} failed"),
         bodyTemplate=overrides.pop("body_template", "{{ jobId }}"),
-        active=overrides.pop("active", True),
-        createdTime=overrides.pop("created_time", now),
-        updatedTime=overrides.pop("updated_time", now),
-    )
-
-
-def make_group(**overrides):
-    now = datetime.now(timezone.utc)
-    return NotificationGroupRead(
-        id=overrides.pop("id", uuid4()),
-        office=overrides.pop("office", "SWT"),
-        slug=overrides.pop("slug", "data-admins"),
-        name=overrides.pop("name", "Data Admins"),
-        active=overrides.pop("active", True),
-        createdTime=overrides.pop("created_time", now),
-        updatedTime=overrides.pop("updated_time", now),
-    )
-
-
-def make_member(**overrides):
-    now = datetime.now(timezone.utc)
-    return NotificationGroupMemberRead(
-        id=overrides.pop("id", uuid4()),
-        groupId=overrides.pop("group_id", uuid4()),
-        email=overrides.pop("email", "one@example.mil"),
         active=overrides.pop("active", True),
         createdTime=overrides.pop("created_time", now),
         updatedTime=overrides.pop("updated_time", now),
@@ -79,20 +52,10 @@ def template_payload(**overrides):
     }
 
 
-def group_payload(**overrides):
-    return {
-        "office": overrides.pop("office", "SWT"),
-        "slug": overrides.pop("slug", "data-admins"),
-        "name": overrides.pop("name", "Data Admins"),
-        "active": overrides.pop("active", True),
-        **overrides,
-    }
-
-
 def test_get_templates_requires_admin_access(client):
     response = client.get("/notifications/templates", params={"office": "LRH"})
 
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 def test_create_and_list_templates(client, job_db):
@@ -111,6 +74,34 @@ def test_create_and_list_templates(client, job_db):
     assert create_response.json()["id"] == str(template.id)
     assert list_response.status_code == 200
     assert list_response.json()[0]["slug"] == "job_failure_v1"
+
+
+def test_templates_require_an_office_scope(client, job_db):
+    payload = template_payload()
+    payload.pop("office")
+
+    create_response = client.post("/notifications/templates", json=payload)
+    list_response = client.get("/notifications/templates")
+
+    assert create_response.status_code == 422
+    assert list_response.status_code == 422
+    job_db.store_notification_template.assert_not_called()
+
+
+def test_rule_rejects_invalid_manual_recipient(client, job_db):
+    rule = make_rule()
+    payload = {
+        "scriptId": str(rule.script_id),
+        "eventType": "job_failed",
+        "templateId": str(rule.template_id),
+        "manualRecipients": ["not-an-email"],
+        "active": True,
+    }
+
+    response = client.post("/notifications/rules", json=payload)
+
+    assert response.status_code == 422
+    job_db.store_script_notification_rule.assert_not_called()
 
 
 def test_update_and_delete_template(client, job_db):
@@ -135,36 +126,6 @@ def test_notification_template_missing_maps_to_404(client, job_db):
     )
 
     assert response.status_code == 404
-
-
-def test_create_and_manage_group_members(client, job_db):
-    group = make_group()
-    member = make_member(group_id=group.id)
-    job_db.store_notification_group.return_value = group
-    job_db.get_notification_groups_for_office.return_value = [group]
-    job_db.store_notification_group_member.return_value = member
-    job_db.get_notification_group_members.return_value = [member]
-    job_db.update_notification_group_member.return_value = member
-
-    group_response = client.post("/notifications/groups", json=group_payload())
-    groups_response = client.get("/notifications/groups", params={"office": "SWT"})
-    member_response = client.post(
-        f"/notifications/groups/{group.id}/members",
-        json={"email": "one@example.mil", "active": True},
-    )
-    members_response = client.get(f"/notifications/groups/{group.id}/members")
-    update_response = client.put(
-        f"/notifications/groups/members/{member.id}",
-        json={"email": "one@example.mil", "active": False},
-    )
-    delete_response = client.delete(f"/notifications/groups/members/{member.id}")
-
-    assert group_response.status_code == 200
-    assert groups_response.json()[0]["id"] == str(group.id)
-    assert member_response.status_code == 200
-    assert members_response.json()[0]["email"] == "one@example.mil"
-    assert update_response.status_code == 200
-    assert delete_response.status_code == 204
 
 
 def test_create_and_manage_rules(client, job_db):

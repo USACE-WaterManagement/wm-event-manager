@@ -112,7 +112,7 @@ class NotificationTemplateModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    office: Mapped[str | None]
+    office: Mapped[str]
     slug: Mapped[str]
     subject_template: Mapped[str]
     body_template: Mapped[str]
@@ -123,57 +123,6 @@ class NotificationTemplateModel(Base):
     updated_time: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp()
     )
-
-
-class NotificationGroupModel(Base):
-    __tablename__ = "notification_groups"
-    __table_args__ = (
-        UniqueConstraint("office", "slug", name="notification_groups_office_slug"),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    office: Mapped[str | None]
-    slug: Mapped[str]
-    name: Mapped[str]
-    active: Mapped[bool]
-    created_time: Mapped[datetime.datetime] = mapped_column(
-        server_default=func.current_timestamp()
-    )
-    updated_time: Mapped[datetime.datetime] = mapped_column(
-        server_default=func.current_timestamp()
-    )
-
-    members: Mapped[list["NotificationGroupMemberModel"]] = relationship(
-        back_populates="group", cascade="all, delete-orphan", lazy="selectin"
-    )
-
-
-class NotificationGroupMemberModel(Base):
-    __tablename__ = "notification_group_members"
-    __table_args__ = (
-        UniqueConstraint(
-            "group_id", "email", name="notification_group_members_group_email"
-        ),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    group_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("notification_groups.id", ondelete="CASCADE")
-    )
-    email: Mapped[str]
-    active: Mapped[bool]
-    created_time: Mapped[datetime.datetime] = mapped_column(
-        server_default=func.current_timestamp()
-    )
-    updated_time: Mapped[datetime.datetime] = mapped_column(
-        server_default=func.current_timestamp()
-    )
-
-    group: Mapped["NotificationGroupModel"] = relationship(back_populates="members")
 
 
 class ScriptNotificationRuleModel(Base):

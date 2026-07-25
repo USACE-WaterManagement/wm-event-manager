@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from unittest import mock
 from uuid import uuid4
 
+import requests
+
 from cwms_batch_events.core.models import (
     NotificationTemplateRead,
     ScriptNotificationRuleDetails,
@@ -60,7 +62,12 @@ def test_render_notification_uses_jinja_templates():
     assert rendered.recipients == ["one@example.mil"]
 
 
-def test_cda_user_list_uses_worker_api_key():
+def test_cda_user_list_uses_service_account_bearer_token():
+    token_response = mock.Mock()
+    token_response.json.return_value = {
+        "access_token": "service-token",
+        "expires_in": 300,
+    }
     response = mock.Mock()
     response.json.return_value = {
         "members": [
@@ -70,8 +77,16 @@ def test_cda_user_list_uses_worker_api_key():
     }
     with (
         mock.patch(
-            "cwms_batch_events.core.notifications.settings.cda_api_key",
+            "cwms_batch_events.core.notifications.settings.cda_client_id",
+            "batch-events",
+        ),
+        mock.patch(
+            "cwms_batch_events.core.notifications.settings.cda_client_secret",
             "secret",
+        ),
+        mock.patch(
+            "cwms_batch_events.core.notifications.settings.cda_token_url",
+            "https://identity.example/token",
         ),
         mock.patch(
             "cwms_batch_events.core.notifications.settings.cda_api_root",
@@ -81,6 +96,14 @@ def test_cda_user_list_uses_worker_api_key():
             "cwms_batch_events.core.notifications.requests.get",
             return_value=response,
         ) as request,
+        mock.patch(
+            "cwms_batch_events.core.notifications.requests.post",
+            return_value=token_response,
+        ) as token_request,
+        mock.patch(
+            "cwms_batch_events.core.notifications._token_cache",
+            None,
+        ),
     ):
         emails = get_cda_user_list_emails("SWT", "operators")
 
@@ -88,9 +111,61 @@ def test_cda_user_list_uses_worker_api_key():
     request.assert_called_once_with(
         "https://cda.example/cwms-data/user/list/operators/members",
         params={"office": "SWT"},
-        headers={"Authorization": "apikey secret"},
+        headers={"Authorization": "Bearer service-token"},
         timeout=30,
     )
+    token_request.assert_called_once_with(
+        "https://identity.example/token",
+        data={
+            "grant_type": "client_credentials",
+            "client_id": "batch-events",
+            "client_secret": "secret",
+        },
+        headers=None,
+        timeout=30,
+    )
+
+
+def test_render_notification_rejects_unknown_template_fields():
+    with mock.patch(
+        "cwms_batch_events.core.notifications.ALLOWED_TEMPLATE_FIELDS",
+        {"jobId"},
+    ):
+        try:
+            render_notification(
+                subject_template="{{ secret }}",
+                body_template="{{ jobId }}",
+                recipients=["one@example.mil"],
+                data={"jobId": "job-123"},
+            )
+        except ValueError as error:
+            assert "secret" in str(error)
+        else:
+            raise AssertionError("Unknown template field should be rejected")
+
+
+def test_manual_recipients_still_enqueue_when_cda_is_unavailable():
+    db = mock.Mock()
+    queue = mock.Mock()
+    queue.send_notification.return_value = "message-123"
+    job = make_job_record()
+    rule = make_rule(
+        script_id=job.script_id,
+        cda_user_list_id="ON-CALL",
+        manual_recipients=["fallback@example.mil"],
+    )
+    db.get_active_job_failed_notification_rules.return_value = [rule]
+
+    with mock.patch(
+        "cwms_batch_events.core.notifications.get_cda_user_list_emails",
+        side_effect=requests.RequestException("unavailable"),
+    ):
+        response = enqueue_failed_job_notifications(job, db, queue)
+
+    assert response == ["message-123"]
+    assert queue.send_notification.call_args.args[0].recipients == [
+        "fallback@example.mil"
+    ]
 
 
 def test_failed_job_with_no_rules_does_not_enqueue():

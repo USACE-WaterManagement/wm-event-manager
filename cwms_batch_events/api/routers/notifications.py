@@ -8,12 +8,6 @@ from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_database.postgres.postgres import SlugError
 from cwms_batch_events.core.models import (
-    NotificationGroupCreate,
-    NotificationGroupMemberCreate,
-    NotificationGroupMemberRead,
-    NotificationGroupMemberUpdate,
-    NotificationGroupRead,
-    NotificationGroupUpdate,
     NotificationPreviewRequest,
     NotificationTemplateCreate,
     NotificationTemplateRead,
@@ -34,7 +28,7 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 def check_user_office_admin(user: User, office: str):
     if office not in user.admin_offices:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User does not have script admin access for office '{office}'",
         )
 
@@ -45,7 +39,7 @@ def map_write_error(e: Exception):
             status_code=status.HTTP_404_NOT_FOUND, detail="Notification resource not found"
         )
     if isinstance(e, PermissionError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     if isinstance(e, SlugError):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     if isinstance(e, ValueError):
@@ -57,12 +51,11 @@ def map_write_error(e: Exception):
 
 @router.get("/templates")
 def get_templates(
-    office: str | None = None,
+    office: str,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[NotificationTemplateRead]:
-    if office is not None:
-        check_user_office_admin(user, office)
+    check_user_office_admin(user, office)
     return job_db.get_notification_templates_for_office(office)
 
 
@@ -72,8 +65,7 @@ def post_template(
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> NotificationTemplateRead:
-    if payload.office is not None:
-        check_user_office_admin(user, payload.office)
+    check_user_office_admin(user, payload.office)
     try:
         return job_db.store_notification_template(payload)
     except Exception as e:
@@ -138,114 +130,6 @@ def preview_template(
         recipients=[],
         data=data,
     )
-
-
-@router.get("/groups")
-def get_groups(
-    office: str | None = None,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> list[NotificationGroupRead]:
-    if office is not None:
-        check_user_office_admin(user, office)
-    return job_db.get_notification_groups_for_office(office)
-
-
-@router.post("/groups")
-def post_group(
-    payload: NotificationGroupCreate,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> NotificationGroupRead:
-    if payload.office is not None:
-        check_user_office_admin(user, payload.office)
-    try:
-        return job_db.store_notification_group(payload)
-    except Exception as e:
-        map_write_error(e)
-
-
-@router.put("/groups/{group_id}")
-def put_group(
-    group_id: UUID,
-    payload: NotificationGroupUpdate,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> NotificationGroupRead:
-    try:
-        return job_db.update_notification_group(group_id, payload, user.admin_offices)
-    except Exception as e:
-        map_write_error(e)
-
-
-@router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_group(
-    group_id: UUID,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-):
-    try:
-        job_db.remove_notification_group_if_allowed(group_id, user.admin_offices)
-    except Exception as e:
-        map_write_error(e)
-
-
-@router.get("/groups/{group_id}/members")
-def get_group_members(
-    group_id: UUID,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> list[NotificationGroupMemberRead]:
-    try:
-        return job_db.get_notification_group_members(group_id, user.admin_offices)
-    except Exception as e:
-        map_write_error(e)
-
-
-@router.post("/groups/{group_id}/members")
-def post_group_member(
-    group_id: UUID,
-    payload: NotificationGroupMemberCreate,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> NotificationGroupMemberRead:
-    try:
-        return job_db.store_notification_group_member(
-            group_id, payload, user.admin_offices
-        )
-    except Exception as e:
-        map_write_error(e)
-
-
-@router.put("/groups/members/{member_id}")
-def put_group_member(
-    member_id: UUID,
-    payload: NotificationGroupMemberUpdate,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-) -> NotificationGroupMemberRead:
-    try:
-        return job_db.update_notification_group_member(
-            member_id, payload, user.admin_offices
-        )
-    except Exception as e:
-        map_write_error(e)
-
-
-@router.delete(
-    "/groups/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT
-)
-def delete_group_member(
-    member_id: UUID,
-    user: User = Depends(get_current_user),
-    job_db: JobDatabase = Depends(get_job_database),
-):
-    try:
-        job_db.remove_notification_group_member_if_allowed(
-            member_id, user.admin_offices
-        )
-    except Exception as e:
-        map_write_error(e)
 
 
 @router.get("/rules")

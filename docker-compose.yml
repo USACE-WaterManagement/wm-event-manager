@@ -26,6 +26,9 @@ services:
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
       CDA_API_ROOT: http://traefik/cwms-data/
+      CDA_CLIENT_ID: ${CDA_CLIENT_ID:-}
+      CDA_CLIENT_SECRET: ${CDA_CLIENT_SECRET:-}
+      CDA_TOKEN_URL: ${CDA_TOKEN_URL:-}
       DEFAULT_JOB_RUNNER: docker-local
       PGUSER: *application_user
       PGPASSWORD: *application_password
@@ -69,6 +72,10 @@ services:
       S3_BUCKET: wm-event-manager-local
       S3_ENDPOINT_URL: http://minio:9000
       NOTIFICATION_QUEUE_NAME: cwms-batch-events-notifications
+      CDA_API_ROOT: http://traefik/cwms-data/
+      CDA_CLIENT_ID: ${CDA_CLIENT_ID:-}
+      CDA_CLIENT_SECRET: ${CDA_CLIENT_SECRET:-}
+      CDA_TOKEN_URL: ${CDA_TOKEN_URL:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -87,6 +94,7 @@ services:
       AWS_REGION: us-gov-west-1
       AWS_DEFAULT_REGION: us-gov-west-1
       QUEUE_URL: http://elasticmq:9324/000000000000/cwms-batch-events-notifications
+      NOTIFICATION_DELIVERY_MODE: log
     command: >
       python -u infra/notifications/notification_loop.py
     networks:

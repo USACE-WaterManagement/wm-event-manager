@@ -32,3 +32,25 @@ Available district scripts are managed within the cwms-batch application itself 
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.
+
+#### Failed-job email notifications
+
+Batch Events stores office-scoped email templates and one active failed-job rule
+per script. Reusable recipient lists are owned by CDA, not Batch Events. A rule
+stores the CDA list ID together with the script office, so the effective list
+identity is `(office, user-list-id)`. Users create and maintain list membership
+in the authenticated CDA User Lists UI; Batch Events only selects and resolves
+those lists.
+
+CDA resolution at job-failure time uses a registered confidential Keycloak
+service account with `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`. `CDA_TOKEN_URL` can
+override the normal token URL derived from `AUTH_HOST` and `AUTH_REALM`, and
+`CDA_TOKEN_HOST_HEADER` is available for local proxy routing. API keys are not
+used for this workflow.
+
+The notification worker uses `NOTIFICATION_DELIVERY_MODE=log` locally, which
+records only delivery metadata and does not log recipients or message contents.
+Set the mode to `ses` and provide `NOTIFICATION_FROM_ADDRESS` for AWS SES
+delivery. Failed or invalid deliveries remain on SQS for retry and eventual
+dead-letter handling. Templates are rendered in a restricted Jinja sandbox and
+may reference only the documented job-failure fields exposed by Batch Events.

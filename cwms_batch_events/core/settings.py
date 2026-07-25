@@ -11,7 +11,11 @@ class Settings(BaseSettings):
     aws_secret_access_key: str | None = None
     aws_default_region: str | None = None
     cda_api_root: str = "http://traefik/cwms-data/"
-    cda_api_key: str = ""
+    cda_bearer_token: str = ""
+    cda_client_id: str = ""
+    cda_client_secret: str = ""
+    cda_token_url: str = ""
+    cda_token_host_header: str = ""
     default_job_runner: str = "batch"
     dynamodb_host: str = "http://dynamodb:9010"
     pguser: str = ""
@@ -20,6 +24,8 @@ class Settings(BaseSettings):
     pghost: str = "db"
     mock_user: bool = False
     notification_queue_name: str = "cwms-batch-events-notifications"
+    notification_delivery_mode: str = "log"
+    notification_from_address: str = ""
     root_path: str = ""
     s3_bucket: str = ""
     s3_endpoint_url: str | None = None

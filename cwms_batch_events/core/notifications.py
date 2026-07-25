@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
+import logging
+from time import monotonic
 
-from jinja2 import Template
+from jinja2 import StrictUndefined, meta
+from jinja2.sandbox import SandboxedEnvironment
 import requests
 
 from cwms_batch_events.core.job_database.base import JobDatabase
@@ -16,23 +19,103 @@ from cwms_batch_events.core.notification_queue import (
 )
 from cwms_batch_events.core.settings import settings
 
+logger = logging.getLogger(__name__)
+
+ALLOWED_TEMPLATE_FIELDS = {
+    "errorMessage",
+    "executionType",
+    "externalJobId",
+    "jobId",
+    "logs",
+    "office",
+    "repoPath",
+    "scriptId",
+    "scriptName",
+    "scriptSlug",
+    "status",
+    "username",
+}
+ALLOWED_TEMPLATE_FILTERS = {"default", "e", "escape", "lower", "replace", "title", "trim", "upper"}
+MAX_RENDERED_SUBJECT = 998
+MAX_RENDERED_BODY = 100_000
+_token_cache: tuple[str, float] | None = None
+
+
+def _cda_access_token() -> str:
+    global _token_cache
+    if settings.cda_bearer_token:
+        return settings.cda_bearer_token
+    if _token_cache is not None and _token_cache[1] > monotonic() + 30:
+        return _token_cache[0]
+    if not settings.cda_client_id or not settings.cda_client_secret:
+        raise ValueError(
+            "CDA_CLIENT_ID and CDA_CLIENT_SECRET are required to resolve user lists"
+        )
+    token_url = settings.cda_token_url or (
+        f"{settings.auth_host.rstrip('/')}/realms/{settings.auth_realm}"
+        "/protocol/openid-connect/token"
+    )
+    headers = (
+        {"Host": settings.cda_token_host_header}
+        if settings.cda_token_host_header
+        else None
+    )
+    response = requests.post(
+        token_url,
+        data={
+            "grant_type": "client_credentials",
+            "client_id": settings.cda_client_id,
+            "client_secret": settings.cda_client_secret,
+        },
+        headers=headers,
+        timeout=30,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    token = payload["access_token"]
+    _token_cache = (token, monotonic() + int(payload.get("expires_in", 300)))
+    return token
+
 
 def get_cda_user_list_emails(office: str, user_list_id: str) -> list[str]:
-    if not settings.cda_api_key:
-        raise ValueError("CDA_API_KEY is required to resolve notification user lists")
     root = settings.cda_api_root.rstrip("/")
     response = requests.get(
         f"{root}/user/list/{user_list_id}/members",
         params={"office": office},
-        headers={"Authorization": f"apikey {settings.cda_api_key}"},
+        headers={"Authorization": f"Bearer {_cda_access_token()}"},
         timeout=30,
     )
     response.raise_for_status()
-    return [
-        member["email"]
+    return sorted({
+        member["email"].strip().lower()
         for member in response.json().get("members", [])
         if member.get("email")
-    ]
+    })
+
+
+def _template_environment() -> SandboxedEnvironment:
+    environment = SandboxedEnvironment(undefined=StrictUndefined, autoescape=False)
+    environment.globals.clear()
+    environment.filters = {
+        name: value
+        for name, value in environment.filters.items()
+        if name in ALLOWED_TEMPLATE_FILTERS
+    }
+    return environment
+
+
+def _render_template(source: str, data: dict[str, str | None], limit: int) -> str:
+    environment = _template_environment()
+    parsed = environment.parse(source)
+    unknown = meta.find_undeclared_variables(parsed) - ALLOWED_TEMPLATE_FIELDS
+    if unknown:
+        raise ValueError(
+            f"Unsupported notification template fields: {', '.join(sorted(unknown))}"
+        )
+    rendered = environment.from_string(source).render(**data)
+    if len(rendered) > limit:
+        raise ValueError(f"Rendered notification exceeds {limit} characters")
+    return rendered
 
 
 def build_job_failure_data(
@@ -66,8 +149,8 @@ def render_notification(
 ) -> RenderedNotification:
     return RenderedNotification(
         recipients=recipients,
-        subject=Template(subject_template).render(**data),
-        body=Template(body_template).render(**data),
+        subject=_render_template(subject_template, data, MAX_RENDERED_SUBJECT),
+        body=_render_template(body_template, data, MAX_RENDERED_BODY),
         data=data,
     )
 
@@ -88,11 +171,19 @@ def enqueue_failed_job_notifications(
     data = build_job_failure_data(job, error_message=error_message, logs=logs)
 
     for rule in rules:
-        recipients = list(rule.manual_recipients)
+        recipients = [str(recipient).strip().lower() for recipient in rule.manual_recipients]
         if rule.cda_user_list_id:
-            recipients.extend(
-                get_cda_user_list_emails(job.office, rule.cda_user_list_id)
-            )
+            try:
+                recipients.extend(
+                    get_cda_user_list_emails(job.office, rule.cda_user_list_id)
+                )
+            except requests.RequestException:
+                logger.exception(
+                    "Could not resolve CDA user list for notification",
+                    extra={"office": job.office, "user_list_id": rule.cda_user_list_id},
+                )
+                if not recipients:
+                    raise
         recipients = sorted(set(recipients))
         if not recipients:
             continue
