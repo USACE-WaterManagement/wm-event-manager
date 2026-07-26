@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import toast from "react-hot-toast";
 import { FaEnvelope, FaPlus } from "react-icons/fa6";
+import { HelpTip } from "../../shared/components/HelpTip";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
 import { useRememberedOffice } from "../../shared/hooks/useRememberedOffice";
 import useAdminOffices from "../scripts-manager/useAdminOffices";
@@ -28,6 +29,7 @@ import {
   useUpdateNotificationTemplate,
 } from "./api";
 import { JinjaTemplateField } from "./JinjaTemplateField";
+import { TemplateVariablesHelp } from "./TemplateVariablesHelp";
 import type { NotificationTemplate } from "./types";
 
 const emptyTemplate = (office: string) => ({
@@ -65,7 +67,8 @@ export const NotificationsManager = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const sortedTemplates = useMemo(
-    () => [...(templates.data ?? [])].sort((a, b) => a.slug.localeCompare(b.slug)),
+    () =>
+      [...(templates.data ?? [])].sort((a, b) => a.slug.localeCompare(b.slug)),
     [templates.data],
   );
   const selectedTemplate = sortedTemplates.find(
@@ -192,8 +195,8 @@ export const NotificationsManager = () => {
           <Badge color="blue">Setup</Badge>
           <H2 className="mt-2">Email templates</H2>
           <Text className="mt-2 max-w-3xl">
-            Define office-scoped messages for failed-job notifications. Recipient
-            lists are created and maintained in CDA.
+            Define office-scoped messages for failed-job notifications.
+            Recipient lists are created and maintained in CDA.
           </Text>
         </div>
         <Button type="button" onClick={startNew}>
@@ -213,8 +216,16 @@ export const NotificationsManager = () => {
 
       <Card className="p-5">
         <Field className="max-w-sm">
-          <Label>Office</Label>
-          <Description>Templates can only be used by scripts in this office.</Description>
+          <div className="flex items-center gap-1">
+            <Label>Office</Label>
+            <HelpTip title="Office-scoped templates">
+              A template is available only to scripts owned by this office. The
+              same template ID may be used independently by another office.
+            </HelpTip>
+          </div>
+          <Description>
+            Templates can only be used by scripts in this office.
+          </Description>
           <OfficeSelector
             offices={adminOffices.data}
             value={selectedOffice}
@@ -320,7 +331,14 @@ export const NotificationsManager = () => {
           <form onSubmit={saveTemplate}>
             <Fieldset className="flex flex-col gap-5">
               <Field>
-                <Label htmlFor="template-slug">Template ID</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="template-slug">Template ID</Label>
+                  <HelpTip title="Template ID">
+                    This stable, office-scoped name identifies the template in
+                    notification rules. Use lowercase letters, numbers, hyphens,
+                    or underscores.
+                  </HelpTip>
+                </div>
                 <Description>
                   A stable identifier such as job_failure_v1.
                 </Description>
@@ -338,7 +356,10 @@ export const NotificationsManager = () => {
                 />
               </Field>
               <Field>
-                <Label htmlFor="template-subject">Subject</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="template-subject">Subject</Label>
+                  <TemplateVariablesHelp />
+                </div>
                 <JinjaTemplateField
                   id="template-subject"
                   value={templateForm.subjectTemplate}
@@ -352,7 +373,10 @@ export const NotificationsManager = () => {
                 />
               </Field>
               <Field>
-                <Label htmlFor="template-body">Body</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="template-body">Body</Label>
+                  <TemplateVariablesHelp />
+                </div>
                 <JinjaTemplateField
                   id="template-body"
                   value={templateForm.bodyTemplate}

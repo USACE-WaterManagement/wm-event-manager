@@ -23,6 +23,8 @@ import {
   useUpdateScriptNotificationRule,
 } from "./api";
 import { JinjaTemplateField } from "./JinjaTemplateField";
+import { TemplateVariablesHelp } from "./TemplateVariablesHelp";
+import { HelpTip } from "../../shared/components/HelpTip";
 
 interface ScriptNotificationEditorProps {
   script: Script;
@@ -46,6 +48,7 @@ const jobFailureData = (script: Script) => ({
   externalJobId: "preview-external-id",
   errorMessage: "Example failure message",
   logs: "Example job log output",
+  status: "Failed",
 });
 
 export const ScriptNotificationEditor = ({
@@ -79,8 +82,7 @@ export const ScriptNotificationEditor = ({
   const [manualRecipients, setManualRecipients] = useState("");
   const [subjectTemplate, setSubjectTemplate] = useState("");
   const [bodyTemplate, setBodyTemplate] = useState("");
-  const cdaUserListId =
-    cdaUserListIdOverride ?? rule?.cdaUserListId ?? "";
+  const cdaUserListId = cdaUserListIdOverride ?? rule?.cdaUserListId ?? "";
 
   useEffect(() => {
     setTemplateId(selectedTemplateId);
@@ -106,7 +108,8 @@ export const ScriptNotificationEditor = ({
     templateId: selectedTemplateId,
     cdaUserListId: rule?.cdaUserListId ?? "",
     manualRecipients: rule?.manualRecipients?.join("\n") ?? "",
-    subjectTemplate: rule?.subjectTemplate ?? selectedTemplate?.subjectTemplate ?? "",
+    subjectTemplate:
+      rule?.subjectTemplate ?? selectedTemplate?.subjectTemplate ?? "",
     bodyTemplate: rule?.bodyTemplate ?? selectedTemplate?.bodyTemplate ?? "",
   };
   const dirty =
@@ -141,7 +144,10 @@ export const ScriptNotificationEditor = ({
     )
       return;
     if (rule) {
-      await updateRule.mutateAsync({ ruleId: rule.id, payload: payload(active) });
+      await updateRule.mutateAsync({
+        ruleId: rule.id,
+        payload: payload(active),
+      });
       setCdaUserListIdOverride(undefined);
       toast.success(active ? "Notification saved" : "Notification disabled");
     } else {
@@ -191,48 +197,75 @@ export const ScriptNotificationEditor = ({
       )}
       <Fieldset className="flex flex-col gap-4">
         {activeTemplates.length > 0 ? (
-          <Dropdown
-            label="Template"
-            value={templateId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              const nextTemplate = activeTemplates.find(
-                (template) => template.id === e.target.value,
-              );
-              setTemplateId(e.target.value);
-              setSubjectTemplate(nextTemplate?.subjectTemplate ?? "");
-              setBodyTemplate(nextTemplate?.bodyTemplate ?? "");
-            }}
-            options={activeTemplates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.slug}
-              </option>
-            ))}
-          />
+          <Field>
+            <div className="flex items-center gap-1">
+              <Label>Template</Label>
+              <HelpTip title="Notification template">
+                Only active templates from {script.office} are shown. Selecting
+                one supplies the starting subject and body; edits below apply
+                only to this script.
+              </HelpTip>
+            </div>
+            <Dropdown
+              label="Template"
+              labelClassName="sr-only"
+              value={templateId}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                const nextTemplate = activeTemplates.find(
+                  (template) => template.id === e.target.value,
+                );
+                setTemplateId(e.target.value);
+                setSubjectTemplate(nextTemplate?.subjectTemplate ?? "");
+                setBodyTemplate(nextTemplate?.bodyTemplate ?? "");
+              }}
+              options={activeTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.slug}
+                </option>
+              ))}
+            />
+          </Field>
         ) : (
-          <Text>Create a notification template before enabling this script.</Text>
+          <Text>
+            Create a notification template before enabling this script.
+          </Text>
         )}
         {userLists.isLoading ? (
           <Text role="status">Loading CDA user lists…</Text>
         ) : (userLists.data?.length ?? 0) > 0 ? (
-          <Dropdown
-            key={`cda-list-${cdaUserListId}-${userLists.data?.length}`}
-            label="CDA user list"
-            defaultValue={cdaUserListId}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setCdaUserListIdOverride(e.target.value)
-            }
-            options={[
-              <option key="none" value="">
-                No CDA user list
-              </option>,
-              ...(userLists.data ?? []).map((list) => (
-                <option key={list["user-list-id"]} value={list["user-list-id"]}>
-                  {list["user-list-id"]}
-                  {list.description ? ` — ${list.description}` : ""}
-                </option>
-              )),
-            ]}
-          />
+          <Field>
+            <div className="flex items-center gap-1">
+              <Label>CDA user list</Label>
+              <HelpTip title="CDA user list recipients">
+                Lists are owned by {script.office} and maintained in CDA. When
+                an email is sent, Batch Events resolves the list&apos;s current
+                members and their current CDA email addresses.
+              </HelpTip>
+            </div>
+            <Dropdown
+              key={`cda-list-${cdaUserListId}-${userLists.data?.length}`}
+              label="CDA user list"
+              labelClassName="sr-only"
+              defaultValue={cdaUserListId}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setCdaUserListIdOverride(e.target.value)
+              }
+              options={[
+                <option key="none" value="">
+                  No CDA user list
+                </option>,
+                ...(userLists.data ?? []).map((list) => (
+                  <option
+                    key={list["user-list-id"]}
+                    value={list["user-list-id"]}
+                  >
+                    {list["user-list-id"]}
+                    {list.description ? ` — ${list.description}` : ""}
+                  </option>
+                )),
+              ]}
+            />
+          </Field>
         ) : (
           <Text>
             No CDA user lists exist for {script.office}.{" "}
@@ -258,9 +291,16 @@ export const ScriptNotificationEditor = ({
           </a>
         </Text>
         <FieldRow>
-          <Label htmlFor="script-notification-recipients">
-            Manual recipients
-          </Label>
+          <div className="flex items-center gap-1 sm:self-start">
+            <Label htmlFor="script-notification-recipients">
+              Manual recipients
+            </Label>
+            <HelpTip title="Manual recipients">
+              Optional addresses are combined with the selected CDA list and
+              duplicates are removed. Separate addresses with commas,
+              semicolons, or new lines.
+            </HelpTip>
+          </div>
           <Textarea
             id="script-notification-recipients"
             value={manualRecipients}
@@ -282,13 +322,19 @@ export const ScriptNotificationEditor = ({
             </div>
           )}
           {invalidRecipients.length > 0 && (
-            <Text className="col-start-1 text-red-700 sm:col-start-2" role="alert">
+            <Text
+              className="col-start-1 text-red-700 sm:col-start-2"
+              role="alert"
+            >
               Correct the highlighted email addresses before saving.
             </Text>
           )}
         </FieldRow>
         <FieldRow>
-          <Label htmlFor="script-notification-subject">Subject</Label>
+          <div className="flex items-center gap-1 sm:self-start">
+            <Label htmlFor="script-notification-subject">Subject</Label>
+            <TemplateVariablesHelp />
+          </div>
           <JinjaTemplateField
             id="script-notification-subject"
             value={subjectTemplate}
@@ -297,7 +343,10 @@ export const ScriptNotificationEditor = ({
           />
         </FieldRow>
         <FieldRow>
-          <Label htmlFor="script-notification-body">Body</Label>
+          <div className="flex items-center gap-1 sm:self-start">
+            <Label htmlFor="script-notification-body">Body</Label>
+            <TemplateVariablesHelp />
+          </div>
           <JinjaTemplateField
             id="script-notification-body"
             value={bodyTemplate}
@@ -336,7 +385,8 @@ export const ScriptNotificationEditor = ({
             color="danger"
             style="outline"
             onClick={async () => {
-              if (!window.confirm("Delete this failed-job notification?")) return;
+              if (!window.confirm("Delete this failed-job notification?"))
+                return;
               await deleteRule.mutateAsync(rule.id);
               toast.success("Notification deleted");
             }}
@@ -361,7 +411,9 @@ export const ScriptNotificationEditor = ({
           </pre>
         </section>
       )}
-      {dirty && <Text role="status">You have unsaved notification changes.</Text>}
+      {dirty && (
+        <Text role="status">You have unsaved notification changes.</Text>
+      )}
     </Card>
   );
 };
