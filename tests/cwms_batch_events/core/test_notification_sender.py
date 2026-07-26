@@ -1,12 +1,14 @@
 from unittest import mock
 
-from cwms_batch_events.core.models import NotificationMessage
+from cwms_batch_events.core.models import EmailNotificationMessage
 from cwms_batch_events.core.notification_sender import NotificationSender
 
 
 def make_notification():
-    return NotificationMessage(
-        version="1.0",
+    return EmailNotificationMessage(
+        version="1.1",
+        messageType="operations_notice",
+        source="test-suite",
         template="job_failure_v1",
         office="SWT",
         severity="HIGH",

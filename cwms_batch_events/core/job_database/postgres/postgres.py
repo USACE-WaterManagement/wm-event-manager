@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import re
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import uuid
@@ -34,6 +34,15 @@ from cwms_batch_events.core.utils import get_runner_id
 
 class SlugError(Exception):
     pass
+
+
+class TemplateInUseError(Exception):
+    def __init__(self, usage_count: int):
+        self.usage_count = usage_count
+        super().__init__(
+            f"Template is used by {usage_count} script"
+            f"{'s' if usage_count != 1 else ''}"
+        )
 
 
 def slugify(value: str) -> str:
@@ -256,7 +265,6 @@ class PostgresJobDatabase:
                 ScriptNotificationRuleModel.script_id == script_id,
                 ScriptNotificationRuleModel.event_type == NotificationEventType.JOB_FAILED,
                 ScriptNotificationRuleModel.active.is_(True),
-                NotificationTemplateModel.active.is_(True),
             )
         ).all()
         return [ScriptNotificationRuleDetails.model_validate(rule) for rule in rules]
@@ -264,12 +272,26 @@ class PostgresJobDatabase:
     def get_notification_templates_for_office(
         self, office: str
     ) -> list[NotificationTemplateRead]:
-        templates = self.db.scalars(
-            select(NotificationTemplateModel)
+        usage_count = (
+            select(func.count(ScriptNotificationRuleModel.id))
+            .where(
+                ScriptNotificationRuleModel.template_id
+                == NotificationTemplateModel.id
+            )
+            .correlate(NotificationTemplateModel)
+            .scalar_subquery()
+        )
+        rows = self.db.execute(
+            select(NotificationTemplateModel, usage_count.label("usage_count"))
             .where(NotificationTemplateModel.office == office)
             .order_by(NotificationTemplateModel.slug)
         ).all()
-        return [NotificationTemplateRead.model_validate(model) for model in templates]
+        return [
+            NotificationTemplateRead.model_validate(model).model_copy(
+                update={"usage_count": count}
+            )
+            for model, count in rows
+        ]
 
     def store_notification_template(
         self, payload: NotificationTemplateCreate
@@ -312,6 +334,13 @@ class PostgresJobDatabase:
         with self.db.begin():
             template = self.db.get_one(NotificationTemplateModel, template_id)
             self._ensure_admin_office(template.office, admin_offices)
+            usage_count = self.db.scalar(
+                select(func.count(ScriptNotificationRuleModel.id)).where(
+                    ScriptNotificationRuleModel.template_id == template_id
+                )
+            )
+            if usage_count:
+                raise TemplateInUseError(usage_count)
             self.db.delete(template)
 
     def get_notification_template_if_allowed(

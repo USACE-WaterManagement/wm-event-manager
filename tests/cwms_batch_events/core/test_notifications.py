@@ -26,7 +26,6 @@ def make_rule(**overrides):
             slug="job_failure_v1",
             subjectTemplate="Job {{ scriptName }} failed",
             bodyTemplate="{{ jobId }}: {{ errorMessage }}",
-            active=True,
             createdTime=now,
             updatedTime=now,
         ),
@@ -215,6 +214,8 @@ def test_failed_job_with_active_rule_enqueues_rendered_notification():
     assert response == ["message-123"]
     message = queue.send_notification.call_args.args[0]
     assert message.template == "job_failure_v1"
+    assert message.message_type == "job_failed"
+    assert message.source == "cwms-batch-events"
     assert message.recipients == ["one@example.mil"]
     assert message.subject == "Job Hourly failed"
     assert message.body == f"{job.id}: boom"

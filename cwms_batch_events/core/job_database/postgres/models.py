@@ -3,6 +3,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     String,
     CheckConstraint,
     UniqueConstraint,
@@ -10,6 +11,7 @@ from sqlalchemy import (
     Table,
     UUID,
     VARCHAR,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -116,7 +118,6 @@ class NotificationTemplateModel(Base):
     slug: Mapped[str]
     subject_template: Mapped[str]
     body_template: Mapped[str]
-    active: Mapped[bool]
     created_time: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp()
     )
@@ -135,6 +136,14 @@ class ScriptNotificationRuleModel(Base):
             "template_id",
             name="script_notification_rules_unique_rule",
         ),
+        Index(
+            "script_notification_rules_one_active_job_failed",
+            "script_id",
+            "event_type",
+            unique=True,
+            postgresql_where=text("active IS TRUE"),
+            sqlite_where=text("active IS TRUE"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -145,12 +154,10 @@ class ScriptNotificationRuleModel(Base):
     )
     event_type: Mapped[str]
     template_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("notification_templates.id", ondelete="CASCADE")
+        UUID(as_uuid=True), ForeignKey("notification_templates.id", ondelete="RESTRICT")
     )
     cda_user_list_id: Mapped[str | None]
     manual_recipients: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
-    subject_template: Mapped[str | None]
-    body_template: Mapped[str | None]
     active: Mapped[bool]
     created_time: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp()

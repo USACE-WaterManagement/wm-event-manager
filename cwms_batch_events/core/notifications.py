@@ -9,7 +9,7 @@ import requests
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.models import (
     JobRecord,
-    NotificationMessage,
+    EmailNotificationMessage,
     NotificationSeverity,
     RenderedNotification,
 )
@@ -189,13 +189,15 @@ def enqueue_failed_job_notifications(
             continue
 
         rendered = render_notification(
-            subject_template=rule.subject_template or rule.template.subject_template,
-            body_template=rule.body_template or rule.template.body_template,
+            subject_template=rule.template.subject_template,
+            body_template=rule.template.body_template,
             recipients=recipients,
             data=data,
         )
-        message = NotificationMessage(
+        message = EmailNotificationMessage(
             version=MESSAGE_VERSION,
+            messageType="job_failed",
+            source="cwms-batch-events",
             template=rule.template.slug,
             office=job.office,
             severity=NotificationSeverity.HIGH,

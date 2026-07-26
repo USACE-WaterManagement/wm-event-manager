@@ -4,7 +4,7 @@ import os
 import boto3
 from pydantic import ValidationError
 
-from cwms_batch_events.core.models import NotificationMessage
+from cwms_batch_events.core.notification_queue import parse_notification_message
 from cwms_batch_events.core.notification_sender import NotificationSender
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
@@ -36,7 +36,7 @@ while True:
         body_raw = msg["Body"]
 
         try:
-            notification = NotificationMessage.model_validate_json(body_raw)
+            notification = parse_notification_message(body_raw)
             delivery_id = sender.send(notification)
         except (ValidationError, ValueError):
             logger.exception(
@@ -56,10 +56,13 @@ while True:
             continue
 
         logger.info(
-            "Notification delivered: message_id=%s delivery_id=%s template=%s office=%s",
+            "Notification delivered: message_id=%s delivery_id=%s "
+            "message_type=%s source=%s template=%s office=%s",
             msg.get("MessageId"),
             delivery_id,
-            notification.template,
+            notification.message_type,
+            notification.source,
+            notification.template or "-",
             notification.office,
         )
 

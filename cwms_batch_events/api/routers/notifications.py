@@ -6,7 +6,10 @@ from sqlalchemy.exc import NoResultFound
 from cwms_batch_events.api.dependencies import get_current_user, get_job_database
 from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.job_database.base import JobDatabase
-from cwms_batch_events.core.job_database.postgres.postgres import SlugError
+from cwms_batch_events.core.job_database.postgres.postgres import (
+    SlugError,
+    TemplateInUseError,
+)
 from cwms_batch_events.core.models import (
     NotificationPreviewRequest,
     NotificationTemplateCreate,
@@ -41,6 +44,8 @@ def map_write_error(e: Exception):
     if isinstance(e, PermissionError):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     if isinstance(e, SlugError):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    if isinstance(e, TemplateInUseError):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     if isinstance(e, ValueError):
         raise HTTPException(

@@ -2,7 +2,7 @@ import logging
 
 import boto3
 
-from cwms_batch_events.core.models import NotificationMessage
+from cwms_batch_events.core.models import EmailNotificationMessage
 from cwms_batch_events.core.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -15,12 +15,14 @@ class NotificationSender:
         self.delivery_mode = settings.notification_delivery_mode.lower()
         self.ses = ses_client
 
-    def send(self, notification: NotificationMessage) -> str:
+    def send(self, notification: EmailNotificationMessage) -> str:
         if self.delivery_mode == "log":
             logger.info(
-                "Notification accepted by local log sender: template=%s office=%s "
-                "recipient_count=%d",
-                notification.template,
+                "Email notification accepted by local log sender: "
+                "message_type=%s source=%s template=%s office=%s recipient_count=%d",
+                notification.message_type,
+                notification.source,
+                notification.template or "-",
                 notification.office,
                 len(notification.recipients),
             )

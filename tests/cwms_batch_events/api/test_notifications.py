@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from sqlalchemy.exc import NoResultFound
 
+from cwms_batch_events.core.job_database.postgres.postgres import TemplateInUseError
 from cwms_batch_events.core.models import (
     NotificationTemplateRead,
     ScriptNotificationRuleRead,
@@ -18,7 +19,7 @@ def make_template(**overrides):
         slug=overrides.pop("slug", "job_failure_v1"),
         subjectTemplate=overrides.pop("subject_template", "Job {{ scriptName }} failed"),
         bodyTemplate=overrides.pop("body_template", "{{ jobId }}"),
-        active=overrides.pop("active", True),
+        usageCount=overrides.pop("usage_count", 0),
         createdTime=overrides.pop("created_time", now),
         updatedTime=overrides.pop("updated_time", now),
     )
@@ -47,7 +48,6 @@ def template_payload(**overrides):
             "subjectTemplate", "Job {{ scriptName }} failed"
         ),
         "bodyTemplate": overrides.pop("bodyTemplate", "{{ jobId }}"),
-        "active": overrides.pop("active", True),
         **overrides,
     }
 
@@ -126,6 +126,15 @@ def test_notification_template_missing_maps_to_404(client, job_db):
     )
 
     assert response.status_code == 404
+
+
+def test_notification_template_in_use_maps_to_conflict(client, job_db):
+    job_db.remove_notification_template_if_allowed.side_effect = TemplateInUseError(2)
+
+    response = client.delete(f"/notifications/templates/{uuid4()}")
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Template is used by 2 scripts"
 
 
 def test_create_and_manage_rules(client, job_db):

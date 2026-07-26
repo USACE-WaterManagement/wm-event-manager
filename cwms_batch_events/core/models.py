@@ -1,8 +1,10 @@
 from datetime import datetime
 from enum import Enum
+from typing import Literal
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.alias_generators import to_camel
-from uuid import UUID
 
 
 class CamelModel(BaseModel):
@@ -105,8 +107,8 @@ class NotificationSeverity(str, Enum):
     HIGH = "HIGH"
 
 
-class NotificationMessage(BaseModel):
-    version: str
+class LegacyNotificationMessage(BaseModel):
+    version: Literal["1.0"]
     template: str
     office: str
     severity: NotificationSeverity
@@ -115,6 +117,22 @@ class NotificationMessage(BaseModel):
     body: str = Field(min_length=1, max_length=100_000)
     created_at: datetime
     data: dict[str, str | None]
+
+
+class EmailNotificationMessage(CamelModel):
+    version: Literal["1.1"] = "1.1"
+    message_type: str = Field(
+        min_length=1, max_length=128, pattern=r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$"
+    )
+    source: str = Field(min_length=1, max_length=128)
+    office: str = Field(min_length=1, max_length=16)
+    severity: NotificationSeverity
+    recipients: list[EmailStr] = Field(min_length=1, max_length=100)
+    subject: str = Field(min_length=1, max_length=998)
+    body: str = Field(min_length=1, max_length=100_000)
+    created_at: datetime
+    template: str | None = Field(default=None, max_length=128)
+    data: dict[str, str | None] = Field(default_factory=dict)
 
 
 class NotificationEventType(str, Enum):
@@ -126,7 +144,6 @@ class NotificationTemplateBase(CamelModel):
     slug: str = Field(pattern=r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$", max_length=128)
     subject_template: str = Field(min_length=1, max_length=998)
     body_template: str = Field(min_length=1, max_length=100_000)
-    active: bool = True
 
 
 class NotificationTemplateCreate(NotificationTemplateBase):
@@ -141,6 +158,7 @@ class NotificationTemplateRead(NotificationTemplateBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    usage_count: int = Field(default=0, ge=0)
     created_time: datetime
     updated_time: datetime
 
@@ -151,8 +169,6 @@ class ScriptNotificationRuleBase(CamelModel):
     template_id: UUID
     cda_user_list_id: str | None = Field(default=None, max_length=128)
     manual_recipients: list[EmailStr] = Field(default_factory=list, max_length=100)
-    subject_template: str | None = Field(default=None, max_length=998)
-    body_template: str | None = Field(default=None, max_length=100_000)
     active: bool = True
 
     @field_validator("manual_recipients")
