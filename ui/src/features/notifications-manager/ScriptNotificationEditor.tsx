@@ -12,6 +12,7 @@ import {
   Textarea,
 } from "@usace/groundwork";
 import toast from "react-hot-toast";
+import { HelpTip } from "../../shared/components/HelpTip";
 import type { Script } from "../scripts-manager/types";
 import {
   useCreateScriptNotificationRule,
@@ -22,9 +23,6 @@ import {
   useScriptNotificationRules,
   useUpdateScriptNotificationRule,
 } from "./api";
-import { JinjaTemplateField } from "./JinjaTemplateField";
-import { TemplateVariablesHelp } from "./TemplateVariablesHelp";
-import { HelpTip } from "../../shared/components/HelpTip";
 
 interface ScriptNotificationEditorProps {
   script: Script;
@@ -61,42 +59,35 @@ export const ScriptNotificationEditor = ({
   const updateRule = useUpdateScriptNotificationRule(script.id);
   const deleteRule = useDeleteScriptNotificationRule(script.id);
   const preview = usePreviewNotificationTemplate();
+  const resetPreview = preview.reset;
 
   const rule = useMemo(
     () => rules.data?.find((item) => item.eventType === "job_failed"),
     [rules.data],
   );
-  const activeTemplates = useMemo(
-    () => templates.data?.filter((template) => template.active) ?? [],
-    [templates.data],
-  );
-  const selectedTemplate =
-    activeTemplates.find((template) => template.id === rule?.templateId) ??
-    activeTemplates[0];
-  const selectedTemplateId = selectedTemplate?.id ?? "";
+  const availableTemplates = templates.data ?? [];
+  const defaultTemplateId =
+    availableTemplates.find((template) => template.id === rule?.templateId)
+      ?.id ??
+    availableTemplates[0]?.id ??
+    "";
 
+  const [enabled, setEnabled] = useState(false);
   const [templateId, setTemplateId] = useState("");
-  const [cdaUserListIdOverride, setCdaUserListIdOverride] = useState<
-    string | undefined
-  >();
+  const [cdaUserListId, setCdaUserListId] = useState("");
   const [manualRecipients, setManualRecipients] = useState("");
-  const [subjectTemplate, setSubjectTemplate] = useState("");
-  const [bodyTemplate, setBodyTemplate] = useState("");
-  const cdaUserListId = cdaUserListIdOverride ?? rule?.cdaUserListId ?? "";
 
   useEffect(() => {
-    setTemplateId(selectedTemplateId);
+    setEnabled(rule?.active ?? false);
+    setTemplateId(rule?.templateId ?? defaultTemplateId);
+    setCdaUserListId(rule?.cdaUserListId ?? "");
     setManualRecipients(rule?.manualRecipients?.join("\n") ?? "");
-    setSubjectTemplate(
-      rule?.subjectTemplate ?? selectedTemplate?.subjectTemplate ?? "",
-    );
-    setBodyTemplate(rule?.bodyTemplate ?? selectedTemplate?.bodyTemplate ?? "");
-  }, [rule, selectedTemplate, selectedTemplateId]);
+    resetPreview();
+  }, [defaultTemplateId, resetPreview, rule, script.id]);
 
-  useEffect(() => {
-    setCdaUserListIdOverride(undefined);
-  }, [script.id, rule?.id]);
-
+  const selectedTemplate = availableTemplates.find(
+    (template) => template.id === templateId,
+  );
   const recipientEmails = manualRecipients
     .split(/[\n,;]/)
     .map((email) => email.trim())
@@ -105,56 +96,42 @@ export const ScriptNotificationEditor = ({
     (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
   );
   const initialValues = {
-    templateId: selectedTemplateId,
+    enabled: rule?.active ?? false,
+    templateId: rule?.templateId ?? defaultTemplateId,
     cdaUserListId: rule?.cdaUserListId ?? "",
     manualRecipients: rule?.manualRecipients?.join("\n") ?? "",
-    subjectTemplate:
-      rule?.subjectTemplate ?? selectedTemplate?.subjectTemplate ?? "",
-    bodyTemplate: rule?.bodyTemplate ?? selectedTemplate?.bodyTemplate ?? "",
   };
-  const dirty =
-    JSON.stringify({
-      templateId,
-      cdaUserListId,
-      manualRecipients,
-      subjectTemplate,
-      bodyTemplate,
-    }) !== JSON.stringify(initialValues);
+  const currentValues = {
+    enabled,
+    templateId,
+    cdaUserListId,
+    manualRecipients,
+  };
+  const dirty = JSON.stringify(currentValues) !== JSON.stringify(initialValues);
+  const recipientsMissing = !cdaUserListId && recipientEmails.length === 0;
+  const enabledConfigurationInvalid =
+    enabled &&
+    (!selectedTemplate || recipientsMissing || invalidRecipients.length > 0);
+  const pending =
+    createRule.isPending || updateRule.isPending || deleteRule.isPending;
 
-  const payload = (active: boolean) => ({
+  const payload = {
     scriptId: script.id,
     eventType: "job_failed" as const,
     templateId,
     cdaUserListId: cdaUserListId || null,
     manualRecipients: recipientEmails,
-    subjectTemplate:
-      subjectTemplate === selectedTemplate?.subjectTemplate
-        ? null
-        : subjectTemplate,
-    bodyTemplate:
-      bodyTemplate === selectedTemplate?.bodyTemplate ? null : bodyTemplate,
-    active,
-  });
+    active: enabled,
+  };
 
-  const save = async (active = rule?.active ?? true) => {
-    if (
-      !templateId ||
-      invalidRecipients.length > 0 ||
-      (!cdaUserListId && recipientEmails.length === 0)
-    )
-      return;
+  const save = async () => {
+    if ((!rule && !enabled) || enabledConfigurationInvalid) return;
     if (rule) {
-      await updateRule.mutateAsync({
-        ruleId: rule.id,
-        payload: payload(active),
-      });
-      setCdaUserListIdOverride(undefined);
-      toast.success(active ? "Notification saved" : "Notification disabled");
+      await updateRule.mutateAsync({ ruleId: rule.id, payload });
     } else {
-      await createRule.mutateAsync(payload(active));
-      setCdaUserListIdOverride(undefined);
-      toast.success("Notification created");
+      await createRule.mutateAsync(payload);
     }
+    toast.success(enabled ? "Failure email saved" : "Failure email disabled");
   };
 
   const renderPreview = async () => {
@@ -162,8 +139,6 @@ export const ScriptNotificationEditor = ({
     await preview.mutateAsync({
       templateId,
       data: jobFailureData(script),
-      subjectTemplate,
-      bodyTemplate,
     });
   };
 
@@ -180,13 +155,14 @@ export const ScriptNotificationEditor = ({
     <Card className="flex min-w-0 flex-col gap-5 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <H3>Failed-job email</H3>
+          <H3>Email alerts</H3>
           <Text>{script.name}</Text>
         </div>
         <Badge color={rule?.active ? "green" : "zinc"}>
-          {rule?.active ? "Enabled" : "Not enabled"}
+          {rule?.active ? "Failure email enabled" : "Failure email off"}
         </Badge>
       </div>
+
       {error && (
         <div
           role="alert"
@@ -195,224 +171,251 @@ export const ScriptNotificationEditor = ({
           {error.message}
         </div>
       )}
-      <Fieldset className="flex flex-col gap-4">
-        {activeTemplates.length > 0 ? (
-          <Field>
-            <div className="flex items-center gap-1">
-              <Label>Template</Label>
-              <HelpTip title="Notification template">
-                Only active templates from {script.office} are shown. Selecting
-                one supplies the starting subject and body; edits below apply
-                only to this script.
-              </HelpTip>
-            </div>
-            <Dropdown
-              label="Template"
-              labelClassName="sr-only"
-              value={templateId}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                const nextTemplate = activeTemplates.find(
-                  (template) => template.id === e.target.value,
-                );
-                setTemplateId(e.target.value);
-                setSubjectTemplate(nextTemplate?.subjectTemplate ?? "");
-                setBodyTemplate(nextTemplate?.bodyTemplate ?? "");
-              }}
-              options={activeTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.slug}
-                </option>
-              ))}
+
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+        <label
+          htmlFor="email-on-failure"
+          className="flex cursor-pointer items-center justify-between gap-4"
+        >
+          <span>
+            <span className="block font-semibold text-zinc-950">
+              Email when this script fails
+            </span>
+            <span className="mt-1 block text-sm text-zinc-600">
+              This script-level setting is the only control that triggers
+              failure email.
+            </span>
+          </span>
+          <span className="flex items-center gap-2">
+            <HelpTip title="Failure email">
+              Templates are reusable content only. Turning this setting on tells
+              Batch Events to use the selected template and recipients when this
+              script fails.
+            </HelpTip>
+            <input
+              id="email-on-failure"
+              type="checkbox"
+              role="switch"
+              className="h-5 w-5 accent-blue-700"
+              checked={enabled}
+              disabled={!rule && availableTemplates.length === 0}
+              onChange={(event) => setEnabled(event.target.checked)}
             />
-          </Field>
-        ) : (
-          <Text>
-            Create a notification template before enabling this script.
-          </Text>
-        )}
-        {userLists.isLoading ? (
-          <Text role="status">Loading CDA user lists…</Text>
-        ) : (userLists.data?.length ?? 0) > 0 ? (
-          <Field>
-            <div className="flex items-center gap-1">
-              <Label>CDA user list</Label>
-              <HelpTip title="CDA user list recipients">
-                Lists are owned by {script.office} and maintained in CDA. When
-                an email is sent, Batch Events resolves the list&apos;s current
-                members and their current CDA email addresses.
-              </HelpTip>
-            </div>
-            <Dropdown
-              key={`cda-list-${cdaUserListId}-${userLists.data?.length}`}
-              label="CDA user list"
-              labelClassName="sr-only"
-              defaultValue={cdaUserListId}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                setCdaUserListIdOverride(e.target.value)
-              }
-              options={[
-                <option key="none" value="">
-                  No CDA user list
-                </option>,
-                ...(userLists.data ?? []).map((list) => (
-                  <option
-                    key={list["user-list-id"]}
-                    value={list["user-list-id"]}
-                  >
-                    {list["user-list-id"]}
-                    {list.description ? ` — ${list.description}` : ""}
+          </span>
+        </label>
+      </div>
+
+      {enabled && (
+        <Fieldset className="flex flex-col gap-4">
+          {availableTemplates.length > 0 ? (
+            <Field>
+              <div className="flex items-center gap-1">
+                <Label>Email template</Label>
+                <HelpTip title="Email template">
+                  Choose the canonical email content for this script. Edit its
+                  subject and body from Setup → Email templates.
+                </HelpTip>
+              </div>
+              <Dropdown
+                label="Email template"
+                labelClassName="sr-only"
+                value={templateId}
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                  setTemplateId(event.target.value);
+                  resetPreview();
+                }}
+                options={availableTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.slug}
                   </option>
-                )),
-              ]}
-            />
-          </Field>
-        ) : (
+                ))}
+              />
+            </Field>
+          ) : (
+            <Text role="alert">
+              Create an email template in Setup before enabling failure email.
+            </Text>
+          )}
+
+          {userLists.isLoading ? (
+            <Text role="status">Loading CDA user lists…</Text>
+          ) : (userLists.data?.length ?? 0) > 0 ? (
+            <Field>
+              <div className="flex items-center gap-1">
+                <Label>CDA user list</Label>
+                <HelpTip title="CDA user list recipients">
+                  Lists are owned by {script.office} and maintained in CDA. At
+                  send time, Batch Events resolves current members and their CDA
+                  email addresses.
+                </HelpTip>
+              </div>
+              <Dropdown
+                label="CDA user list"
+                labelClassName="sr-only"
+                value={cdaUserListId}
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                  setCdaUserListId(event.target.value)
+                }
+                options={[
+                  <option key="none" value="">
+                    No CDA user list
+                  </option>,
+                  ...(userLists.data ?? []).map((list) => (
+                    <option
+                      key={list["user-list-id"]}
+                      value={list["user-list-id"]}
+                    >
+                      {list["user-list-id"]}
+                      {list.description ? ` — ${list.description}` : ""}
+                    </option>
+                  )),
+                ]}
+              />
+            </Field>
+          ) : (
+            <Text>
+              No CDA user lists exist for {script.office}.{" "}
+              <a
+                className="underline"
+                href={`${import.meta.env.VITE_CDA_UI_ROOT}/user-lists`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Create one in CDA
+              </a>
+              , or enter manual recipients below.
+            </Text>
+          )}
+
           <Text>
-            No CDA user lists exist for {script.office}.{" "}
             <a
-              className="underline"
+              className="font-medium text-blue-700 underline"
               href={`${import.meta.env.VITE_CDA_UI_ROOT}/user-lists`}
               target="_blank"
               rel="noreferrer"
             >
-              Create one in CDA
+              Manage user lists in CDA
             </a>
-            , or enter manual recipients below.
           </Text>
-        )}
-        <Text>
-          <a
-            className="font-medium text-blue-700 underline"
-            href={`${import.meta.env.VITE_CDA_UI_ROOT}/user-lists`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Manage user lists in CDA
-          </a>
-        </Text>
-        <FieldRow>
-          <div className="flex items-center gap-1 sm:self-start">
-            <Label htmlFor="script-notification-recipients">
-              Manual recipients
-            </Label>
-            <HelpTip title="Manual recipients">
-              Optional addresses are combined with the selected CDA list and
-              duplicates are removed. Separate addresses with commas,
-              semicolons, or new lines.
-            </HelpTip>
-          </div>
-          <Textarea
-            id="script-notification-recipients"
-            value={manualRecipients}
-            placeholder="one@example.mil, two@example.mil"
-            onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setManualRecipients(event.target.value)
-            }
-          />
-          {recipientEmails.length > 0 && (
-            <div className="col-start-1 flex flex-wrap gap-2 sm:col-start-2">
-              {recipientEmails.map((email) => (
-                <Badge
-                  key={email}
-                  color={invalidRecipients.includes(email) ? "red" : "blue"}
-                >
-                  {email}
-                </Badge>
-              ))}
+
+          <FieldRow>
+            <div className="flex items-center gap-1 sm:self-start">
+              <Label htmlFor="script-notification-recipients">
+                Manual recipients
+              </Label>
+              <HelpTip title="Manual recipients">
+                Optional addresses are combined with the selected CDA list and
+                duplicates are removed. Separate addresses with commas,
+                semicolons, or new lines.
+              </HelpTip>
             </div>
-          )}
-          {invalidRecipients.length > 0 && (
-            <Text
-              className="col-start-1 text-red-700 sm:col-start-2"
-              role="alert"
-            >
-              Correct the highlighted email addresses before saving.
+            <Textarea
+              id="script-notification-recipients"
+              value={manualRecipients}
+              placeholder="one@example.mil, two@example.mil"
+              onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setManualRecipients(event.target.value)
+              }
+            />
+            {recipientEmails.length > 0 && (
+              <div className="col-start-1 flex flex-wrap gap-2 sm:col-start-2">
+                {recipientEmails.map((email) => (
+                  <Badge
+                    key={email}
+                    color={invalidRecipients.includes(email) ? "red" : "blue"}
+                  >
+                    {email}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {invalidRecipients.length > 0 && (
+              <Text
+                className="col-start-1 text-red-700 sm:col-start-2"
+                role="alert"
+              >
+                Correct the highlighted email addresses before saving.
+              </Text>
+            )}
+          </FieldRow>
+
+          {recipientsMissing && (
+            <Text className="text-red-700" role="alert">
+              Choose a CDA user list or enter at least one manual recipient.
             </Text>
           )}
-        </FieldRow>
-        <FieldRow>
-          <div className="flex items-center gap-1 sm:self-start">
-            <Label htmlFor="script-notification-subject">Subject</Label>
-            <TemplateVariablesHelp />
-          </div>
-          <JinjaTemplateField
-            id="script-notification-subject"
-            value={subjectTemplate}
-            className="h-20"
-            onChange={setSubjectTemplate}
-          />
-        </FieldRow>
-        <FieldRow>
-          <div className="flex items-center gap-1 sm:self-start">
-            <Label htmlFor="script-notification-body">Body</Label>
-            <TemplateVariablesHelp />
-          </div>
-          <JinjaTemplateField
-            id="script-notification-body"
-            value={bodyTemplate}
-            onChange={setBodyTemplate}
-          />
-        </FieldRow>
-      </Fieldset>
+
+          {selectedTemplate && (
+            <section className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <Badge color="blue">Selected template</Badge>
+                  <Text className="mt-2 font-medium">
+                    {selectedTemplate.subjectTemplate}
+                  </Text>
+                </div>
+                <Button
+                  type="button"
+                  color="light"
+                  disabled={preview.isPending}
+                  onClick={renderPreview}
+                >
+                  Preview email
+                </Button>
+              </div>
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 font-sans text-sm">
+                {selectedTemplate.bodyTemplate}
+              </pre>
+            </section>
+          )}
+        </Fieldset>
+      )}
+
+      {!enabled && rule && (
+        <Text>
+          The template and recipients are retained. Save this change to stop
+          failure email; turn it back on later to reuse the configuration.
+        </Text>
+      )}
+
       <div className="flex flex-wrap gap-3">
         <Button
           type="button"
-          disabled={
-            !templateId ||
-            !dirty ||
-            invalidRecipients.length > 0 ||
-            (!cdaUserListId && recipientEmails.length === 0) ||
-            createRule.isPending ||
-            updateRule.isPending
-          }
-          onClick={() => save(true)}
+          disabled={!dirty || enabledConfigurationInvalid || pending}
+          onClick={save}
         >
-          {rule ? "Save changes" : "Enable notification"}
+          Save email alert
         </Button>
         {rule && (
           <Button
             type="button"
-            disabled={updateRule.isPending || invalidRecipients.length > 0}
-            onClick={() => save(!rule.active)}
-          >
-            {rule.active ? "Disable notification" : "Enable notification"}
-          </Button>
-        )}
-        {rule && (
-          <Button
-            type="button"
-            disabled={deleteRule.isPending}
+            disabled={pending}
             color="danger"
             style="outline"
             onClick={async () => {
-              if (!window.confirm("Delete this failed-job notification?"))
+              if (!window.confirm("Remove this email alert configuration?"))
                 return;
               await deleteRule.mutateAsync(rule.id);
-              toast.success("Notification deleted");
+              toast.success("Email alert configuration removed");
             }}
           >
-            Delete notification
+            Remove alert configuration
           </Button>
         )}
-        <Button
-          type="button"
-          disabled={!templateId || preview.isPending}
-          onClick={renderPreview}
-        >
-          Preview email
-        </Button>
       </div>
+
       {preview.data && (
         <section className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-4">
-          <Badge color="blue">Email preview</Badge>
+          <Badge color="blue">Rendered preview</Badge>
           <H3 className="text-lg">{preview.data.subject}</H3>
           <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 font-sans text-sm">
             {preview.data.body}
           </pre>
         </section>
       )}
+
       {dirty && (
-        <Text role="status">You have unsaved notification changes.</Text>
+        <Text role="status">You have unsaved email alert changes.</Text>
       )}
     </Card>
   );

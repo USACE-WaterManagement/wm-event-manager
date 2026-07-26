@@ -301,11 +301,6 @@ export interface components {
             subjectTemplate: string;
             /** Bodytemplate */
             bodyTemplate: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
         };
         /** NotificationTemplateRead */
         NotificationTemplateRead: {
@@ -318,15 +313,15 @@ export interface components {
             /** Bodytemplate */
             bodyTemplate: string;
             /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
              * Id
              * Format: uuid
              */
             id: string;
+            /**
+             * Usagecount
+             * @default 0
+             */
+            usageCount: number;
             /**
              * Createdtime
              * Format: date-time
@@ -348,11 +343,6 @@ export interface components {
             subjectTemplate: string;
             /** Bodytemplate */
             bodyTemplate: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
         };
         /** RenderedNotification */
         RenderedNotification: {
@@ -413,10 +403,6 @@ export interface components {
             cdaUserListId?: string | null;
             /** Manualrecipients */
             manualRecipients?: string[];
-            /** Subjecttemplate */
-            subjectTemplate?: string | null;
-            /** Bodytemplate */
-            bodyTemplate?: string | null;
             /**
              * Active
              * @default true
@@ -441,10 +427,6 @@ export interface components {
             cdaUserListId?: string | null;
             /** Manualrecipients */
             manualRecipients?: string[];
-            /** Subjecttemplate */
-            subjectTemplate?: string | null;
-            /** Bodytemplate */
-            bodyTemplate?: string | null;
             /**
              * Active
              * @default true
@@ -484,10 +466,6 @@ export interface components {
             cdaUserListId?: string | null;
             /** Manualrecipients */
             manualRecipients?: string[];
-            /** Subjecttemplate */
-            subjectTemplate?: string | null;
-            /** Bodytemplate */
-            bodyTemplate?: string | null;
             /**
              * Active
              * @default true

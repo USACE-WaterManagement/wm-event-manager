@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Card,
-  Checkboxes,
   Description,
   Field,
   Fieldset,
@@ -39,7 +38,6 @@ const emptyTemplate = (office: string) => ({
   subjectTemplate: "Batch job {{ scriptName }} failed",
   bodyTemplate:
     "Job {{ jobId }} failed for {{ office }}.\nError: {{ errorMessage }}\n\nReview the job and logs in Batch Events.",
-  active: true,
 });
 
 const formFromTemplate = (template: NotificationTemplate) => ({
@@ -48,7 +46,6 @@ const formFromTemplate = (template: NotificationTemplate) => ({
   slug: template.slug,
   subjectTemplate: template.subjectTemplate,
   bodyTemplate: template.bodyTemplate,
-  active: template.active,
 });
 
 export const NotificationsManager = () => {
@@ -145,7 +142,6 @@ export const NotificationsManager = () => {
       slug: templateForm.slug.trim(),
       subjectTemplate: templateForm.subjectTemplate,
       bodyTemplate: templateForm.bodyTemplate,
-      active: templateForm.active,
     };
     try {
       const saved = templateForm.id
@@ -195,8 +191,9 @@ export const NotificationsManager = () => {
           <Badge color="blue">Setup</Badge>
           <H2 className="mt-2">Email templates</H2>
           <Text className="mt-2 max-w-3xl">
-            Define office-scoped messages for failed-job notifications.
-            Recipient lists are created and maintained in CDA.
+            Create reusable, office-scoped email content. Templates never send
+            email by themselves; enable failure email and choose a template on
+            each script in Scripts Manager.
           </Text>
         </div>
         <Button type="button" onClick={startNew}>
@@ -263,8 +260,9 @@ export const NotificationsManager = () => {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <strong>{template.slug}</strong>
-                    <Badge color={template.active ? "green" : "zinc"}>
-                      {template.active ? "Active" : "Inactive"}
+                    <Badge color={template.usageCount ? "blue" : "zinc"}>
+                      Used by {template.usageCount}{" "}
+                      {template.usageCount === 1 ? "script" : "scripts"}
                     </Badge>
                   </div>
                   <Text className="mt-1 line-clamp-2">
@@ -290,6 +288,7 @@ export const NotificationsManager = () => {
               </Text>
             </div>
             {templateForm.id &&
+              selectedTemplate?.usageCount === 0 &&
               (deleteConfirm ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <Text>Delete this template?</Text>
@@ -326,6 +325,13 @@ export const NotificationsManager = () => {
                   Delete template
                 </Button>
               ))}
+            {templateForm.id && (selectedTemplate?.usageCount ?? 0) > 0 && (
+              <Text className="max-w-xs text-right">
+                Used by {selectedTemplate?.usageCount}{" "}
+                {selectedTemplate?.usageCount === 1 ? "script" : "scripts"}.
+                Reassign those scripts before deleting this template.
+              </Text>
+            )}
           </div>
 
           <form onSubmit={saveTemplate}>
@@ -388,22 +394,6 @@ export const NotificationsManager = () => {
                   }
                 />
               </Field>
-              <Checkboxes
-                key={`template-active-${templateForm.id || "new"}`}
-                legend="Template status"
-                content={[
-                  {
-                    id: "template-active",
-                    label: "Active",
-                    defaultChecked: templateForm.active,
-                    onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-                      setTemplateForm((current) => ({
-                        ...current,
-                        active: event.target.checked,
-                      })),
-                  },
-                ]}
-              />
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="submit"

@@ -70,8 +70,8 @@
   <text x="372" y="207" class="step">Batch Events UI</text>
   <text x="372" y="233" class="body">Select a CDA user list</text>
   <text x="372" y="253" class="body">and/or enter manual email addresses.</text>
-  <text x="372" y="281" class="body">Choose template and optional</text>
-  <text x="372" y="301" class="body">subject/body overrides.</text>
+  <text x="372" y="281" class="body">Enable email on failure and</text>
+  <text x="372" y="301" class="body">choose one canonical template.</text>
 
   <path d="M668 216H735" class="arrow" stroke="#059669" marker-end="url(#arrow-green)"/>
   <text x="684" y="203" class="small">GET lists</text>
@@ -91,7 +91,7 @@
   <text x="1105" y="234" class="body">Stores:</text>
   <text x="1120" y="255" class="body">• CDA user-list ID</text>
   <text x="1120" y="275" class="body">• manual recipients</text>
-  <text x="1120" y="295" class="body">• template and overrides</text>
+  <text x="1120" y="295" class="body">• template + enabled state</text>
 
   <!-- Runtime lane -->
   <rect x="42" y="390" width="1356" height="400" rx="20" fill="#ffffff" stroke="#cbd5e1"/>
@@ -121,9 +121,9 @@
   <text x="648" y="486" class="step">Resolve CDA members</text>
   <text x="648" y="513" class="body">GET /user/list/{id}/members</text>
   <text x="648" y="535" class="body">for the job’s office.</text>
-  <rect x="648" y="553" width="110" height="20" rx="10" fill="#bbf7d0"/>
-  <text x="660" y="567" class="pill" fill="#047857">CDA_API_KEY</text>
-  <text x="648" y="591" class="small">Worker credential · apikey scheme</text>
+  <rect x="648" y="553" width="150" height="20" rx="10" fill="#bbf7d0"/>
+  <text x="660" y="567" class="pill" fill="#047857">CDA BEARER TOKEN</text>
+  <text x="648" y="591" class="small">Registered service-account credential</text>
 
   <path d="M551 566C593 625 645 650 704 650" class="arrow" stroke="#475569" marker-end="url(#arrow-gray)"/>
   <text x="555" y="622" class="small">manual emails</text>
@@ -148,15 +148,16 @@
 
   <rect x="1231" y="468" width="131" height="122" rx="14" fill="url(#queue)" stroke="#f59e0b" class="box"/>
   <text x="1261" y="500" class="step">SQS</text>
-  <text x="1251" y="527" class="body">Versioned</text>
-  <text x="1251" y="547" class="body">notification</text>
-  <text x="1251" y="567" class="body">message.</text>
+  <text x="1251" y="527" class="body">Rendered</text>
+  <text x="1251" y="547" class="body">email v1.1</text>
+  <text x="1251" y="567" class="body">envelope.</text>
 
   <path d="M1296 590V666" class="arrow" stroke="#f59e0b" marker-end="url(#arrow-gray)"/>
 
   <rect x="1050" y="667" width="312" height="82" rx="14" fill="#fff7ed" stroke="#fb923c" class="box"/>
-  <text x="1074" y="698" class="step">Notification worker boundary</text>
-  <text x="1074" y="724" class="body">Local worker logs a mock send; production email delivery is the next integration.</text>
+  <text x="1074" y="698" class="step">Generic email worker</text>
+  <text x="1074" y="720" class="body">Validates the rendered envelope and delivers</text>
+  <text x="1074" y="740" class="body">through the local log sink or production SES.</text>
 
   <!-- Failure note -->
   <path d="M624 529H588V775H1070" class="arrow dash" stroke="#be123c" marker-end="url(#arrow-gray)"/>
