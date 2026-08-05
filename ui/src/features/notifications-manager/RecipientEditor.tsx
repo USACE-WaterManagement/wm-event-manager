@@ -12,7 +12,12 @@ import {
   Text,
   Textarea,
 } from "@usace/groundwork";
-import { FaCheck, FaPlus, FaXmark } from "react-icons/fa6";
+import {
+  FaArrowUpRightFromSquare,
+  FaCheck,
+  FaPlus,
+  FaXmark,
+} from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import { useCdaUserLists } from "./api";
 import { parseManualRecipients } from "./recipientParsing";
@@ -430,16 +435,21 @@ export const RecipientEditor = ({
                 </Text>
               )}
               {cdaUserListsUrl && (
-                <Text className="border-t border-blue-200 pt-3">
+                <div className="border-t border-blue-200 pt-3">
                   <a
-                    className="font-medium text-blue-700 underline"
+                    className="inline-flex items-center gap-2 rounded-md border border-blue-700 bg-white px-4 py-2 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
                     href={cdaUserListsUrl}
                     target="_blank"
                     rel="noreferrer"
                   >
                     Manage user lists in CDA
+                    <FaArrowUpRightFromSquare aria-hidden="true" />
+                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
-                </Text>
+                  <Text className="mt-2 text-sm text-zinc-600">
+                    Create or update recipient lists in CWMS Data API.
+                  </Text>
+                </div>
               )}
             </div>
           )}
