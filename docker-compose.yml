@@ -26,9 +26,10 @@ services:
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
       CDA_API_ROOT: http://traefik/cwms-data/
-      CDA_CLIENT_ID: ${CDA_CLIENT_ID:-}
-      CDA_CLIENT_SECRET: ${CDA_CLIENT_SECRET:-}
-      CDA_TOKEN_URL: ${CDA_TOKEN_URL:-}
+      CDA_CLIENT_ID: ${CDA_CLIENT_ID:-cwms-batch-notifications-local}
+      CDA_CLIENT_SECRET: ${CDA_CLIENT_SECRET:-local-cwms-batch-notifications-secret}
+      CDA_TOKEN_URL: ${CDA_TOKEN_URL:-http://traefik/auth/realms/cwms/protocol/openid-connect/token}
+      CDA_TOKEN_HOST_HEADER: ${CDA_TOKEN_HOST_HEADER:-localhost:8081}
       DEFAULT_JOB_RUNNER: docker-local
       PGUSER: *application_user
       PGPASSWORD: *application_password
@@ -73,9 +74,10 @@ services:
       S3_ENDPOINT_URL: http://minio:9000
       NOTIFICATION_QUEUE_NAME: cwms-batch-events-notifications
       CDA_API_ROOT: http://traefik/cwms-data/
-      CDA_CLIENT_ID: ${CDA_CLIENT_ID:-}
-      CDA_CLIENT_SECRET: ${CDA_CLIENT_SECRET:-}
-      CDA_TOKEN_URL: ${CDA_TOKEN_URL:-}
+      CDA_CLIENT_ID: ${CDA_CLIENT_ID:-cwms-batch-notifications-local}
+      CDA_CLIENT_SECRET: ${CDA_CLIENT_SECRET:-local-cwms-batch-notifications-secret}
+      CDA_TOKEN_URL: ${CDA_TOKEN_URL:-http://traefik/auth/realms/cwms/protocol/openid-connect/token}
+      CDA_TOKEN_HOST_HEADER: ${CDA_TOKEN_HOST_HEADER:-localhost:8081}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:

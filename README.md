@@ -54,6 +54,15 @@ override the normal token URL derived from `AUTH_HOST` and `AUTH_REALM`, and
 `CDA_TOKEN_HOST_HEADER` is available for local proxy routing. API keys are not
 used for this workflow.
 
+Local Compose defaults these settings to the local-only
+`cwms-batch-notifications-local` Keycloak service account seeded by the CDA
+development realm. Override `CDA_CLIENT_ID`, `CDA_CLIENT_SECRET`, or
+`CDA_TOKEN_URL`, or `CDA_TOKEN_HOST_HEADER` in the shell when testing against a
+different CDA environment. The host-header default preserves CDA's public
+localhost issuer while Batch Events reaches Keycloak through Docker's internal
+`traefik` hostname. The local credentials are development fixtures and must not
+be reused outside localhost.
+
 The notification worker uses `NOTIFICATION_DELIVERY_MODE=log` locally, which
 records only delivery metadata and does not log recipients or message contents.
 Set the mode to `ses` and provide `NOTIFICATION_FROM_ADDRESS` for AWS SES
