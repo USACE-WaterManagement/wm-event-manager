@@ -12,7 +12,7 @@ import {
   Text,
   Textarea,
 } from "@usace/groundwork";
-import { FaPlus, FaXmark } from "react-icons/fa6";
+import { FaCheck, FaPlus, FaXmark } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import { useCdaUserLists } from "./api";
 import { parseManualRecipients } from "./recipientParsing";
@@ -356,12 +356,14 @@ export const RecipientEditor = ({
                       ? ". Search to find more."
                       : "."}
                   </Text>
-                  <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-300 bg-white shadow-sm">
-                    <Table className="w-full table-fixed">
-                      <TableHead className="sticky top-0 z-10 bg-zinc-100">
+                  <div className="rounded-lg border border-zinc-300 bg-white shadow-sm">
+                    <Table className="max-h-64 overflow-y-auto">
+                      <TableHead>
                         <TableRow>
-                          <TableHeader>User list</TableHeader>
-                          <TableHeader className="w-24 text-right">
+                          <TableHeader className="sticky top-0 z-20 bg-zinc-100 shadow-[inset_0_-1px_0_#d4d4d8]">
+                            User list
+                          </TableHeader>
+                          <TableHeader className="sticky top-0 z-20 w-24 bg-zinc-100 text-right shadow-[inset_0_-1px_0_#d4d4d8]">
                             Action
                           </TableHeader>
                         </TableRow>
@@ -373,9 +375,15 @@ export const RecipientEditor = ({
                           return (
                             <TableRow
                               key={list["user-list-id"]}
-                              className={isSelected ? "bg-blue-50" : undefined}
+                              aria-current={isSelected ? "true" : undefined}
                             >
-                              <TableCell className="align-top">
+                              <TableCell
+                                className={`whitespace-normal align-top ${
+                                  isSelected
+                                    ? "border-l-4 border-blue-700 bg-blue-100"
+                                    : "border-l-4 border-transparent"
+                                }`}
+                              >
                                 <span className="block break-words font-medium text-zinc-950">
                                   {list["user-list-id"]}
                                 </span>
@@ -385,9 +393,15 @@ export const RecipientEditor = ({
                                   </span>
                                 )}
                               </TableCell>
-                              <TableCell className="align-middle text-right">
+                              <TableCell
+                                className={`align-middle text-right ${
+                                  isSelected ? "bg-blue-100" : ""
+                                }`}
+                              >
                                 {isSelected ? (
-                                  <Badge color="blue">Selected</Badge>
+                                  <Badge color="blue">
+                                    <FaCheck aria-hidden="true" /> Selected
+                                  </Badge>
                                 ) : (
                                   <Button
                                     type="button"
