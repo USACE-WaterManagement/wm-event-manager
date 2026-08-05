@@ -9,6 +9,7 @@
     "generate:types": "openapi-typescript http://localhost:8000/openapi.json -o src/generated/api-types.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "node --experimental-strip-types --test src/features/notifications-manager/recipientParsing.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

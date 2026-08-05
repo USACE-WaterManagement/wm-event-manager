@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Dropdown,
-  Input,
   Search,
   Table,
   TableBody,
@@ -12,10 +11,12 @@ import {
   TableHeader,
   TableRow,
   Text,
+  Textarea,
 } from "@usace/groundwork";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import { useCdaUserLists } from "./api";
+import { parseManualRecipients } from "./recipientParsing";
 
 type AddRecipientMode = "manual" | "user-list";
 
@@ -28,8 +29,6 @@ interface RecipientEditorProps {
   onCdaUserListChange: (office: string, userListId: string) => void;
   onManualRecipientsChange: (recipients: string[]) => void;
 }
-
-const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 export const RecipientEditor = ({
   office,
@@ -95,16 +94,25 @@ export const RecipientEditor = ({
   }, [debouncedUserListSearch, userLists.data]);
 
   const addManualRecipient = () => {
-    const email = manualEmail.trim().toLocaleLowerCase();
-    if (!isEmail(email)) {
-      setManualError("Enter a valid email address.");
+    const parsed = parseManualRecipients(manualEmail);
+    if (parsed.emails.length === 0) {
+      setManualError("Enter at least one valid email address.");
       return;
     }
-    if (manualRecipients.includes(email)) {
-      setManualError("That email address is already included.");
+    if (parsed.invalidFragments.length > 0) {
+      setManualError(
+        `Correct the malformed address${parsed.invalidFragments.length === 1 ? "" : "es"}: ${parsed.invalidFragments.join(", ")}`,
+      );
       return;
     }
-    onManualRecipientsChange([...manualRecipients, email]);
+    const newRecipients = parsed.emails.filter(
+      (email) => !manualRecipients.includes(email),
+    );
+    if (newRecipients.length === 0) {
+      setManualError("Those email addresses are already included.");
+      return;
+    }
+    onManualRecipientsChange([...manualRecipients, ...newRecipients]);
     setManualEmail("");
     setManualError("");
   };
@@ -258,30 +266,28 @@ export const RecipientEditor = ({
                 htmlFor="manual-recipient-email"
                 className="font-medium text-zinc-950"
               >
-                Email address
+                Email addresses
               </label>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
+                <Textarea
                   id="manual-recipient-email"
-                  type="email"
                   value={manualEmail}
-                  placeholder="name@example.mil"
+                  placeholder="name@example.mil; Another Person <another@example.mil>"
                   aria-invalid={!!manualError}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  rows={3}
+                  onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
                     setManualEmail(event.target.value);
                     setManualError("");
                   }}
-                  onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      addManualRecipient();
-                    }
-                  }}
                 />
                 <Button type="button" onClick={addManualRecipient}>
-                  Add email
+                  Add emails
                 </Button>
               </div>
+              <Text className="text-sm text-zinc-600">
+                Paste addresses separated by commas, semicolons, or new lines.
+                Outlook-style names and angle brackets are supported.
+              </Text>
               {manualError && (
                 <Text role="alert" className="text-red-700">
                   {manualError}
