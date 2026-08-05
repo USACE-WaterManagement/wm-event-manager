@@ -14,6 +14,7 @@ import {
   Text,
 } from "@usace/groundwork";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import toast from "react-hot-toast";
 import { FaEnvelope, FaPlus } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
@@ -50,6 +51,8 @@ const formFromTemplate = (template: NotificationTemplate) => ({
 
 export const NotificationsManager = () => {
   const auth = useAuth();
+  const search = useSearch({ from: "/setup" });
+  const navigate = useNavigate({ from: "/setup" });
   const adminOffices = useAdminOffices();
   const [office, setOffice] = useRememberedOffice(adminOffices.data ?? []);
   const selectedOffice = office ?? "";
@@ -95,6 +98,29 @@ export const NotificationsManager = () => {
     resetPreview();
   }, [selectedOffice, resetPreview]);
 
+  useEffect(() => {
+    if (
+      search.office &&
+      adminOffices.data?.includes(search.office) &&
+      selectedOffice !== search.office
+    ) {
+      setOffice(search.office);
+    }
+  }, [adminOffices.data, search.office, selectedOffice, setOffice]);
+
+  useEffect(() => {
+    if (!search.template || !templates.data) return;
+    const routedTemplate = templates.data.find(
+      (template) => template.id === search.template,
+    );
+    if (!routedTemplate || routedTemplate.id === selectedTemplateId) return;
+
+    setSelectedTemplateId(routedTemplate.id);
+    setTemplateForm(formFromTemplate(routedTemplate));
+    setDeleteConfirm(false);
+    resetPreview();
+  }, [resetPreview, search.template, selectedTemplateId, templates.data]);
+
   if (!auth.isAuth) {
     return (
       <Card className="mx-auto max-w-xl p-8 text-center">
@@ -125,6 +151,13 @@ export const NotificationsManager = () => {
     setTemplateForm(formFromTemplate(template));
     setDeleteConfirm(false);
     resetPreview();
+    void navigate({
+      replace: true,
+      search: {
+        office: template.office ?? selectedOffice,
+        template: template.id,
+      },
+    });
   };
 
   const startNew = () => {
@@ -133,6 +166,18 @@ export const NotificationsManager = () => {
     setTemplateForm(emptyTemplate(selectedOffice));
     setDeleteConfirm(false);
     preview.reset();
+    void navigate({
+      replace: true,
+      search: { office: selectedOffice, template: undefined },
+    });
+  };
+
+  const changeOffice = (nextOffice: string) => {
+    setOffice(nextOffice);
+    void navigate({
+      replace: true,
+      search: { office: nextOffice, template: undefined },
+    });
   };
 
   const saveTemplate = async (event: React.FormEvent) => {
@@ -226,7 +271,7 @@ export const NotificationsManager = () => {
           <OfficeSelector
             offices={adminOffices.data}
             value={selectedOffice}
-            onChange={setOffice}
+            onChange={changeOffice}
           />
         </Field>
       </Card>
@@ -302,6 +347,13 @@ export const NotificationsManager = () => {
                       setTemplateForm(emptyTemplate(selectedOffice));
                       setDeleteConfirm(false);
                       resetPreview();
+                      void navigate({
+                        replace: true,
+                        search: {
+                          office: selectedOffice,
+                          template: undefined,
+                        },
+                      });
                       toast.success("Template deleted");
                     }}
                   >

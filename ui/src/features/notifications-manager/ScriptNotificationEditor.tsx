@@ -12,6 +12,7 @@ import {
   Textarea,
 } from "@usace/groundwork";
 import toast from "react-hot-toast";
+import { FaPen } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import type { Script } from "../scripts-manager/types";
 import {
@@ -354,14 +355,28 @@ export const ScriptNotificationEditor = ({
                     {selectedTemplate.subjectTemplate}
                   </Text>
                 </div>
-                <Button
-                  type="button"
-                  color="light"
-                  disabled={preview.isPending}
-                  onClick={renderPreview}
-                >
-                  Preview email
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    href="/setup"
+                    search={{
+                      office: script.office,
+                      template: selectedTemplate.id,
+                    }}
+                    color="light"
+                    aria-label={`Edit template ${selectedTemplate.slug}`}
+                  >
+                    <FaPen aria-hidden="true" />
+                    Edit template
+                  </Button>
+                  <Button
+                    type="button"
+                    color="light"
+                    disabled={preview.isPending}
+                    onClick={renderPreview}
+                  >
+                    Preview email
+                  </Button>
+                </div>
               </div>
               <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 font-sans text-sm">
                 {selectedTemplate.bodyTemplate}
