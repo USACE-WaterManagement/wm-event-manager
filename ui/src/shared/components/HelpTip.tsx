@@ -1,4 +1,5 @@
-import { useId, useState, type PropsWithChildren } from "react";
+import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
+import { useId, type PropsWithChildren } from "react";
 import { FaCircleQuestion, FaXmark } from "react-icons/fa6";
 
 interface HelpTipProps extends PropsWithChildren {
@@ -7,60 +8,46 @@ interface HelpTipProps extends PropsWithChildren {
 }
 
 export const HelpTip = ({ title, className = "", children }: HelpTipProps) => {
-  const [open, setOpen] = useState(false);
   const titleId = useId();
 
   return (
-    <div className={`inline-block ${className}`}>
-      <button
+    <Popover className={`relative inline-flex ${className}`}>
+      <PopoverButton
         type="button"
-        aria-expanded={open}
-        aria-haspopup="dialog"
         aria-label={`Help: ${title}`}
         title={title}
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-blue-700 hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-        onClick={() => setOpen(true)}
       >
         <FaCircleQuestion aria-hidden="true" className="h-4 w-4" />
-      </button>
-      {open && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          role="presentation"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setOpen(false);
-          }}
-        >
-          <button
-            type="button"
-            className="absolute inset-0 cursor-default bg-zinc-950/35"
-            aria-label="Close help"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className="relative z-10 block max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-zinc-200 bg-white p-5 text-left text-sm font-normal leading-5 text-zinc-700 shadow-2xl"
-          >
-            <div className="mb-3 flex items-start justify-between gap-4">
+      </PopoverButton>
+      <PopoverPanel
+        anchor="bottom start"
+        transition
+        className="z-[100] mt-2 w-72 origin-top-left rounded-lg border-2 border-blue-200 bg-white p-4 text-left text-sm font-normal leading-5 text-zinc-700 shadow-xl transition duration-150 ease-out [--anchor-gap:0.5rem] data-closed:scale-95 data-closed:opacity-0"
+      >
+        {({ close }) => (
+          <>
+            <span
+              aria-hidden="true"
+              className="absolute -top-[7px] left-4 h-3 w-3 rotate-45 border-l-2 border-t-2 border-blue-200 bg-white"
+            />
+            <div className="mb-2 flex items-start justify-between gap-3">
               <strong id={titleId} className="text-zinc-950">
                 {title}
               </strong>
               <button
                 type="button"
-                autoFocus
                 aria-label="Close help"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                onClick={() => setOpen(false)}
+                className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                onClick={() => close()}
               >
                 <FaXmark aria-hidden="true" />
               </button>
             </div>
-            {children}
-          </div>
-        </div>
-      )}
-    </div>
+            <div aria-labelledby={titleId}>{children}</div>
+          </>
+        )}
+      </PopoverPanel>
+    </Popover>
   );
 };
