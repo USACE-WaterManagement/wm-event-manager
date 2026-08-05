@@ -424,6 +424,14 @@ class PostgresJobDatabase:
             raise ValueError("Only job_failed notification rules are supported")
         if template.office != script.office:
             raise ValueError("Notification template office must match script office")
+        if (
+            payload.cda_user_list_office
+            and payload.cda_user_list_office not in admin_offices
+        ):
+            raise PermissionError(
+                "User does not have script admin access for CDA user list office "
+                f"'{payload.cda_user_list_office}'"
+            )
         if not payload.cda_user_list_id and not payload.manual_recipients:
             raise ValueError(
                 "A CDA user list or at least one manual recipient is required"

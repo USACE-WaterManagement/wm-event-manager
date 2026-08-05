@@ -14,11 +14,11 @@ import toast from "react-hot-toast";
 import { FaPen } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import type { Script } from "../scripts-manager/types";
+import useAdminOffices from "../scripts-manager/useAdminOffices";
 import { RecipientEditor } from "./RecipientEditor";
 import {
   useCreateScriptNotificationRule,
   useDeleteScriptNotificationRule,
-  useCdaUserLists,
   useNotificationTemplates,
   usePreviewNotificationTemplate,
   useScriptNotificationRules,
@@ -48,7 +48,7 @@ export const ScriptNotificationEditor = ({
   script,
 }: ScriptNotificationEditorProps) => {
   const templates = useNotificationTemplates(script.office);
-  const userLists = useCdaUserLists(script.office);
+  const adminOffices = useAdminOffices();
   const rules = useScriptNotificationRules(script.id);
   const createRule = useCreateScriptNotificationRule(script.id);
   const updateRule = useUpdateScriptNotificationRule(script.id);
@@ -70,12 +70,14 @@ export const ScriptNotificationEditor = ({
   const [enabled, setEnabled] = useState(false);
   const [templateId, setTemplateId] = useState("");
   const [cdaUserListId, setCdaUserListId] = useState("");
+  const [cdaUserListOffice, setCdaUserListOffice] = useState("");
   const [manualRecipients, setManualRecipients] = useState<string[]>([]);
 
   useEffect(() => {
     setEnabled(rule?.active ?? false);
     setTemplateId(rule?.templateId ?? defaultTemplateId);
     setCdaUserListId(rule?.cdaUserListId ?? "");
+    setCdaUserListOffice(rule?.cdaUserListOffice ?? "");
     setManualRecipients(rule?.manualRecipients ?? []);
     resetPreview();
   }, [defaultTemplateId, resetPreview, rule, script.id]);
@@ -88,12 +90,14 @@ export const ScriptNotificationEditor = ({
     enabled: rule?.active ?? false,
     templateId: rule?.templateId ?? defaultTemplateId,
     cdaUserListId: rule?.cdaUserListId ?? "",
+    cdaUserListOffice: rule?.cdaUserListOffice ?? "",
     manualRecipients: rule?.manualRecipients ?? [],
   };
   const currentValues = {
     enabled,
     templateId,
     cdaUserListId,
+    cdaUserListOffice,
     manualRecipients,
   };
   const dirty = JSON.stringify(currentValues) !== JSON.stringify(initialValues);
@@ -108,6 +112,7 @@ export const ScriptNotificationEditor = ({
     eventType: "job_failed" as const,
     templateId,
     cdaUserListId: cdaUserListId || null,
+    cdaUserListOffice: cdaUserListOffice || null,
     manualRecipients: recipientEmails,
     active: enabled,
   };
@@ -132,7 +137,7 @@ export const ScriptNotificationEditor = ({
 
   const error =
     templates.error ||
-    userLists.error ||
+    adminOffices.error ||
     rules.error ||
     createRule.error ||
     updateRule.error ||
@@ -227,11 +232,14 @@ export const ScriptNotificationEditor = ({
 
           <RecipientEditor
             office={script.office}
+            availableOffices={adminOffices.data ?? [script.office]}
             cdaUserListId={cdaUserListId}
+            cdaUserListOffice={cdaUserListOffice}
             manualRecipients={manualRecipients}
-            userLists={userLists.data ?? []}
-            userListsLoading={userLists.isLoading}
-            onCdaUserListChange={setCdaUserListId}
+            onCdaUserListChange={(office, userListId) => {
+              setCdaUserListOffice(office);
+              setCdaUserListId(userListId);
+            }}
             onManualRecipientsChange={setManualRecipients}
           />
 

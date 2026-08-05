@@ -11,6 +11,7 @@ from cwms_batch_events.core.models import (
 from cwms_batch_events.core.notifications import (
     enqueue_failed_job_notifications,
     get_cda_user_list_emails,
+    get_cda_user_lists,
     render_notification,
 )
 from tests.factories import make_job_record
@@ -36,6 +37,7 @@ def make_rule(**overrides):
         eventType=overrides.pop("event_type", "job_failed"),
         templateId=template.id,
         cdaUserListId=overrides.pop("cda_user_list_id", None),
+        cdaUserListOffice=overrides.pop("cda_user_list_office", None),
         manualRecipients=overrides.pop("manual_recipients", []),
         active=overrides.pop("active", True),
         createdTime=now,
@@ -125,6 +127,42 @@ def test_cda_user_list_uses_service_account_bearer_token():
     )
 
 
+def test_get_cda_user_lists_uses_selected_office():
+    response = mock.Mock()
+    response.json.return_value = {
+        "user-lists": [
+            {
+                "office-id": "LRH",
+                "user-list-id": "OPERATORS",
+                "description": "On-call operators",
+            }
+        ]
+    }
+    with (
+        mock.patch(
+            "cwms_batch_events.core.notifications.settings.cda_api_root",
+            "https://cda.example/cwms-data/",
+        ),
+        mock.patch(
+            "cwms_batch_events.core.notifications.settings.cda_bearer_token",
+            "service-token",
+        ),
+        mock.patch(
+            "cwms_batch_events.core.notifications.requests.get",
+            return_value=response,
+        ) as request,
+    ):
+        user_lists = get_cda_user_lists("LRH")
+
+    assert user_lists[0].user_list_id == "OPERATORS"
+    request.assert_called_once_with(
+        "https://cda.example/cwms-data/user/list",
+        params={"office": "LRH"},
+        headers={"Authorization": "Bearer service-token"},
+        timeout=30,
+    )
+
+
 def test_render_notification_rejects_unknown_template_fields():
     with mock.patch(
         "cwms_batch_events.core.notifications.ALLOWED_TEMPLATE_FIELDS",
@@ -151,6 +189,7 @@ def test_manual_recipients_still_enqueue_when_cda_is_unavailable():
     rule = make_rule(
         script_id=job.script_id,
         cda_user_list_id="ON-CALL",
+        cda_user_list_office="LRH",
         manual_recipients=["fallback@example.mil"],
     )
     db.get_active_job_failed_notification_rules.return_value = [rule]
@@ -158,13 +197,14 @@ def test_manual_recipients_still_enqueue_when_cda_is_unavailable():
     with mock.patch(
         "cwms_batch_events.core.notifications.get_cda_user_list_emails",
         side_effect=requests.RequestException("unavailable"),
-    ):
+    ) as resolve:
         response = enqueue_failed_job_notifications(job, db, queue)
 
     assert response == ["message-123"]
     assert queue.send_notification.call_args.args[0].recipients == [
         "fallback@example.mil"
     ]
+    resolve.assert_called_once_with("LRH", "ON-CALL")
 
 
 def test_failed_job_with_no_rules_does_not_enqueue():

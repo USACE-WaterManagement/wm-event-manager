@@ -12,6 +12,7 @@ from cwms_batch_events.core.job_database.postgres.postgres import (
 )
 from cwms_batch_events.core.models import (
     NotificationPreviewRequest,
+    CdaUserListRead,
     NotificationTemplateCreate,
     NotificationTemplateRead,
     NotificationTemplateUpdate,
@@ -22,6 +23,7 @@ from cwms_batch_events.core.models import (
 )
 from cwms_batch_events.core.notifications import (
     build_job_failure_data,
+    get_cda_user_lists,
     render_notification,
 )
 
@@ -62,6 +64,25 @@ def get_templates(
 ) -> list[NotificationTemplateRead]:
     check_user_office_admin(user, office)
     return job_db.get_notification_templates_for_office(office)
+
+
+@router.get("/cda-user-lists")
+def get_available_cda_user_lists(
+    office: str,
+    user: User = Depends(get_current_user),
+) -> list[CdaUserListRead]:
+    check_user_office_admin(user, office)
+    try:
+        return get_cda_user_lists(office)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"CDA user lists are unavailable: {e}",
+        )
 
 
 @router.post("/templates")

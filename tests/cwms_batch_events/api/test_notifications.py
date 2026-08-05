@@ -33,6 +33,7 @@ def make_rule(**overrides):
         eventType=overrides.pop("event_type", "job_failed"),
         templateId=overrides.pop("template_id", uuid4()),
         cdaUserListId=overrides.pop("cda_user_list_id", "data-admins"),
+        cdaUserListOffice=overrides.pop("cda_user_list_office", "SWT"),
         manualRecipients=overrides.pop("manual_recipients", ["one@example.mil"]),
         active=overrides.pop("active", True),
         createdTime=overrides.pop("created_time", now),
@@ -76,6 +77,40 @@ def test_create_and_list_templates(client, job_db):
     assert list_response.json()[0]["slug"] == "job_failure_v1"
 
 
+def test_list_cda_user_lists_for_admin_office(client, monkeypatch):
+    monkeypatch.setattr(
+        "cwms_batch_events.api.routers.notifications.get_cda_user_lists",
+        lambda office: [
+            {
+                "office-id": office,
+                "user-list-id": "OPERATORS",
+                "description": "On-call operators",
+            }
+        ],
+    )
+
+    response = client.get(
+        "/notifications/cda-user-lists", params={"office": "SWT"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "office-id": "SWT",
+            "user-list-id": "OPERATORS",
+            "description": "On-call operators",
+        }
+    ]
+
+
+def test_list_cda_user_lists_requires_admin_office(client):
+    response = client.get(
+        "/notifications/cda-user-lists", params={"office": "LRH"}
+    )
+
+    assert response.status_code == 403
+
+
 def test_templates_require_an_office_scope(client, job_db):
     payload = template_payload()
     payload.pop("office")
@@ -95,6 +130,22 @@ def test_rule_rejects_invalid_manual_recipient(client, job_db):
         "eventType": "job_failed",
         "templateId": str(rule.template_id),
         "manualRecipients": ["not-an-email"],
+        "active": True,
+    }
+
+    response = client.post("/notifications/rules", json=payload)
+
+    assert response.status_code == 422
+    job_db.store_script_notification_rule.assert_not_called()
+
+
+def test_rule_requires_user_list_office(client, job_db):
+    rule = make_rule()
+    payload = {
+        "scriptId": str(rule.script_id),
+        "eventType": "job_failed",
+        "templateId": str(rule.template_id),
+        "cdaUserListId": "OPERATORS",
         "active": True,
     }
 
@@ -148,6 +199,7 @@ def test_create_and_manage_rules(client, job_db):
         "eventType": "job_failed",
         "templateId": str(rule.template_id),
         "cdaUserListId": rule.cda_user_list_id,
+        "cdaUserListOffice": rule.cda_user_list_office,
         "manualRecipients": rule.manual_recipients,
         "active": True,
     }

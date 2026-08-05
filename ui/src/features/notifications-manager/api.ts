@@ -51,24 +51,16 @@ export interface CdaUserList {
 
 export const useCdaUserLists = (office?: string) => {
   const auth = useAuth();
-  const cdaRoot = import.meta.env.VITE_CDA_API_ROOT?.replace(/\/$/, "");
   return useQuery({
     queryKey: ["cda-user-lists", office],
-    enabled: !!office && !!auth.token && !!cdaRoot,
-    queryFn: async () => {
-      const response = await fetch(
-        `${cdaRoot}/user/list?office=${encodeURIComponent(office!)}`,
-        {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${auth.token}` },
-        },
-      );
-      if (!response.ok) {
-        throw new Error(`CDA user lists are unavailable (${response.status})`);
-      }
-      const payload = await response.json();
-      return (payload["user-lists"] ?? []) as CdaUserList[];
-    },
+    enabled: !!office && auth.isAuth,
+    retry: false,
+    queryFn: () =>
+      requestJson<CdaUserList[]>(
+        `/api/notifications/cda-user-lists?office=${encodeURIComponent(office!)}`,
+        { cache: "no-store" },
+        auth.token,
+      ),
   });
 };
 
@@ -113,7 +105,10 @@ export const useUpdateNotificationTemplate = (office?: string) => {
   const auth = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (args: { templateId: string; payload: NotificationTemplateUpdate }) =>
+    mutationFn: (args: {
+      templateId: string;
+      payload: NotificationTemplateUpdate;
+    }) =>
       requestJson<NotificationTemplate>(
         `/api/notifications/templates/${args.templateId}`,
         {
@@ -126,7 +121,8 @@ export const useUpdateNotificationTemplate = (office?: string) => {
     onSuccess: (template) => {
       queryClient.setQueryData<NotificationTemplate[]>(
         ["notification-templates", office],
-        (old) => old?.map((item) => (item.id === template.id ? template : item)),
+        (old) =>
+          old?.map((item) => (item.id === template.id ? template : item)),
       );
     },
   });
@@ -192,7 +188,10 @@ export const useUpdateScriptNotificationRule = (scriptId?: string) => {
   const auth = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (args: { ruleId: string; payload: ScriptNotificationRuleUpdate }) =>
+    mutationFn: (args: {
+      ruleId: string;
+      payload: ScriptNotificationRuleUpdate;
+    }) =>
       requestJson<ScriptNotificationRule>(
         `/api/notifications/rules/${args.ruleId}`,
         {

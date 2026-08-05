@@ -157,6 +157,7 @@ class ScriptNotificationRuleModel(Base):
         UUID(as_uuid=True), ForeignKey("notification_templates.id", ondelete="RESTRICT")
     )
     cda_user_list_id: Mapped[str | None]
+    cda_user_list_office: Mapped[str | None]
     manual_recipients: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     active: Mapped[bool]
     created_time: Mapped[datetime.datetime] = mapped_column(

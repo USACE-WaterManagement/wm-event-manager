@@ -9,6 +9,7 @@ import requests
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.models import (
     JobRecord,
+    CdaUserListRead,
     EmailNotificationMessage,
     NotificationSeverity,
     RenderedNotification,
@@ -93,6 +94,21 @@ def get_cda_user_list_emails(office: str, user_list_id: str) -> list[str]:
     })
 
 
+def get_cda_user_lists(office: str) -> list[CdaUserListRead]:
+    root = settings.cda_api_root.rstrip("/")
+    response = requests.get(
+        f"{root}/user/list",
+        params={"office": office},
+        headers={"Authorization": f"Bearer {_cda_access_token()}"},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return [
+        CdaUserListRead.model_validate(user_list)
+        for user_list in response.json().get("user-lists", [])
+    ]
+
+
 def _template_environment() -> SandboxedEnvironment:
     environment = SandboxedEnvironment(undefined=StrictUndefined, autoescape=False)
     environment.globals.clear()
@@ -175,12 +191,17 @@ def enqueue_failed_job_notifications(
         if rule.cda_user_list_id:
             try:
                 recipients.extend(
-                    get_cda_user_list_emails(job.office, rule.cda_user_list_id)
+                    get_cda_user_list_emails(
+                        rule.cda_user_list_office, rule.cda_user_list_id
+                    )
                 )
             except requests.RequestException:
                 logger.exception(
                     "Could not resolve CDA user list for notification",
-                    extra={"office": job.office, "user_list_id": rule.cda_user_list_id},
+                    extra={
+                        "office": rule.cda_user_list_office,
+                        "user_list_id": rule.cda_user_list_id,
+                    },
                 )
                 if not recipients:
                     raise

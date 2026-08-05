@@ -3,7 +3,14 @@ from enum import Enum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 from pydantic.alias_generators import to_camel
 
 
@@ -139,6 +146,12 @@ class NotificationEventType(str, Enum):
     JOB_FAILED = "job_failed"
 
 
+class CdaUserListRead(BaseModel):
+    office_id: str = Field(alias="office-id")
+    user_list_id: str = Field(alias="user-list-id")
+    description: str | None = None
+
+
 class NotificationTemplateBase(CamelModel):
     office: str = Field(min_length=1, max_length=16)
     slug: str = Field(pattern=r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$", max_length=128)
@@ -168,6 +181,7 @@ class ScriptNotificationRuleBase(CamelModel):
     event_type: NotificationEventType = NotificationEventType.JOB_FAILED
     template_id: UUID
     cda_user_list_id: str | None = Field(default=None, max_length=128)
+    cda_user_list_office: str | None = Field(default=None, max_length=16)
     manual_recipients: list[EmailStr] = Field(default_factory=list, max_length=100)
     active: bool = True
 
@@ -180,6 +194,19 @@ class ScriptNotificationRuleBase(CamelModel):
     @classmethod
     def normalize_user_list_id(cls, user_list_id):
         return user_list_id.strip().upper() if user_list_id else None
+
+    @field_validator("cda_user_list_office")
+    @classmethod
+    def normalize_user_list_office(cls, office):
+        return office.strip().upper() if office else None
+
+    @model_validator(mode="after")
+    def require_complete_user_list_reference(self):
+        if bool(self.cda_user_list_id) != bool(self.cda_user_list_office):
+            raise ValueError(
+                "CDA user list ID and office must be provided together"
+            )
+        return self
 
 
 class ScriptNotificationRuleCreate(ScriptNotificationRuleBase):

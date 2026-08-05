@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Button,
+  Dropdown,
   Input,
   Search,
   Table,
@@ -14,17 +15,17 @@ import {
 } from "@usace/groundwork";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
-import type { CdaUserList } from "./api";
+import { useCdaUserLists } from "./api";
 
 type AddRecipientMode = "manual" | "user-list";
 
 interface RecipientEditorProps {
   office: string;
+  availableOffices: string[];
   cdaUserListId: string;
+  cdaUserListOffice: string;
   manualRecipients: string[];
-  userLists: CdaUserList[];
-  userListsLoading: boolean;
-  onCdaUserListChange: (userListId: string) => void;
+  onCdaUserListChange: (office: string, userListId: string) => void;
   onManualRecipientsChange: (recipients: string[]) => void;
 }
 
@@ -32,10 +33,10 @@ const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 export const RecipientEditor = ({
   office,
+  availableOffices,
   cdaUserListId,
+  cdaUserListOffice,
   manualRecipients,
-  userLists,
-  userListsLoading,
   onCdaUserListChange,
   onManualRecipientsChange,
 }: RecipientEditorProps) => {
@@ -47,6 +48,18 @@ export const RecipientEditor = ({
   const [manualError, setManualError] = useState("");
   const [userListSearch, setUserListSearch] = useState("");
   const [debouncedUserListSearch, setDebouncedUserListSearch] = useState("");
+  const [userListOffice, setUserListOffice] = useState(
+    cdaUserListOffice || office,
+  );
+  const userLists = useCdaUserLists(
+    addMode === "user-list" ? userListOffice : undefined,
+  );
+
+  useEffect(() => {
+    if (addMode === "user-list") {
+      setUserListOffice(cdaUserListOffice || office);
+    }
+  }, [addMode, cdaUserListOffice, office]);
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -56,21 +69,30 @@ export const RecipientEditor = ({
     return () => window.clearTimeout(timer);
   }, [userListSearch]);
 
-  const selectedUserList = userLists.find(
-    (list) => list["user-list-id"] === cdaUserListId,
+  const selectedUserList = userLists.data?.find(
+    (list) =>
+      userListOffice === cdaUserListOffice &&
+      list["user-list-id"] === cdaUserListId,
   );
+
+  const orderedAvailableOffices = [
+    userListOffice,
+    ...availableOffices
+      .filter((availableOffice) => availableOffice !== userListOffice)
+      .sort(),
+  ];
 
   const filteredUserLists = useMemo(() => {
     const search = debouncedUserListSearch.toLocaleLowerCase();
     const matches = search
-      ? userLists.filter((list) =>
+      ? (userLists.data ?? []).filter((list) =>
           `${list["user-list-id"]} ${list.description ?? ""}`
             .toLocaleLowerCase()
             .includes(search),
         )
-      : userLists;
+      : (userLists.data ?? []);
     return matches.slice(0, search ? 20 : 5);
-  }, [debouncedUserListSearch, userLists]);
+  }, [debouncedUserListSearch, userLists.data]);
 
   const addManualRecipient = () => {
     const email = manualEmail.trim().toLocaleLowerCase();
@@ -88,7 +110,7 @@ export const RecipientEditor = ({
   };
 
   const chooseUserList = (userListId: string) => {
-    onCdaUserListChange(userListId);
+    onCdaUserListChange(userListOffice, userListId);
     setAddMode(null);
     setUserListSearch("");
     setDebouncedUserListSearch("");
@@ -140,7 +162,9 @@ export const RecipientEditor = ({
                   <Badge color="blue">CDA list</Badge>
                 </TableCell>
                 <TableCell>
-                  <span className="font-medium">{cdaUserListId}</span>
+                  <span className="font-medium">
+                    {cdaUserListOffice} / {cdaUserListId}
+                  </span>
                   {selectedUserList?.description && (
                     <span className="ml-2 text-sm text-zinc-600">
                       {selectedUserList.description}
@@ -153,7 +177,7 @@ export const RecipientEditor = ({
                     color="danger"
                     style="outline"
                     aria-label={`Remove CDA user list ${cdaUserListId}`}
-                    onClick={() => onCdaUserListChange("")}
+                    onClick={() => onCdaUserListChange("", "")}
                   >
                     <FaXmark aria-hidden="true" />
                   </Button>
@@ -267,6 +291,28 @@ export const RecipientEditor = ({
           ) : (
             <div className="grid gap-2">
               <label
+                htmlFor="cda-user-list-office"
+                className="font-medium text-zinc-950"
+              >
+                User list office
+              </label>
+              <Dropdown
+                id="cda-user-list-office"
+                label="User list office"
+                labelClassName="sr-only"
+                value={userListOffice}
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                  setUserListOffice(event.target.value);
+                  setUserListSearch("");
+                  setDebouncedUserListSearch("");
+                }}
+                options={orderedAvailableOffices.map((availableOffice) => (
+                  <option key={availableOffice} value={availableOffice}>
+                    {availableOffice}
+                  </option>
+                ))}
+              />
+              <label
                 htmlFor="cda-user-list-search"
                 className="font-medium text-zinc-950"
               >
@@ -287,8 +333,12 @@ export const RecipientEditor = ({
                   Choosing a different list replaces {cdaUserListId}.
                 </Text>
               )}
-              {userListsLoading ? (
+              {userLists.isLoading ? (
                 <Text role="status">Loading CDA user lists…</Text>
+              ) : userLists.error ? (
+                <Text role="alert" className="text-red-700">
+                  {userLists.error.message}
+                </Text>
               ) : filteredUserLists.length > 0 ? (
                 <div className="max-h-52 overflow-auto rounded-lg border border-zinc-200 bg-white">
                   {filteredUserLists.map((list) => (
@@ -316,8 +366,8 @@ export const RecipientEditor = ({
                 </div>
               ) : (
                 <Text>
-                  {userLists.length === 0
-                    ? `No CDA user lists exist for ${office}.`
+                  {(userLists.data?.length ?? 0) === 0
+                    ? `No CDA user lists exist for ${userListOffice}.`
                     : "No user lists match that search."}
                 </Text>
               )}
