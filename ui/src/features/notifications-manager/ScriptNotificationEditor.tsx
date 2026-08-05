@@ -9,12 +9,12 @@ import {
   H3,
   Label,
   Text,
-  Textarea,
 } from "@usace/groundwork";
 import toast from "react-hot-toast";
 import { FaPen } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import type { Script } from "../scripts-manager/types";
+import { RecipientEditor } from "./RecipientEditor";
 import {
   useCreateScriptNotificationRule,
   useDeleteScriptNotificationRule,
@@ -28,12 +28,6 @@ import {
 interface ScriptNotificationEditorProps {
   script: Script;
 }
-
-const FieldRow = ({ children }: React.PropsWithChildren) => (
-  <Field className="grid grid-cols-1 gap-2 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-4">
-    {children}
-  </Field>
-);
 
 const jobFailureData = (script: Script) => ({
   jobId: "preview-job-id",
@@ -76,31 +70,25 @@ export const ScriptNotificationEditor = ({
   const [enabled, setEnabled] = useState(false);
   const [templateId, setTemplateId] = useState("");
   const [cdaUserListId, setCdaUserListId] = useState("");
-  const [manualRecipients, setManualRecipients] = useState("");
+  const [manualRecipients, setManualRecipients] = useState<string[]>([]);
 
   useEffect(() => {
     setEnabled(rule?.active ?? false);
     setTemplateId(rule?.templateId ?? defaultTemplateId);
     setCdaUserListId(rule?.cdaUserListId ?? "");
-    setManualRecipients(rule?.manualRecipients?.join("\n") ?? "");
+    setManualRecipients(rule?.manualRecipients ?? []);
     resetPreview();
   }, [defaultTemplateId, resetPreview, rule, script.id]);
 
   const selectedTemplate = availableTemplates.find(
     (template) => template.id === templateId,
   );
-  const recipientEmails = manualRecipients
-    .split(/[\n,;]/)
-    .map((email) => email.trim())
-    .filter(Boolean);
-  const invalidRecipients = recipientEmails.filter(
-    (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
-  );
+  const recipientEmails = manualRecipients;
   const initialValues = {
     enabled: rule?.active ?? false,
     templateId: rule?.templateId ?? defaultTemplateId,
     cdaUserListId: rule?.cdaUserListId ?? "",
-    manualRecipients: rule?.manualRecipients?.join("\n") ?? "",
+    manualRecipients: rule?.manualRecipients ?? [],
   };
   const currentValues = {
     enabled,
@@ -111,8 +99,7 @@ export const ScriptNotificationEditor = ({
   const dirty = JSON.stringify(currentValues) !== JSON.stringify(initialValues);
   const recipientsMissing = !cdaUserListId && recipientEmails.length === 0;
   const enabledConfigurationInvalid =
-    enabled &&
-    (!selectedTemplate || recipientsMissing || invalidRecipients.length > 0);
+    enabled && (!selectedTemplate || recipientsMissing);
   const pending =
     createRule.isPending || updateRule.isPending || deleteRule.isPending;
 
@@ -238,107 +225,15 @@ export const ScriptNotificationEditor = ({
             </Text>
           )}
 
-          {userLists.isLoading ? (
-            <Text role="status">Loading CDA user lists…</Text>
-          ) : (userLists.data?.length ?? 0) > 0 ? (
-            <Field>
-              <div className="flex items-center gap-1">
-                <Label>CDA user list</Label>
-                <HelpTip title="CDA user list recipients">
-                  Lists are owned by {script.office} and maintained in CDA. At
-                  send time, Batch Events resolves current members and their CDA
-                  email addresses.
-                </HelpTip>
-              </div>
-              <Dropdown
-                label="CDA user list"
-                labelClassName="sr-only"
-                value={cdaUserListId}
-                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-                  setCdaUserListId(event.target.value)
-                }
-                options={[
-                  <option key="none" value="">
-                    No CDA user list
-                  </option>,
-                  ...(userLists.data ?? []).map((list) => (
-                    <option
-                      key={list["user-list-id"]}
-                      value={list["user-list-id"]}
-                    >
-                      {list["user-list-id"]}
-                      {list.description ? ` — ${list.description}` : ""}
-                    </option>
-                  )),
-                ]}
-              />
-            </Field>
-          ) : (
-            <Text>
-              No CDA user lists exist for {script.office}.{" "}
-              <a
-                className="underline"
-                href={`${import.meta.env.VITE_CDA_UI_ROOT}/user-lists`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Create one in CDA
-              </a>
-              , or enter manual recipients below.
-            </Text>
-          )}
-
-          <Text>
-            <a
-              className="font-medium text-blue-700 underline"
-              href={`${import.meta.env.VITE_CDA_UI_ROOT}/user-lists`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Manage user lists in CDA
-            </a>
-          </Text>
-
-          <FieldRow>
-            <div className="flex items-center gap-1 sm:self-start">
-              <Label htmlFor="script-notification-recipients">
-                Manual recipients
-              </Label>
-              <HelpTip title="Manual recipients">
-                Optional addresses are combined with the selected CDA list and
-                duplicates are removed. Separate addresses with commas,
-                semicolons, or new lines.
-              </HelpTip>
-            </div>
-            <Textarea
-              id="script-notification-recipients"
-              value={manualRecipients}
-              placeholder="one@example.mil, two@example.mil"
-              onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setManualRecipients(event.target.value)
-              }
-            />
-            {recipientEmails.length > 0 && (
-              <div className="col-start-1 flex flex-wrap gap-2 sm:col-start-2">
-                {recipientEmails.map((email) => (
-                  <Badge
-                    key={email}
-                    color={invalidRecipients.includes(email) ? "red" : "blue"}
-                  >
-                    {email}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            {invalidRecipients.length > 0 && (
-              <Text
-                className="col-start-1 text-red-700 sm:col-start-2"
-                role="alert"
-              >
-                Correct the highlighted email addresses before saving.
-              </Text>
-            )}
-          </FieldRow>
+          <RecipientEditor
+            office={script.office}
+            cdaUserListId={cdaUserListId}
+            manualRecipients={manualRecipients}
+            userLists={userLists.data ?? []}
+            userListsLoading={userLists.isLoading}
+            onCdaUserListChange={setCdaUserListId}
+            onManualRecipientsChange={setManualRecipients}
+          />
 
           {recipientsMissing && (
             <Text className="text-red-700" role="alert">
