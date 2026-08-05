@@ -295,7 +295,7 @@ export const RecipientEditor = ({
               )}
             </div>
           ) : (
-            <div className="grid gap-2">
+            <div className="grid gap-3">
               <label
                 htmlFor="cda-user-list-office"
                 className="font-medium text-zinc-950"
@@ -336,7 +336,7 @@ export const RecipientEditor = ({
                 />
               </div>
               {cdaUserListId && (
-                <Text className="text-sm text-zinc-600">
+                <Text className="rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-zinc-700">
                   Choosing a different list replaces {cdaUserListId}.
                 </Text>
               )}
@@ -347,29 +347,66 @@ export const RecipientEditor = ({
                   {userLists.error.message}
                 </Text>
               ) : filteredUserLists.length > 0 ? (
-                <div className="max-h-52 overflow-auto rounded-lg border border-zinc-200 bg-white">
-                  {filteredUserLists.map((list) => (
-                    <button
-                      key={list["user-list-id"]}
-                      type="button"
-                      className="flex w-full items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 text-left last:border-b-0 hover:bg-blue-50 focus:bg-blue-50"
-                      onClick={() => chooseUserList(list["user-list-id"])}
-                    >
-                      <span>
-                        <span className="block font-medium text-zinc-950">
-                          {list["user-list-id"]}
-                        </span>
-                        {list.description && (
-                          <span className="mt-1 block text-sm text-zinc-600">
-                            {list.description}
-                          </span>
-                        )}
-                      </span>
-                      {list["user-list-id"] === cdaUserListId && (
-                        <Badge color="blue">Selected</Badge>
-                      )}
-                    </button>
-                  ))}
+                <div className="grid gap-2">
+                  <Text className="text-sm text-zinc-600">
+                    Showing {filteredUserLists.length} of{" "}
+                    {userLists.data?.length ?? 0} lists
+                    {!debouncedUserListSearch &&
+                    (userLists.data?.length ?? 0) > filteredUserLists.length
+                      ? ". Search to find more."
+                      : "."}
+                  </Text>
+                  <div className="max-h-64 overflow-y-auto rounded-lg border border-zinc-300 bg-white shadow-sm">
+                    <Table className="w-full table-fixed">
+                      <TableHead className="sticky top-0 z-10 bg-zinc-100">
+                        <TableRow>
+                          <TableHeader>User list</TableHeader>
+                          <TableHeader className="w-24 text-right">
+                            Action
+                          </TableHeader>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {filteredUserLists.map((list) => {
+                          const isSelected =
+                            list["user-list-id"] === cdaUserListId;
+                          return (
+                            <TableRow
+                              key={list["user-list-id"]}
+                              className={isSelected ? "bg-blue-50" : undefined}
+                            >
+                              <TableCell className="align-top">
+                                <span className="block break-words font-medium text-zinc-950">
+                                  {list["user-list-id"]}
+                                </span>
+                                {list.description && (
+                                  <span className="mt-1 block break-words text-sm text-zinc-600">
+                                    {list.description}
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="align-middle text-right">
+                                {isSelected ? (
+                                  <Badge color="blue">Selected</Badge>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    color="light"
+                                    aria-label={`Select CDA user list ${list["user-list-id"]}`}
+                                    onClick={() =>
+                                      chooseUserList(list["user-list-id"])
+                                    }
+                                  >
+                                    Select
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               ) : (
                 <Text>
@@ -379,7 +416,7 @@ export const RecipientEditor = ({
                 </Text>
               )}
               {cdaUserListsUrl && (
-                <Text>
+                <Text className="border-t border-blue-200 pt-3">
                   <a
                     className="font-medium text-blue-700 underline"
                     href={cdaUserListsUrl}
