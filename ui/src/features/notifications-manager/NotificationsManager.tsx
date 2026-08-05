@@ -32,10 +32,12 @@ import { JinjaTemplateField } from "./JinjaTemplateField";
 import { TemplateVariablesHelp } from "./TemplateVariablesHelp";
 import type { NotificationTemplate } from "./types";
 
+const NEW_TEMPLATE_ROUTE_VALUE = "new";
+
 const emptyTemplate = (office: string) => ({
   id: "",
   office,
-  slug: "job_failure_v1",
+  slug: "",
   subjectTemplate: "Batch job {{ scriptName }} failed",
   bodyTemplate:
     "Job {{ jobId }} failed for {{ office }}.\nError: {{ errorMessage }}\n\nReview the job and logs in Batch Events.",
@@ -74,6 +76,7 @@ export const NotificationsManager = () => {
   const selectedTemplate = sortedTemplates.find(
     (template) => template.id === selectedTemplateId,
   );
+  const isCreating = !templateForm.id;
   const initialForm = selectedTemplate
     ? formFromTemplate(selectedTemplate)
     : emptyTemplate(selectedOffice);
@@ -109,7 +112,14 @@ export const NotificationsManager = () => {
   }, [adminOffices.data, search.office, selectedOffice, setOffice]);
 
   useEffect(() => {
-    if (!search.template || !templates.data) return;
+    if (!search.template || search.template === NEW_TEMPLATE_ROUTE_VALUE) {
+      setSelectedTemplateId("");
+      setTemplateForm(emptyTemplate(selectedOffice));
+      setDeleteConfirm(false);
+      resetPreview();
+      return;
+    }
+    if (!templates.data) return;
     const routedTemplate = templates.data.find(
       (template) => template.id === search.template,
     );
@@ -119,7 +129,13 @@ export const NotificationsManager = () => {
     setTemplateForm(formFromTemplate(routedTemplate));
     setDeleteConfirm(false);
     resetPreview();
-  }, [resetPreview, search.template, selectedTemplateId, templates.data]);
+  }, [
+    resetPreview,
+    search.template,
+    selectedOffice,
+    selectedTemplateId,
+    templates.data,
+  ]);
 
   if (!auth.isAuth) {
     return (
@@ -147,10 +163,6 @@ export const NotificationsManager = () => {
   }
 
   const selectTemplate = (template: NotificationTemplate) => {
-    setSelectedTemplateId(template.id);
-    setTemplateForm(formFromTemplate(template));
-    setDeleteConfirm(false);
-    resetPreview();
     void navigate({
       replace: true,
       search: {
@@ -162,13 +174,12 @@ export const NotificationsManager = () => {
 
   const startNew = () => {
     if (dirty && !window.confirm("Discard unsaved template changes?")) return;
-    setSelectedTemplateId("");
-    setTemplateForm(emptyTemplate(selectedOffice));
-    setDeleteConfirm(false);
-    preview.reset();
     void navigate({
       replace: true,
-      search: { office: selectedOffice, template: undefined },
+      search: {
+        office: selectedOffice,
+        template: NEW_TEMPLATE_ROUTE_VALUE,
+      },
     });
   };
 
@@ -176,7 +187,7 @@ export const NotificationsManager = () => {
     setOffice(nextOffice);
     void navigate({
       replace: true,
-      search: { office: nextOffice, template: undefined },
+      search: { office: nextOffice, template: NEW_TEMPLATE_ROUTE_VALUE },
     });
   };
 
@@ -241,9 +252,13 @@ export const NotificationsManager = () => {
             each script in Scripts Manager.
           </Text>
         </div>
-        <Button type="button" onClick={startNew}>
+        <Button
+          type="button"
+          disabled={isCreating || pending}
+          onClick={startNew}
+        >
           <FaPlus aria-hidden="true" />
-          New template
+          {isCreating ? "Creating new template" : "New template"}
         </Button>
       </header>
 
@@ -283,6 +298,20 @@ export const NotificationsManager = () => {
             <Badge color="blue">{sortedTemplates.length}</Badge>
           </div>
           <div className="space-y-2 p-3">
+            {isCreating && (
+              <div
+                aria-current="true"
+                className="rounded-lg border-2 border-blue-600 bg-blue-50 p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <strong>New template</strong>
+                  <Badge color="blue">Not saved</Badge>
+                </div>
+                <Text className="mt-1">
+                  Complete the form to add a separate template.
+                </Text>
+              </div>
+            )}
             {templates.isLoading ? (
               <>
                 <Skeleton className="h-20 w-full" />
@@ -324,12 +353,21 @@ export const NotificationsManager = () => {
           </div>
         </Card>
 
-        <Card className="min-w-0 p-5">
+        <Card
+          className={`min-w-0 p-5 ${
+            isCreating ? "border-blue-300 ring-2 ring-blue-100" : ""
+          }`}
+        >
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
+              {isCreating && <Badge color="blue">New, not saved</Badge>}
               <H3>{templateForm.id ? "Edit template" : "New template"}</H3>
               <Text>
-                {dirty ? "Unsaved changes" : `Office: ${selectedOffice}`}
+                {isCreating
+                  ? `A separate template for ${selectedOffice}`
+                  : dirty
+                    ? "Unsaved changes"
+                    : `Office: ${selectedOffice}`}
               </Text>
             </div>
             {templateForm.id &&
@@ -343,15 +381,11 @@ export const NotificationsManager = () => {
                     disabled={pending}
                     onClick={async () => {
                       await deleteTemplate.mutateAsync(templateForm.id);
-                      setSelectedTemplateId("");
-                      setTemplateForm(emptyTemplate(selectedOffice));
-                      setDeleteConfirm(false);
-                      resetPreview();
                       void navigate({
                         replace: true,
                         search: {
                           office: selectedOffice,
-                          template: undefined,
+                          template: NEW_TEMPLATE_ROUTE_VALUE,
                         },
                       });
                       toast.success("Template deleted");
@@ -386,6 +420,19 @@ export const NotificationsManager = () => {
             )}
           </div>
 
+          {isCreating && (
+            <div
+              role="status"
+              className="mb-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-950"
+            >
+              <strong>Creating a new template</strong>
+              <Text className="mt-1">
+                Saving this form creates a new record. It will not update an
+                existing template.
+              </Text>
+            </div>
+          )}
+
           <form onSubmit={saveTemplate}>
             <Fieldset className="flex flex-col gap-5">
               <Field>
@@ -404,6 +451,7 @@ export const NotificationsManager = () => {
                   required
                   id="template-slug"
                   maxLength={128}
+                  placeholder="job_failure_v2"
                   value={templateForm.slug}
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                     setTemplateForm((current) => ({
