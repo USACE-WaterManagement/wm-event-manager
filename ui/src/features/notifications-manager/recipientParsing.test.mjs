@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { parseManualRecipients } from "./recipientParsing.ts";
+import { sortOfficeCodes } from "./recipientOptions.ts";
 
 describe("parseManualRecipients", () => {
   it("parses comma, semicolon, and newline-delimited addresses", () => {
@@ -49,5 +50,15 @@ describe("parseManualRecipients", () => {
         invalidFragments: ["bad@"],
       },
     );
+  });
+});
+
+describe("sortOfficeCodes", () => {
+  it("sorts and deduplicates offices alphabetically", () => {
+    assert.deepEqual(sortOfficeCodes(["SWT", "LRH", "MVP", "LRH", ""]), [
+      "LRH",
+      "MVP",
+      "SWT",
+    ]);
   });
 });

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Button,
-  Dropdown,
   Search,
   Table,
   TableBody,
@@ -17,6 +16,7 @@ import { FaPlus, FaXmark } from "react-icons/fa6";
 import { HelpTip } from "../../shared/components/HelpTip";
 import { useCdaUserLists } from "./api";
 import { parseManualRecipients } from "./recipientParsing";
+import { sortOfficeCodes } from "./recipientOptions";
 
 type AddRecipientMode = "manual" | "user-list";
 
@@ -39,9 +39,11 @@ export const RecipientEditor = ({
   onCdaUserListChange,
   onManualRecipientsChange,
 }: RecipientEditorProps) => {
-  const cdaUiRoot =
-    import.meta.env.VITE_CDA_UI_ROOT ??
-    (import.meta.env.DEV ? "http://localhost:5174/cwms-data" : "");
+  const cdaUserListsUrl =
+    import.meta.env.VITE_CDA_USER_LISTS_URL ??
+    (import.meta.env.DEV
+      ? "http://localhost:5174/cwms-data/user-lists"
+      : "");
   const [addMode, setAddMode] = useState<AddRecipientMode | null>(null);
   const [manualEmail, setManualEmail] = useState("");
   const [manualError, setManualError] = useState("");
@@ -74,12 +76,10 @@ export const RecipientEditor = ({
       list["user-list-id"] === cdaUserListId,
   );
 
-  const orderedAvailableOffices = [
+  const orderedAvailableOffices = sortOfficeCodes([
+    ...availableOffices,
     userListOffice,
-    ...availableOffices
-      .filter((availableOffice) => availableOffice !== userListOffice)
-      .sort(),
-  ];
+  ]);
 
   const filteredUserLists = useMemo(() => {
     const search = debouncedUserListSearch.toLocaleLowerCase();
@@ -302,22 +302,23 @@ export const RecipientEditor = ({
               >
                 User list office
               </label>
-              <Dropdown
+              <select
                 id="cda-user-list-office"
-                label="User list office"
-                labelClassName="sr-only"
+                name="cda-user-list-office"
+                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={userListOffice}
                 onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
                   setUserListOffice(event.target.value);
                   setUserListSearch("");
                   setDebouncedUserListSearch("");
                 }}
-                options={orderedAvailableOffices.map((availableOffice) => (
+              >
+                {orderedAvailableOffices.map((availableOffice) => (
                   <option key={availableOffice} value={availableOffice}>
                     {availableOffice}
                   </option>
                 ))}
-              />
+              </select>
               <label
                 htmlFor="cda-user-list-search"
                 className="font-medium text-zinc-950"
@@ -377,16 +378,18 @@ export const RecipientEditor = ({
                     : "No user lists match that search."}
                 </Text>
               )}
-              <Text>
-                <a
-                  className="font-medium text-blue-700 underline"
-                  href={`${cdaUiRoot}/user-lists`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Manage user lists in CDA
-                </a>
-              </Text>
+              {cdaUserListsUrl && (
+                <Text>
+                  <a
+                    className="font-medium text-blue-700 underline"
+                    href={cdaUserListsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Manage user lists in CDA
+                  </a>
+                </Text>
+              )}
             </div>
           )}
         </div>
