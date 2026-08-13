@@ -6,6 +6,30 @@ CWMS Batch Events provides users an API and user interface to execute water mana
 
 To get your local environment setup and/or make contributions please see the contributions documentation: [CONTRIBUTING.md](https://github.com/USACE-WaterManagement/cwms-batch-events/blob/cwbi-dev/CONTRIBUTING.md)
 
+### GitHub Codespaces
+
+The repository's development container prepares a complete environment for GitHub Codespaces, including Python 3.12 and all test dependencies, Node.js 22 and the UI dependencies, Docker Compose with an isolated Docker daemon, the external `cwms` Docker network required by the local stack, and editor support for Python, TypeScript, ESLint, and Docker.
+
+Create a Codespace for this repository and wait for its setup to finish. The mounted checkout is used directly for Python imports, and `ui/node_modules` is installed from the committed lockfile. No credentials or repository secrets are required for the default mock-user development flow.
+
+Verify the environment with:
+
+```bash
+python -m pytest -q
+npm --prefix ui run lint
+npm --prefix ui run build
+docker compose config --quiet
+```
+
+Start the local service stack and UI in separate terminals:
+
+```bash
+docker compose up --build
+npm --prefix ui run dev -- --host 0.0.0.0
+```
+
+Codespaces forwards the UI, API, MinIO console, and ElasticMQ UI ports automatically. Use the forwarded URLs shown in the **Ports** panel rather than assuming `localhost` from outside the Codespace.
+
 
 ### Local Development Setup
 
@@ -32,4 +56,3 @@ Available district scripts are managed within the cwms-batch application itself 
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.
-

@@ -1,5 +1,11 @@
 # Contributions
 
+## Codespaces
+
+GitHub Codespaces is the quickest supported setup path. The repository development container installs the Python and UI dependencies and prepares the Docker network used by `docker-compose.yml`. After creation, run `docker compose up --build` for the API and backing services, and run `npm --prefix ui run dev -- --host 0.0.0.0` in another terminal for the UI.
+
+The default local stack uses mock authentication and local-only service credentials. Do not add production credentials to the development container configuration or tracked files.
+
 ## Pre-reqs
 * VM 
 * Python 3.12+ (Pref with `pyenv`)
