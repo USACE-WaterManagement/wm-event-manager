@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from cwms_batch_events.core.job_database.postgres.postgres import TemplateInUseError
 from cwms_batch_events.core.models import (
@@ -75,6 +75,19 @@ def test_create_and_list_templates(client, job_db):
     assert create_response.json()["id"] == str(template.id)
     assert list_response.status_code == 200
     assert list_response.json()[0]["slug"] == "job_failure_v1"
+
+
+def test_list_templates_maps_database_error_to_service_unavailable(client, job_db):
+    job_db.get_notification_templates_for_office.side_effect = SQLAlchemyError("boom")
+
+    response = client.get(
+        "/notifications/templates", params={"office": "SWT"}
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Notification database is unavailable; migrations may still be running"
+    )
 
 
 def test_list_cda_user_lists_for_admin_office(client, monkeypatch):

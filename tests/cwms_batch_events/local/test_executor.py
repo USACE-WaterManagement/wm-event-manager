@@ -76,10 +76,15 @@ def test_local_executor_marks_failed_and_reraises_on_exception():
             executor.run_job(message)
 
     assert db.update_job_status.call_args_list[-1].args[1] == JobStatus.FAILED
+    logger.push_logs_for_job.assert_called_once()
+    assert logger.push_logs_for_job.call_args.args[0] == message.job_id
+    assert "RuntimeError: boom" in logger.push_logs_for_job.call_args.args[1]
+    alert_logs = enqueue_alerts.call_args.kwargs["logs"]
+    assert "RuntimeError: boom" in alert_logs
     enqueue_alerts.assert_called_once_with(
         job,
         db,
         notification_queue,
         error_message="boom",
-        logs=None,
+        logs=alert_logs,
     )

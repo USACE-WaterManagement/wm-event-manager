@@ -1,3 +1,5 @@
+import traceback
+
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.notifications import enqueue_failed_job_notifications
@@ -84,7 +86,12 @@ class LocalExecutor:
 
         except Exception as e:
             self.db.update_job_status(message.job_id, JobStatus.FAILED)
-            self._send_failed_job_alert(message, error_message=str(e))
+            logs = traceback.format_exc()
+            try:
+                self.logger.push_logs_for_job(message.job_id, logs)
+            except Exception as log_error:
+                print(f"Failed to persist logs for `{message.job_id}`: {log_error}")
+            self._send_failed_job_alert(message, error_message=str(e), logs=logs)
             raise
 
         finally:

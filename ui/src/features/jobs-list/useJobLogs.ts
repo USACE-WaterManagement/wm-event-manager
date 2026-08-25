@@ -18,7 +18,8 @@ const useJobLogs = (jobId: string, enabled: boolean) => {
 const fetchJobs = async (jobId: string, token?: string): Promise<JobLogs> => {
   const response = await fetchWithAuth(`/api/jobs/${jobId}/logs`, {}, token);
   if (!response.ok) {
-    throw new Error(`Failed to fetch logs for job ${jobId}`);
+    const data = await response.json().catch(() => undefined);
+    throw new Error(data?.detail ?? `Failed to fetch logs for job ${jobId}`);
   }
   return response.json();
 };

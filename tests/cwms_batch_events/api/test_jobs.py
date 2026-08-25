@@ -88,3 +88,15 @@ def test_get_logs_for_job_returns_logs(client, job_logger):
     assert response.status_code == 200
     assert response.json() == {"logs": "hello"}
     job_logger.get_logs_for_job.assert_called_once()
+
+
+def test_get_logs_for_job_returns_404_when_logs_missing(client, job_logger):
+    job_id = str(uuid4())
+    job_logger.get_logs_for_job.side_effect = FileNotFoundError(
+        f"No logs found for job {job_id}"
+    )
+
+    response = client.get(f"/jobs/{job_id}/logs")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": f"No logs found for job {job_id}"}

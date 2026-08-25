@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from cwms_batch_events.api.dependencies import get_current_user, get_job_database
 from cwms_batch_events.core.auth.user.models import User
@@ -49,9 +49,29 @@ def map_write_error(e: Exception):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     if isinstance(e, TemplateInUseError):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    if isinstance(e, SQLAlchemyError):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Notification database is unavailable; migrations may still be running",
+        )
     if isinstance(e, ValueError):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)
+        )
+    raise e
+
+
+def map_read_error(e: Exception):
+    if isinstance(e, NoResultFound):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Notification resource not found"
+        )
+    if isinstance(e, PermissionError):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    if isinstance(e, SQLAlchemyError):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Notification database is unavailable; migrations may still be running",
         )
     raise e
 
@@ -63,7 +83,10 @@ def get_templates(
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[NotificationTemplateRead]:
     check_user_office_admin(user, office)
-    return job_db.get_notification_templates_for_office(office)
+    try:
+        return job_db.get_notification_templates_for_office(office)
+    except Exception as e:
+        map_read_error(e)
 
 
 @router.get("/cda-user-lists")
@@ -137,7 +160,7 @@ def preview_template(
             template_id, user.admin_offices
         )
     except Exception as e:
-        map_write_error(e)
+        map_read_error(e)
 
     data = payload.data
     if payload.job_id is not None:
@@ -167,7 +190,7 @@ def get_rules(
     try:
         return job_db.get_script_notification_rules(script_id, user.admin_offices)
     except Exception as e:
-        map_write_error(e)
+        map_read_error(e)
 
 
 @router.post("/rules")
