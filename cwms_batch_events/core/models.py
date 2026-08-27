@@ -1,8 +1,101 @@
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
+
+
+AWS_BATCH_RESERVED_PREFIX = "AWS_BATCH"
+BATCH_EVENTS_RESERVED_PREFIXES = ("AWS_BATCH", "BATCH_EVENTS_")
+# These names are owned by AWS Batch or by the Batch Events runner contract;
+# script env cannot override them without changing job identity or auth context.
+BATCH_EVENTS_RESERVED_ENV_NAMES = {
+    "BATCH_JOB_CONTEXT_TOKEN",
+    "ENVIRONMENT",
+    "GITHUB_BRANCH",
+    "GITHUB_TOKEN",
+    "JOB_ID",
+    "OFFICE",
+    "REPO_PATH",
+    "RUNTIME",
+    "SCRIPT_PATH",
+    "SCRIPT_SLUG",
+    "SKIP_GIT_CLONE",
+    "EXECUTION_TYPE",
+}
+
+
+def _reject_aws_batch_reserved_env_names(names: list[str]) -> None:
+    reserved_names = [
+        name for name in names if name.upper().startswith(AWS_BATCH_RESERVED_PREFIX)
+    ]
+    if reserved_names:
+        raise ValueError(
+            "environment variable names cannot start with AWS_BATCH: "
+            + ", ".join(reserved_names)
+        )
+
+
+def _reject_batch_events_reserved_env_names(names: list[str]) -> None:
+    reserved_names = [
+        name
+        for name in names
+        if name.upper() in BATCH_EVENTS_RESERVED_ENV_NAMES
+        or any(
+            name.upper().startswith(prefix)
+            for prefix in BATCH_EVENTS_RESERVED_PREFIXES
+        )
+    ]
+    if reserved_names:
+        raise ValueError(
+            "environment variable names are reserved for Batch Events runtime: "
+            + ", ".join(reserved_names)
+        )
+
+
+def _reject_blank_command_args(values: list[str]) -> None:
+    if any(value == "" for value in values):
+        raise ValueError("commandArgs cannot contain empty strings")
+
+
+def _validate_runtime(value: str) -> str:
+    if value not in {"python", "node", "java", "shell"}:
+        raise ValueError("runtime must be one of: python, node, java, shell")
+    return value
+
+
+def _validate_resource_profile(value: str) -> str:
+    if value not in {"small", "medium", "large"}:
+        raise ValueError("resourceProfile must be one of: small, medium, large")
+    return value
+
+
+def _validate_timeout_minutes(value: int) -> int:
+    if not 1 <= value <= 1440:
+        raise ValueError("timeoutMinutes must be between 1 and 1440")
+    return value
+
+
+def _validate_execution_type(value: str | None) -> str:
+    if value in {None, "", "python", "node", "java", "shell"}:
+        return "github_file"
+    if value not in {"github_file", "command"}:
+        raise ValueError("executionType must be one of: github_file, command")
+    return value
+
+
+def _validate_schedule_timezone(value: str | None) -> str:
+    timezone_name = (value or "UTC").strip()
+    if not timezone_name:
+        raise ValueError("scheduleTimezone is required")
+    try:
+        ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError(
+            f"scheduleTimezone is not a valid timezone: {timezone_name}"
+        ) from exc
+    return timezone_name
 
 
 class CamelModel(BaseModel):
@@ -45,6 +138,17 @@ class JobRecord(CamelModel):
     office: str
     repo_path: str
     execution_type: str | None
+    runtime: str = "python"
+    resource_profile: str = "small"
+    command_args: list[str] = Field(default_factory=list)
+    timeout_minutes: int = 30
+    schedule_enabled: bool = False
+    schedule_type: str = "manual"
+    schedule_minute: int | None = None
+    schedule_cron: str | None = None
+    schedule_timezone: str = "UTC"
+    env_vars: dict[str, str] = Field(default_factory=dict)
+    secret_env_names: list[str] = Field(default_factory=list)
     created_time: datetime
     run_time: datetime | None = None
     end_time: datetime | None = None
@@ -63,12 +167,24 @@ class JobRunner(CamelModel):
     created_time: datetime
 
 
-class OfficeCatalog(CamelModel):
-    scripts: list[str]
+class DefaultJobRunner(CamelModel):
+    id: UUID
+    slug: str
 
 
-class OfficeCatalogs(CamelModel):
-    catalogs: dict[str, OfficeCatalog]
+class RepositoryBrowserEntry(CamelModel):
+    name: str
+    path: str
+    entry_type: str
+    selectable: bool
+    runtime_match: bool
+
+
+class RepositoryBrowserResponse(CamelModel):
+    directory: str
+    configured: bool
+    script_types: list[str]
+    entries: list[RepositoryBrowserEntry]
 
 
 class ScriptRunRequest(CamelModel):
@@ -79,6 +195,39 @@ class ScriptRunOptions(CamelModel):
     office: str
     repo_path: str
     script_slug: str | None
+    execution_type: str = "github_file"
+    runtime: str = "python"
+    resource_profile: str = "small"
+    command_args: list[str] = Field(default_factory=list)
+    timeout_minutes: int = 30
+    env_vars: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("env_vars")
+    def validate_env_vars(cls, value: dict[str, str]) -> dict[str, str]:
+        _reject_aws_batch_reserved_env_names(list(value))
+        _reject_batch_events_reserved_env_names(list(value))
+        return value
+
+    @field_validator("command_args")
+    def validate_command_args(cls, value: list[str]) -> list[str]:
+        _reject_blank_command_args(value)
+        return value
+
+    @field_validator("runtime")
+    def validate_runtime(cls, value: str) -> str:
+        return _validate_runtime(value)
+
+    @field_validator("execution_type")
+    def validate_execution_type(cls, value: str) -> str:
+        return _validate_execution_type(value)
+
+    @field_validator("resource_profile")
+    def validate_resource_profile(cls, value: str) -> str:
+        return _validate_resource_profile(value)
+
+    @field_validator("timeout_minutes")
+    def validate_timeout_minutes(cls, value: int) -> int:
+        return _validate_timeout_minutes(value)
 
 
 class JobSource(str, Enum):
@@ -108,14 +257,111 @@ class BindExternalJobIdRequest(BaseModel):
     external_job_id: str
 
 
+class RuntimeEnvResponse(CamelModel):
+    env_vars: dict[str, str]
+
+
 class ScriptBase(CamelModel):
     name: str
     description: str
     repo_path: str
     execution_type: str
+    runtime: str = "python"
+    resource_profile: str = "small"
+    command_args: list[str] = Field(default_factory=list)
+    timeout_minutes: int = 30
+    schedule_enabled: bool = False
+    schedule_type: str = "manual"
+    schedule_minute: int | None = None
+    schedule_cron: str | None = None
+    schedule_timezone: str = "UTC"
+    env_vars: dict[str, str] = Field(default_factory=dict)
+    secret_env_names: list[str] = Field(default_factory=list)
     active: bool = True
-    roles: list[str] = []
-    job_runners: list[UUID] = []
+    roles: list[str] = Field(default_factory=list)
+    job_runners: list[UUID] = Field(default_factory=list)
+
+    @field_validator("env_vars")
+    def validate_env_vars(cls, value: dict[str, str]) -> dict[str, str]:
+        _reject_aws_batch_reserved_env_names(list(value))
+        _reject_batch_events_reserved_env_names(list(value))
+        return value
+
+    @field_validator("secret_env_names")
+    def validate_secret_env_names(cls, value: list[str]) -> list[str]:
+        _reject_aws_batch_reserved_env_names(value)
+        _reject_batch_events_reserved_env_names(value)
+        return value
+
+    @field_validator("command_args")
+    def validate_command_args(cls, value: list[str]) -> list[str]:
+        _reject_blank_command_args(value)
+        return value
+
+    @field_validator("runtime")
+    def validate_runtime(cls, value: str) -> str:
+        return _validate_runtime(value)
+
+    @field_validator("execution_type")
+    def validate_execution_type(cls, value: str) -> str:
+        return _validate_execution_type(value)
+
+    @field_validator("resource_profile")
+    def validate_resource_profile(cls, value: str) -> str:
+        return _validate_resource_profile(value)
+
+    @field_validator("timeout_minutes")
+    def validate_timeout_minutes(cls, value: int) -> int:
+        return _validate_timeout_minutes(value)
+
+    @field_validator("schedule_type")
+    def validate_schedule_type(cls, value: str) -> str:
+        if value not in {"manual", "hourly", "cron"}:
+            raise ValueError("scheduleType must be one of: manual, hourly, cron")
+        return value
+
+    @field_validator("schedule_minute")
+    def validate_schedule_minute(cls, value: int | None) -> int | None:
+        if value is not None and not 0 <= value <= 59:
+            raise ValueError("scheduleMinute must be between 0 and 59")
+        return value
+
+    @field_validator("schedule_cron")
+    def validate_schedule_cron(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+
+        fields = value.strip().split()
+        if len(fields) != 5:
+            raise ValueError("scheduleCron must be a five-field cron expression")
+
+        return " ".join(fields)
+
+    @field_validator("schedule_timezone")
+    def validate_schedule_timezone(cls, value: str | None) -> str:
+        return _validate_schedule_timezone(value)
+
+    @model_validator(mode="after")
+    def validate_enabled_schedule(self):
+        if not self.schedule_enabled:
+            return self
+
+        if self.schedule_type == "manual":
+            raise ValueError(
+                "scheduleType must be hourly or cron when scheduleEnabled is true"
+            )
+
+        if self.schedule_type == "hourly" and self.schedule_minute is None:
+            raise ValueError(
+                "scheduleMinute is required when scheduleEnabled is true and scheduleType is hourly"
+            )
+
+        if self.schedule_type == "cron" and not self.schedule_cron:
+            raise ValueError(
+                "scheduleCron is required when scheduleEnabled is true and scheduleType is cron"
+            )
+
+        return self
 
 
 class ScriptCreate(ScriptBase):
@@ -130,7 +376,7 @@ class ScriptRead(ScriptBase):
     office: str
     created_time: datetime
     updated_time: datetime
-    job_runners: list[UUID] = []
+    job_runners: list[UUID] = Field(default_factory=list)
 
     @field_validator("job_runners", mode="before")
     def extract_job_runner_ids(cls, v):

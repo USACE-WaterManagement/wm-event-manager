@@ -11,6 +11,7 @@ from cwms_batch_events.core.auth.user.dependencies import (
     get_current_user_mock,
     user_cache,
 )
+from cwms_batch_events.core.settings import settings
 
 
 class DummyRequest:
@@ -121,6 +122,35 @@ async def test_get_current_user_cwms_rejects_wrong_azp():
 
     assert exc_info.value.status_code == 401
     assert "not authorized" in exc_info.value.detail
+
+
+@pytest.mark.anyio
+async def test_get_current_user_cwms_accepts_configured_service_client(monkeypatch):
+    credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="token")
+    cda_user = SimpleNamespace(
+        user_name="SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT",
+        roles={"SWT": ["CWMS Users"]},
+    )
+
+    monkeypatch.setattr(settings, "auth_client_ids", "cwms-batch-airflow-swt")
+
+    with mock.patch(
+        "cwms_batch_events.core.auth.user.dependencies.verify_jwt",
+        return_value={"azp": "cwms-batch-airflow-swt"},
+    ), mock.patch(
+        "cwms_batch_events.core.auth.user.dependencies.get_user_profile_jwt",
+        return_value=cda_user,
+    ), mock.patch(
+        "cwms_batch_events.core.auth.user.dependencies.get_user_allowed_offices",
+        return_value=["SWT"],
+    ), mock.patch(
+        "cwms_batch_events.core.auth.user.dependencies.get_user_admin_offices",
+        return_value=[],
+    ):
+        user = await get_current_user_cwms(credentials)
+
+    assert user.username == "SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT"
+    assert user.offices == ["SWT"]
 
 
 @pytest.mark.anyio

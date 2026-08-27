@@ -67,10 +67,6 @@ def lambda_handler(event, context):
         logger.error("Unexpected format -- could not parse job state change event")
         raise
 
-    if "-event-" not in job_name:
-        logger.info("Skipping non-event job status change for %s", job_name)
-        return
-
     logger.info(
         "Event details: job_id=%s job_name=%s status=%s time=%s",
         batch_job_id,
@@ -105,6 +101,12 @@ def lambda_handler(event, context):
         raise
 
     if not (200 <= r.status_code < 300):
+        if r.status_code == 404:
+            logger.info(
+                "Events API has no job record for Batch job %s; ignoring status event",
+                batch_job_id,
+            )
+            return
         logger.error(
             "Events API rejected message: %s %s",
             r.status_code,

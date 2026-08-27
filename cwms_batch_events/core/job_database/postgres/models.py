@@ -9,7 +9,7 @@ from sqlalchemy import (
     UUID,
     VARCHAR,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import Optional
 import uuid
@@ -45,6 +45,17 @@ class JobModel(Base):
     office: Mapped[str]
     repo_path: Mapped[str]
     execution_type: Mapped[str | None]
+    runtime: Mapped[str] = mapped_column(default="python")
+    resource_profile: Mapped[str] = mapped_column(default="small")
+    command_args: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    timeout_minutes: Mapped[int] = mapped_column(default=30)
+    schedule_enabled: Mapped[bool] = mapped_column(default=False)
+    schedule_type: Mapped[str] = mapped_column(default="manual")
+    schedule_minute: Mapped[int | None]
+    schedule_cron: Mapped[str | None]
+    schedule_timezone: Mapped[str] = mapped_column(default="UTC")
+    env_vars: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
+    secret_env_names: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     created_time: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp()
     )
@@ -87,6 +98,17 @@ class ScriptModel(Base):
     description: Mapped[str]
     repo_path: Mapped[str]
     execution_type: Mapped[str]
+    runtime: Mapped[str] = mapped_column(default="python")
+    resource_profile: Mapped[str] = mapped_column(default="small")
+    command_args: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    timeout_minutes: Mapped[int] = mapped_column(default=30)
+    schedule_enabled: Mapped[bool] = mapped_column(default=False)
+    schedule_type: Mapped[str] = mapped_column(default="manual")
+    schedule_minute: Mapped[int | None]
+    schedule_cron: Mapped[str | None]
+    schedule_timezone: Mapped[str] = mapped_column(default="UTC")
+    env_vars: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
+    secret_env_names: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     active: Mapped[bool]
     roles: Mapped[list[str]] = mapped_column(ARRAY(String))
     created_time: Mapped[datetime.datetime] = mapped_column(

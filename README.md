@@ -22,14 +22,42 @@ Redoc | http://localhost:8000/redoc
 For the best experience, [pyenv](https://github.com/pyenv/pyenv) is recommended for install instructions.  If pyenv is available, the `setup-pyenv.sh` script is provided to create a virtual environment and install the necessary local dev requirements. Be sure to install `gcc` for your environment.
 
 #### Authentication
-By default, the local instance of the API uses a mock user account.  This account has script-execute permissions for all districts.  As a result, the API will return scripts for all offices that contain a corresponding script catalog within the minio instance.
+By default, the local instance of the API can use a mock user account. This account has script-execute permissions for all districts. Available scripts come from the Batch Events database registry, so local development should seed or manage script rows through migrations, the "Scripts Manager" UI, or the `/scripts` API endpoints.
 
-#### Script Containers
-The API will reference district script docker images that exist locally by the name `[office-code]-jobs`, e.g. `lrh-jobs`.  These can be created by cloning the corresponding district jobs repo, e.g. [lrh-wm-cwbi-jobs](https://github.com/USACE-WaterManagement/lrh-wm-cwbi-jobs), and building the images from the local dockerfile with `docker build . -t [office-code]-jobs`.
+#### Job Registry
+Available office jobs are managed in Batch Events using the "Scripts Manager" in the Web UI or the `/scripts` API endpoints. A registry entry defines the office, repository path, runtime (`python`, `node`, `java`, or `shell`), command arguments, resource profile (`small`, `medium`, or `large`), timeout, optional environment variables, allowed secret names, roles, and optional schedule. A script can run a direct file such as `python/my_job.py` or a shell entrypoint such as `bin/hourly.sh`; the registry owns the command and arguments, so the old `hourly.sh` convention is no longer required for every job.
 
-#### Script Catalogs
-Available district scripts are managed within the cwms-batch application itself using the "Scripts Manager" available through the Web UI or directly through API endpoints.
+Scheduled jobs are also registry-driven. Airflow calls `/scripts/scheduled`, filters jobs due for the current logical date, and triggers them through `/jobs`. The registry supports hourly-at-minute entries and five-field cron expressions, which keeps office timing and resource choices in Batch Events instead of duplicating one Airflow or AWS Batch definition per office.
+
+#### Runtime Containers
+Production uses shared AWS Batch job definitions per runtime rather than per-office job definitions. The shared runner image is built from `cwbi-wm-images`, clones the office repository at runtime, asks Batch Events for the job's brokered runtime environment, and then runs the registered script path with the registry's command arguments and timeout.
+
+The dispatcher chooses the runtime command from the script registry runtime:
+`python`, `node`, `java`, or `bash` for `shell`. Shell entrypoints such as
+`bin/hourly.sh` should be registered with the `shell` runtime rather than
+depending on a language-specific job definition to invoke bash.
+
+Small/medium/large sizing is selected by the registry and sent to AWS Batch as a
+per-job resource override. If an AWS environment cannot support that override
+shape, the intended fallback is shared runtime-by-size job definitions, not
+office-specific job definitions.
+
+AWS Batch container logs are written to shared runtime log groups. Batch Events keeps the office on each job record and tags submitted jobs with office, office group, runtime, resource profile, job id, and script slug. It exposes office-scoped job listing and log lookup for office members, so district users can filter to their office in the Jobs List and open logs for individual jobs without requiring one CloudWatch log group or job definition per office.
+
+Local development can still run office containers directly when needed, but the production-shaped path is the shared runner plus Batch Events runtime broker. Office-specific CDA Keycloak client credentials should be stored in the office-group job secret and exposed only through the registry entry's allowed secret names, such as `CDA_CLIENT_ID` and `CDA_CLIENT_SECRET`.
+
+For CDA machine requests, Batch Events signs the per-job run context from the accepted job record and returns it to the runner as `BATCH_JOB_CONTEXT_TOKEN`. Production should configure `BATCH_JOB_CONTEXT_PRIVATE_KEY` with an RS256 private key and configure CDA with the matching public key. `BATCH_JOB_CONTEXT_SECRET` remains a legacy HS256 fallback for local/bootstrap use when no private key is configured.
+
+Deployments can override the default AWS Batch runtime wiring with JSON environment values:
+
+| Variable | Purpose |
+| --- | --- |
+| `BATCH_RUNTIME_JOB_DEFINITIONS` | Maps registry runtimes to AWS Batch job definition names. Defaults to `cwms-python-runner-jobdef`, `cwms-node-runner-jobdef`, `cwms-java-runner-jobdef`, and `cwms-shell-runner-jobdef`. |
+| `BATCH_RESOURCE_PROFILES` | Maps registry resource profiles to AWS Batch `VCPU` and `MEMORY` overrides. Defaults to `small`, `medium`, and `large`. |
+| `BATCH_RUNTIME_COMMANDS` | Maps registry runtimes to the command prefix used in the shared runner container. Defaults to `python`, `node`, `java`, and `bash` for shell entrypoints. |
+| `BATCH_LOG_GROUP_PREFIX` | Prefix for shared runtime CloudWatch log groups. Defaults to `ecs/cwms-batch`, producing groups such as `ecs/cwms-batch/shell-runner`. |
+
+For example: `BATCH_RUNTIME_JOB_DEFINITIONS={"python":"cwms-python-runner-jobdef"}`.
 
 #### User Interface
 The user interface is deployed locally as a vite development server.  To run it, simply enter the `ui` directory and run `npm run dev`.
-

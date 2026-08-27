@@ -25,6 +25,7 @@ services:
       APP_KEY: localdevtoken
       AUTH_HOST: http://traefik/auth
       AUTH_REALM: cwms
+      AUTH_CLIENT_IDS: cwms-batch-airflow-swt
       CDA_API_ROOT: http://traefik/cwms-data/
       DEFAULT_JOB_RUNNER: docker-local
       PGUSER: *application_user
@@ -57,6 +58,9 @@ services:
       AWS_ACCESS_KEY_ID: eventsadmin
       AWS_SECRET_ACCESS_KEY: eventsadmin
       AWS_REGION: us-gov-west-1
+      APP_KEY: localdevtoken
+      BATCH_EVENTS_API_ROOT: http://api:8000
+      BATCH_EVENTS_INTERNAL_TOKEN: localdevtoken
       PGUSER: *application_user
       PGPASSWORD: *application_password
       PGDATABASE: postgres
@@ -142,6 +146,7 @@ services:
       FLYWAY_URL: jdbc:postgresql://db:5432/postgres
       FLYWAY_USER: postgres
       FLYWAY_VALIDATE_MIGRATION_NAMING: true
+      FLYWAY_OUT_OF_ORDER: true
       FLYWAY_PLACEHOLDERS_APP_USER: *application_user
       FLYWAY_PLACEHOLDERS_APP_PASSWORD: *application_password
     volumes:

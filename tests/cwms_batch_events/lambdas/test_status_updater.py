@@ -48,25 +48,6 @@ def test_get_internal_token_re_raises_client_error():
             get_internal_token()
 
 
-def test_lambda_handler_ignores_non_event_jobs():
-    with mock.patch(
-        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.requests.post"
-    ) as requests_post:
-        lambda_handler(
-            {
-                "detail": {
-                    "jobName": "cwms-swt-manual-script",
-                    "jobId": "batch-123",
-                    "status": "RUNNING",
-                },
-                "time": "2026-04-16T12:00:00Z",
-            },
-            None,
-        )
-
-    requests_post.assert_not_called()
-
-
 def test_lambda_handler_ignores_unsupported_status():
     with mock.patch(
         "cwms_batch_events.lambdas.update_batch_job_status.status_updater.requests.post"
@@ -118,6 +99,41 @@ def test_lambda_handler_posts_translated_status_to_events_api():
     }
 
 
+def test_lambda_handler_posts_status_for_shared_runner_job_names():
+    response = mock.Mock(status_code=204, text="")
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.get_internal_token",
+        return_value="secret",
+    ), mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.requests.post",
+        return_value=response,
+    ) as requests_post, mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.API_BASE_URL",
+        "http://events/api",
+    ):
+        lambda_handler(
+            {
+                "detail": {
+                    "jobName": "cwms-swt-python-hourly-20260626-1715",
+                    "jobId": "batch-456",
+                    "status": "RUNNING",
+                },
+                "time": "2026-06-26T17:15:00Z",
+            },
+            None,
+        )
+
+    requests_post.assert_called_once()
+    assert requests_post.call_args.args[0] == (
+        "http://events/api/internal/batch-jobs/batch-456/status"
+    )
+    assert requests_post.call_args.kwargs["json"] == {
+        "status": "Running",
+        "event_time": "2026-06-26T17:15:00Z",
+    }
+
+
 def test_lambda_handler_re_raises_request_exceptions():
     with mock.patch(
         "cwms_batch_events.lambdas.update_batch_job_status.status_updater.get_internal_token",
@@ -138,6 +154,31 @@ def test_lambda_handler_re_raises_request_exceptions():
                 },
                 None,
             )
+
+
+def test_lambda_handler_ignores_unknown_batch_jobs():
+    response = mock.Mock(status_code=404, text="not found")
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.get_internal_token",
+        return_value="secret",
+    ), mock.patch(
+        "cwms_batch_events.lambdas.update_batch_job_status.status_updater.requests.post",
+        return_value=response,
+    ) as requests_post:
+        lambda_handler(
+            {
+                "detail": {
+                    "jobName": "cwms-swt-python-smoke-20260626-1715",
+                    "jobId": "batch-untracked",
+                    "status": "RUNNING",
+                },
+                "time": "2026-06-26T17:15:00Z",
+            },
+            None,
+        )
+
+    requests_post.assert_called_once()
 
 
 def test_lambda_handler_raises_when_events_api_rejects_message():

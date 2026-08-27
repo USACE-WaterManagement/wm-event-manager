@@ -3,6 +3,7 @@ from uuid import UUID
 
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.models import JobRecord
+from cwms_batch_events.core.settings import settings
 
 
 class CloudWatchJobLogger:
@@ -32,7 +33,19 @@ class CloudWatchJobLogger:
                 f"Multiple jobs found for external_job_id {external_job_id}"
             )
 
-        return jobs[0]["attempts"][-1]["container"]["logStreamName"]
+        attempts = jobs[0].get("attempts", [])
+        if not attempts:
+            raise ValueError(
+                f"No Batch job attempts found for external_job_id {external_job_id}"
+            )
+
+        log_stream_name = attempts[-1].get("container", {}).get("logStreamName")
+        if not log_stream_name:
+            raise ValueError(
+                f"No log stream found for external_job_id {external_job_id}"
+            )
+
+        return log_stream_name
 
     def get_logs_for_job(self, job_id: UUID) -> str:
         job = self.get_job_details(job_id)
@@ -41,7 +54,10 @@ class CloudWatchJobLogger:
             raise ValueError(f"No external_job_id found for job_id {job_id}")
         log_name = self.get_batch_log_name(job.external_job_id)
 
-        log_group = f"ecs/cwms-batch/{job.office.lower()}-jobs"
+        log_group = (
+            f"{settings.batch_log_group_prefix.rstrip('/')}/"
+            f"{job.runtime.lower()}-runner"
+        )
 
         logs = self.logs.get_log_events(
             logGroupName=log_group,

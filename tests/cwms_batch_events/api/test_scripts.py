@@ -4,7 +4,12 @@ from uuid import uuid4
 from sqlalchemy.exc import NoResultFound
 
 from cwms_batch_events.core.job_database.postgres.postgres import SlugError
-from tests.factories import make_script_create_payload, make_script_payload, make_script_read
+from cwms_batch_events.core.settings import settings
+from tests.factories import (
+    make_script_create_payload,
+    make_script_payload,
+    make_script_read,
+)
 
 
 def test_get_scripts_for_office_requires_admin_access(client):
@@ -27,6 +32,65 @@ def test_get_scripts_for_office_returns_scripts(client, job_db):
     job_db.get_scripts_for_office.assert_called_once_with("SWT")
 
 
+def test_get_repository_browser_entries_returns_runtime_matches(
+    client, tmp_path, monkeypatch
+):
+    scripts_dir = tmp_path / "python"
+    scripts_dir.mkdir()
+    (scripts_dir / "full_picture.PY").write_text("print('ok')", encoding="utf-8")
+    (scripts_dir / "notes.txt").write_text("notes", encoding="utf-8")
+    (tmp_path / "bin").mkdir()
+    monkeypatch.setattr(settings, "script_repository_root", str(tmp_path))
+
+    response = client.get(
+        "/scripts/repository",
+        params={"directory": "python", "runtime": "python"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["configured"] is True
+    assert body["scriptTypes"] == [".py"]
+    assert [entry["path"] for entry in body["entries"]] == [
+        "python/full_picture.PY"
+    ]
+
+
+def test_get_repository_browser_entries_can_include_all_files_for_browsing(
+    client, tmp_path, monkeypatch
+):
+    scripts_dir = tmp_path / "python"
+    scripts_dir.mkdir()
+    (scripts_dir / "full_picture.py").write_text("print('ok')", encoding="utf-8")
+    (scripts_dir / "README").write_text("docs", encoding="utf-8")
+    monkeypatch.setattr(settings, "script_repository_root", str(tmp_path))
+
+    response = client.get(
+        "/scripts/repository",
+        params={"directory": "python", "runtime": "python", "includeAll": "true"},
+    )
+
+    assert response.status_code == 200
+    assert [entry["path"] for entry in response.json()["entries"]] == [
+        "python/full_picture.py",
+        "python/README",
+    ]
+
+
+def test_get_repository_browser_entries_rejects_path_traversal(
+    client, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, "script_repository_root", str(tmp_path))
+
+    response = client.get(
+        "/scripts/repository",
+        params={"directory": "../outside", "runtime": "python"},
+    )
+
+    assert response.status_code == 422
+    assert "configured repository root" in response.text
+
+
 def test_post_script_returns_created_script(client, job_db):
     script = make_script_read()
     job_db.store_script.return_value = script
@@ -39,13 +103,116 @@ def test_post_script_returns_created_script(client, job_db):
 
 
 @pytest.mark.parametrize(
+    ("payload", "expected_detail"),
+    [
+        (
+            make_script_create_payload(
+                scheduleEnabled=True,
+                scheduleType="hourly",
+                scheduleMinute=None,
+            ),
+            "scheduleMinute is required when scheduleEnabled is true and scheduleType is hourly",
+        ),
+        (
+            make_script_create_payload(
+                scheduleEnabled=True,
+                scheduleType="cron",
+                scheduleCron=None,
+            ),
+            "scheduleCron is required when scheduleEnabled is true and scheduleType is cron",
+        ),
+        (
+            make_script_create_payload(
+                scheduleEnabled=True,
+                scheduleType="manual",
+            ),
+            "scheduleType must be hourly or cron when scheduleEnabled is true",
+        ),
+    ],
+)
+def test_post_script_rejects_incomplete_enabled_schedules(
+    client, job_db, payload, expected_detail
+):
+    response = client.post("/scripts", json=payload)
+
+    assert response.status_code == 422
+    assert expected_detail in response.text
+    job_db.store_script.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_detail"),
+    [
+        (
+            make_script_create_payload(runtime="ruby"),
+            "runtime must be one of: python, node, java, shell",
+        ),
+        (
+            make_script_create_payload(resourceProfile="huge"),
+            "resourceProfile must be one of: small, medium, large",
+        ),
+        (
+            make_script_create_payload(timeoutMinutes=0),
+            "timeoutMinutes must be between 1 and 1440",
+        ),
+        (
+            make_script_create_payload(timeoutMinutes=1441),
+            "timeoutMinutes must be between 1 and 1440",
+        ),
+        (
+            make_script_create_payload(scheduleMinute=60),
+            "scheduleMinute must be between 0 and 59",
+        ),
+        (
+            make_script_create_payload(scheduleCron="0 17 * *"),
+            "scheduleCron must be a five-field cron expression",
+        ),
+        (
+            make_script_create_payload(scheduleTimezone="Mars/Base"),
+            "scheduleTimezone is not a valid timezone: Mars/Base",
+        ),
+        (
+            make_script_create_payload(envVars={"AWS_BATCH_FOO": "bad"}),
+            "environment variable names cannot start with AWS_BATCH",
+        ),
+        (
+            make_script_create_payload(secretEnvNames=["AWS_BATCH_TOKEN"]),
+            "environment variable names cannot start with AWS_BATCH",
+        ),
+        (
+            make_script_create_payload(envVars={"JOB_ID": "bad"}),
+            "environment variable names are reserved for Batch Events runtime",
+        ),
+        (
+            make_script_create_payload(secretEnvNames=["BATCH_EVENTS_INTERNAL_TOKEN"]),
+            "environment variable names are reserved for Batch Events runtime",
+        ),
+        (
+            make_script_create_payload(commandArgs=["--project", ""]),
+            "commandArgs cannot contain empty strings",
+        ),
+    ],
+)
+def test_post_script_rejects_invalid_registry_controls(
+    client, job_db, payload, expected_detail
+):
+    response = client.post("/scripts", json=payload)
+
+    assert response.status_code == 422
+    assert expected_detail in response.text
+    job_db.store_script.assert_not_called()
+
+
+@pytest.mark.parametrize(
     ("side_effect", "expected_status", "expected_detail"),
     [
         (ValueError("bad payload"), 422, "bad payload"),
         (SlugError("slug in use"), 409, "slug in use"),
     ],
 )
-def test_post_script_maps_errors(client, job_db, side_effect, expected_status, expected_detail):
+def test_post_script_maps_errors(
+    client, job_db, side_effect, expected_status, expected_detail
+):
     job_db.store_script.side_effect = side_effect
 
     response = client.post("/scripts", json=make_script_create_payload())
@@ -65,6 +232,24 @@ def test_put_script_returns_updated_script(client, job_db):
     job_db.update_script.assert_called_once()
 
 
+def test_put_script_rejects_incomplete_enabled_schedule(client, job_db):
+    response = client.put(
+        f"/scripts/{uuid4()}",
+        json=make_script_payload(
+            scheduleEnabled=True,
+            scheduleType="hourly",
+            scheduleMinute=None,
+        ),
+    )
+
+    assert response.status_code == 422
+    assert (
+        "scheduleMinute is required when scheduleEnabled is true and scheduleType is hourly"
+        in response.text
+    )
+    job_db.update_script.assert_not_called()
+
+
 def test_put_script_returns_404_when_missing(client, job_db):
     job_db.update_script.side_effect = NoResultFound()
     script_id = str(uuid4())
@@ -82,7 +267,9 @@ def test_put_script_returns_404_when_missing(client, job_db):
         (ValueError("bad payload"), 422, "bad payload"),
     ],
 )
-def test_put_script_maps_other_errors(client, job_db, side_effect, expected_status, expected_detail):
+def test_put_script_maps_other_errors(
+    client, job_db, side_effect, expected_status, expected_detail
+):
     job_db.update_script.side_effect = side_effect
 
     response = client.put(f"/scripts/{uuid4()}", json=make_script_payload())
@@ -131,3 +318,42 @@ def test_get_scripts_catalog_returns_role_filtered_catalog(client, job_db):
     job_db.retrieve_script_catalog.assert_called_once_with(
         {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
     )
+
+
+def test_get_scheduled_scripts_catalog_returns_role_filtered_schedules(client, job_db):
+    script = make_script_read(
+        schedule_enabled=True,
+        schedule_type="hourly",
+        schedule_minute=15,
+    )
+    job_db.retrieve_scheduled_script_catalog.return_value = [script]
+
+    response = client.get("/scripts/scheduled")
+
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == str(script.id)
+    assert response.json()[0]["scheduleEnabled"] is True
+    assert response.json()[0]["scheduleType"] == "hourly"
+    assert response.json()[0]["scheduleMinute"] == 15
+    assert response.json()[0]["scheduleTimezone"] == "UTC"
+    job_db.retrieve_scheduled_script_catalog.assert_called_once_with(
+        {"SWT": ["CWMS Users"], "LRH": ["CWMS Users"]}
+    )
+
+
+def test_get_scheduled_scripts_catalog_returns_cron_schedules(client, job_db):
+    script = make_script_read(
+        schedule_enabled=True,
+        schedule_type="cron",
+        schedule_cron="0 17 * * *",
+        schedule_timezone="America/Chicago",
+    )
+    job_db.retrieve_scheduled_script_catalog.return_value = [script]
+
+    response = client.get("/scripts/scheduled")
+
+    assert response.status_code == 200
+    assert response.json()[0]["scheduleEnabled"] is True
+    assert response.json()[0]["scheduleType"] == "cron"
+    assert response.json()[0]["scheduleCron"] == "0 17 * * *"
+    assert response.json()[0]["scheduleTimezone"] == "America/Chicago"

@@ -67,6 +67,12 @@ def test_verify_jwt_by_api_uses_jwks_client():
     jwks_client.get_signing_key_from_jwt.return_value = signing_key
 
     with mock.patch(
+        "cwms_batch_events.core.auth.user.jwt.settings.auth_host",
+        "http://localhost:8081/auth",
+    ), mock.patch(
+        "cwms_batch_events.core.auth.user.jwt.settings.auth_jwks_host",
+        "http://traefik/auth",
+    ), mock.patch(
         "cwms_batch_events.core.auth.user.jwt.PyJWKClient",
         return_value=jwks_client,
     ) as jwk_client_cls, mock.patch(
@@ -76,8 +82,16 @@ def test_verify_jwt_by_api_uses_jwks_client():
         payload = verify_jwt_by_api("token")
 
     assert payload == {"sub": "123"}
-    jwk_client_cls.assert_called_once()
-    jwt_decode.assert_called_once_with("token", signing_key, ["RS256"])
+    jwk_client_cls.assert_called_once_with(
+        "http://traefik/auth/realms/cwms/protocol/openid-connect/certs"
+    )
+    jwt_decode.assert_called_once_with(
+        "token",
+        signing_key,
+        algorithms=["RS256"],
+        issuer="http://localhost:8081/auth/realms/cwms",
+        audience="cwms",
+    )
 
 
 def test_verify_jwt_by_saved_key_uses_saved_public_key_and_issuer():
@@ -102,5 +116,5 @@ def test_verify_jwt_by_saved_key_uses_saved_public_key_and_issuer():
         "pem",
         algorithms=["RS256"],
         issuer=mock_issuer["TEST"],
-        options={"verify_aud": False},
+        audience="cwms",
     )

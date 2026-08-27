@@ -1,10 +1,28 @@
 import pytest
 from uuid import uuid4
 
+from fastapi.testclient import TestClient
 from sqlalchemy.exc import NoResultFound
 
+from cwms_batch_events.api.dependencies import (
+    get_current_user,
+    get_job_database,
+    get_job_logger,
+    get_job_queue,
+)
+from cwms_batch_events.api.main import app
+from cwms_batch_events.core.auth.service.dependencies import require_internal_auth
 from cwms_batch_events.core.models import JobSource
-from tests.factories import make_job_record
+from tests.factories import make_job_record, make_user
+
+
+def make_client_for_user(user, job_db, job_logger, job_queue):
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_job_database] = lambda: job_db
+    app.dependency_overrides[get_job_logger] = lambda: job_logger
+    app.dependency_overrides[get_job_queue] = lambda: job_queue
+    app.dependency_overrides[require_internal_auth] = lambda: True
+    return TestClient(app)
 
 
 def test_get_jobs_for_user_returns_jobs(client, job_db, user):
@@ -15,12 +33,53 @@ def test_get_jobs_for_user_returns_jobs(client, job_db, user):
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == str(job.id)
-    job_db.get_jobs_for_user.assert_called_once_with(user.username)
+    job_db.get_jobs_for_user.assert_called_once_with(user.username, user.offices)
+
+
+def test_get_jobs_for_office_requires_office_membership(client, job_db):
+    response = client.get("/jobs", params={"office": "MVK"})
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "detail": "User does not have job list access for office 'MVK'"
+    }
+    job_db.get_jobs_for_office.assert_not_called()
+
+
+def test_get_jobs_for_office_returns_office_jobs(client, job_db):
+    job = make_job_record(office="SWT")
+    job_db.get_jobs_for_office.return_value = [job]
+
+    response = client.get("/jobs", params={"office": "SWT"})
+
+    assert response.status_code == 200
+    assert response.json()[0]["office"] == "SWT"
+    job_db.get_jobs_for_office.assert_called_once_with("SWT")
+
+
+def test_get_jobs_for_office_allows_non_admin_office_member(job_db, job_logger, job_queue):
+    user = make_user(offices=["SWT"], admin_offices=[])
+    job = make_job_record(office="SWT")
+    job_db.get_jobs_for_office.return_value = [job]
+
+    try:
+        with make_client_for_user(user, job_db, job_logger, job_queue) as test_client:
+            response = test_client.get("/jobs", params={"office": "SWT"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()[0]["office"] == "SWT"
+    job_db.get_jobs_for_office.assert_called_once_with("SWT")
 
 
 def test_post_job_creates_and_dispatches_message(client, job_db, job_queue):
     script_id = str(uuid4())
-    job = make_job_record()
+    job = make_job_record(
+        runtime="shell",
+        resource_profile="large",
+        env_vars={"CDA_API_ROOT": "https://cda"},
+    )
     job_db.create_job.return_value = job
     message = object()
     job_queue.create_job_message.return_value = message
@@ -38,6 +97,11 @@ def test_post_job_creates_and_dispatches_message(client, job_db, job_queue):
     assert create_call.args[3].office == "swt"
     assert create_call.args[3].repo_path == job.repo_path
     assert create_call.args[3].script_slug == job.script_slug
+    assert create_call.args[3].runtime == job.runtime
+    assert create_call.args[3].resource_profile == job.resource_profile
+    assert create_call.args[3].command_args == job.command_args
+    assert create_call.args[3].timeout_minutes == job.timeout_minutes
+    assert create_call.args[3].env_vars == job.env_vars
     job_queue.send_job_message.assert_called_once_with(message)
 
 
@@ -69,6 +133,26 @@ def test_get_job_by_id_returns_job(client, job_db):
     job_db.get_job_by_id.assert_called_once_with(job.id)
 
 
+def test_get_job_by_id_allows_office_member(client, job_db):
+    job = make_job_record(username="other-user", office="LRH")
+    job_db.get_job_by_id.return_value = job
+
+    response = client.get(f"/jobs/{job.id}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(job.id)
+
+
+def test_get_job_by_id_hides_job_from_unrelated_user(client, job_db):
+    job = make_job_record(username="other-user", office="MVK")
+    job_db.get_job_by_id.return_value = job
+
+    response = client.get(f"/jobs/{job.id}")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Job not found"}
+
+
 def test_get_job_by_id_returns_404_when_missing(client, job_db):
     job_id = str(uuid4())
     job_db.get_job_by_id.return_value = None
@@ -79,12 +163,50 @@ def test_get_job_by_id_returns_404_when_missing(client, job_db):
     assert response.json() == {"detail": f"No job found for jobId '{job_id}'"}
 
 
-def test_get_logs_for_job_returns_logs(client, job_logger):
-    job_id = str(uuid4())
+def test_get_logs_for_job_returns_logs_for_owner(client, job_db, job_logger):
+    job = make_job_record()
+    job_db.get_job_by_id.return_value = job
     job_logger.get_logs_for_job.return_value = "hello"
 
-    response = client.get(f"/jobs/{job_id}/logs")
+    response = client.get(f"/jobs/{job.id}/logs")
 
     assert response.status_code == 200
     assert response.json() == {"logs": "hello"}
-    job_logger.get_logs_for_job.assert_called_once()
+    job_db.get_job_by_id.assert_called_once_with(job.id)
+    job_logger.get_logs_for_job.assert_called_once_with(job.id)
+
+
+def test_get_logs_for_job_allows_office_member(client, job_db, job_logger):
+    job = make_job_record(username="other-user", office="LRH")
+    job_db.get_job_by_id.return_value = job
+    job_logger.get_logs_for_job.return_value = "office logs"
+
+    response = client.get(f"/jobs/{job.id}/logs")
+
+    assert response.status_code == 200
+    assert response.json() == {"logs": "office logs"}
+    job_logger.get_logs_for_job.assert_called_once_with(job.id)
+
+
+def test_get_logs_for_job_hides_logs_from_unrelated_user(client, job_db, job_logger):
+    job = make_job_record(username="other-user", office="MVK")
+    job_db.get_job_by_id.return_value = job
+
+    response = client.get(f"/jobs/{job.id}/logs")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Job not found"}
+    job_logger.get_logs_for_job.assert_not_called()
+
+
+def test_get_logs_for_job_reports_logs_unavailable(client, job_db, job_logger):
+    job = make_job_record()
+    job_db.get_job_by_id.return_value = job
+    job_logger.get_logs_for_job.side_effect = ValueError("No external_job_id found")
+
+    response = client.get(f"/jobs/{job.id}/logs")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": f"Logs are not available for job '{job.id}': No external_job_id found"
+    }

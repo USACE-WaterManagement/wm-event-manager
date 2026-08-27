@@ -10,6 +10,7 @@ from cwms_batch_events.lambdas.dispatch_job.dispatcher import (
     get_internal_token,
     lambda_handler,
 )
+from cwms_batch_events.core.settings import settings
 from tests.factories import make_job_message
 
 
@@ -88,6 +89,28 @@ def test_lambda_handler_processes_messages_and_binds_external_job_id():
 
     requests_post.assert_called_once()
     assert requests_post.call_args.kwargs["json"] == {"external_job_id": "ext-123"}
+
+
+def test_lambda_handler_configures_runtime_token_signing_key(monkeypatch):
+    message = make_job_message()
+    response = mock.Mock(status_code=204, text="")
+    monkeypatch.setattr(settings, "app_key", "")
+
+    def assert_runtime_signing_key_seeded(_message):
+        assert settings.app_key == "secret"
+        return "ext-123"
+
+    with mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.dispatcher.get_internal_token",
+        return_value="secret",
+    ), mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.dispatcher.dispatch_job",
+        side_effect=assert_runtime_signing_key_seeded,
+    ), mock.patch(
+        "cwms_batch_events.lambdas.dispatch_job.dispatcher.requests.post",
+        return_value=response,
+    ):
+        lambda_handler({"Records": [{"body": message.model_dump_json()}]}, None)
 
 
 def test_lambda_handler_raises_when_api_rejects_message():

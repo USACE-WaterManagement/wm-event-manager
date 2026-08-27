@@ -8,10 +8,12 @@ from cwms_batch_events.core.auth.user.models import User
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_database.postgres.postgres import SlugError
 from cwms_batch_events.core.models import (
+    RepositoryBrowserResponse,
     ScriptCreate,
     ScriptRead,
     ScriptUpdate,
 )
+from cwms_batch_events.core.repository_browser import browse_repository_paths
 
 
 def check_user_office_admin(user: User, office: str):
@@ -50,6 +52,27 @@ def get_scripts_for_office_endpoint(
 ):
     check_user_office_admin(user, office)
     return job_db.get_scripts_for_office(office)
+
+
+@router.get("/repository")
+def get_repository_browser_entries(
+    directory: str = "",
+    runtime: str = "python",
+    includeAll: bool = False,
+    user: User = Depends(get_current_user),
+) -> RepositoryBrowserResponse:
+    if not user.admin_offices:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User does not have script admin access for any offices",
+        )
+    try:
+        return browse_repository_paths(directory, runtime, includeAll)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(e),
+        )
 
 
 @router.post("")
@@ -97,3 +120,11 @@ def get_user_scripts_catalog(
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[ScriptRead]:
     return job_db.retrieve_script_catalog(user.roles)
+
+
+@router.get("/scheduled")
+def get_user_scheduled_scripts_catalog(
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+) -> list[ScriptRead]:
+    return job_db.retrieve_scheduled_script_catalog(user.roles)

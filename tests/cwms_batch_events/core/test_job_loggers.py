@@ -84,12 +84,43 @@ def test_cloudwatch_job_logger_rejects_multiple_batch_jobs():
         logger.get_batch_log_name("ext-123")
 
 
+def test_cloudwatch_job_logger_reports_missing_batch_attempts():
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {"jobs": [{"attempts": []}]}
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, mock.Mock()],
+    ):
+        logger = CloudWatchJobLogger(mock.Mock())
+
+    with pytest.raises(ValueError, match="No Batch job attempts found"):
+        logger.get_batch_log_name("ext-123")
+
+
+def test_cloudwatch_job_logger_reports_missing_log_stream():
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {
+        "jobs": [{"attempts": [{"container": {}}]}]
+    }
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, mock.Mock()],
+    ):
+        logger = CloudWatchJobLogger(mock.Mock())
+
+    with pytest.raises(ValueError, match="No log stream found"):
+        logger.get_batch_log_name("ext-123")
+
+
 def test_cloudwatch_job_logger_requires_external_job_id():
     job_id = uuid4()
     db = mock.Mock()
     db.get_job_by_id.return_value = SimpleNamespace(
         external_job_id=None,
         office="SWT",
+        runtime="shell",
     )
 
     with mock.patch(
@@ -108,6 +139,7 @@ def test_cloudwatch_job_logger_returns_joined_log_messages():
     db.get_job_by_id.return_value = SimpleNamespace(
         external_job_id="ext-123",
         office="SWT",
+        runtime="shell",
     )
     batch_client = mock.Mock()
     batch_client.describe_jobs.return_value = {
@@ -127,7 +159,69 @@ def test_cloudwatch_job_logger_returns_joined_log_messages():
 
     assert logs == "line 1\nline 2"
     logs_client.get_log_events.assert_called_once_with(
-        logGroupName="ecs/cwms-batch/swt-jobs",
+        logGroupName="ecs/cwms-batch/shell-runner",
+        logStreamName="stream",
+        startFromHead=True,
+    )
+
+
+def test_cloudwatch_job_logger_uses_configured_runtime_log_prefix(monkeypatch):
+    job_id = uuid4()
+    db = mock.Mock()
+    db.get_job_by_id.return_value = SimpleNamespace(
+        external_job_id="ext-123",
+        office="SWT",
+        runtime="python",
+    )
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {
+        "jobs": [{"attempts": [{"container": {"logStreamName": "stream"}}]}]
+    }
+    logs_client = mock.Mock()
+    logs_client.get_log_events.return_value = {"events": []}
+    monkeypatch.setattr(
+        "cwms_batch_events.core.job_logger.cloudwatch.settings.batch_log_group_prefix",
+        "ecs/custom-batch/",
+    )
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, logs_client],
+    ):
+        logger = CloudWatchJobLogger(db)
+        logger.get_logs_for_job(job_id)
+
+    logs_client.get_log_events.assert_called_once_with(
+        logGroupName="ecs/custom-batch/python-runner",
+        logStreamName="stream",
+        startFromHead=True,
+    )
+
+
+def test_cloudwatch_job_logger_uses_shared_runtime_group_not_office_group():
+    job_id = uuid4()
+    db = mock.Mock()
+    db.get_job_by_id.return_value = SimpleNamespace(
+        external_job_id="ext-123",
+        office="LRH",
+        runtime="python",
+    )
+    batch_client = mock.Mock()
+    batch_client.describe_jobs.return_value = {
+        "jobs": [{"attempts": [{"container": {"logStreamName": "stream"}}]}]
+    }
+    logs_client = mock.Mock()
+    logs_client.get_log_events.return_value = {"events": []}
+
+    with mock.patch(
+        "cwms_batch_events.core.job_logger.cloudwatch.boto3.client",
+        side_effect=[batch_client, logs_client],
+    ):
+        logger = CloudWatchJobLogger(db)
+        logger.get_logs_for_job(job_id)
+
+    logs_client.get_log_events.assert_called_once_with(
+        logGroupName="ecs/cwms-batch/python-runner",
         logStreamName="stream",
         startFromHead=True,
     )

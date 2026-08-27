@@ -1,0 +1,210 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="M2M Airflow Batch Events" id="QOw4sHHPbXYscoY8iEkL">
+    <mxGraphModel dx="1544" dy="1484" grid="1" gridSize="10" guides="1" tooltips="1" connect="1"
+      arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0"
+      shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="yOy1WugJtw1jma-cY1r7-1" parent="1"
+          style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;"
+          value="Scheduled Office Job Flow: Airflow -> Batch Events -> CDA" vertex="1">
+          <mxGeometry height="40" width="760" x="210" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-2" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f0fe;strokeColor=#6c8ebf;dashed=1;"
+          value="" vertex="1">
+          <mxGeometry height="260" width="270" x="210" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-3" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;"
+          value="Airflow&lt;br&gt;cwms_batch_events_swt_hourly DAG&lt;br&gt;schedule: 15 * * * *" vertex="1">
+          <mxGeometry height="80" width="210" x="240" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-4" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;"
+          value="Scheduler identity&lt;br&gt;Keycloak confidential client&lt;br&gt;cwms-batch-airflow-swt"
+          vertex="1">
+          <mxGeometry height="80" width="210" x="240" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-5" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;"
+          value="Keycloak&lt;br&gt;Token endpoint&lt;br&gt;client_credentials" vertex="1">
+          <mxGeometry height="85" width="210" x="600" y="437.5" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-6" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;"
+          value="Batch Events API&lt;br&gt;POST /jobs&lt;br&gt;validates JWT, azp allow-list,&lt;br&gt;CDA profile roles"
+          vertex="1">
+          <mxGeometry height="110" width="240" x="880" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-7" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;"
+          value="CDA /user/profile&lt;br&gt;service account is registered&lt;br&gt;SWT: CWMS Users" vertex="1">
+          <mxGeometry height="90" width="240" x="1275" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-8" parent="1"
+          style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;"
+          value="Batch Events DB&lt;br&gt;scripts + jobs registry&lt;br&gt;path, schedule, runtime, size&lt;br&gt;no hourly.sh requirement"
+          vertex="1">
+          <mxGeometry height="120" width="220" x="890" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-9" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;"
+          value="Queue&lt;br&gt;SQS / ElasticMQ" vertex="1">
+          <mxGeometry height="70" width="180" x="1275" y="515" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-10" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;"
+          value="Dispatcher&lt;br&gt;Lambda / local loop&lt;br&gt;submits runtime job" vertex="1">
+          <mxGeometry height="90" width="200" x="1275" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-11" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;"
+          value="AWS Batch / Local Docker&lt;br&gt;shared shell runner jobdef&lt;br&gt;not per-office jobdefs"
+          vertex="1">
+          <mxGeometry height="95" width="230" x="890" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-12" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;"
+          value="Runtime env broker&lt;br&gt;GET /internal/jobs/{job}/runtime-env&lt;br&gt;per-job runtime token"
+          vertex="1">
+          <mxGeometry height="95" width="240" x="570" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-13" parent="1"
+          style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;"
+          value="Secrets Manager / local JSON&lt;br&gt;cwms-batch-jobs-swd-secrets&lt;br&gt;SWT_CDA_CLIENT_ID/SECRET"
+          vertex="1">
+          <mxGeometry height="105" width="240" x="110" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-14" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;"
+          value="Runner container&lt;br&gt;cwbi-wm-images&lt;br&gt;loads runtime env, then gets CDA token"
+          vertex="1">
+          <mxGeometry height="95" width="250" x="890" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-15" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;"
+          value="Runner identity&lt;br&gt;Keycloak confidential client&lt;br&gt;cwms-batch-runner-swt&lt;br&gt;machine_auth + run_as_office=SWT"
+          vertex="1">
+          <mxGeometry height="105" width="250" x="580" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-16" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;"
+          value="CDA API&lt;br&gt;validates runner access token&lt;br&gt;registered machine principal&lt;br&gt;office-scoped roles"
+          vertex="1">
+          <mxGeometry height="105" width="240" x="1200" y="830" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-17" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;"
+          value="Office job repo&lt;br&gt;registered script path&lt;br&gt;SWT may use bin/hourly.sh&lt;br&gt;scripts use CDA_BEARER_TOKEN"
+          vertex="1">
+          <mxGeometry height="90" width="250" x="890" y="980" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-18" parent="1"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacing=10;"
+          value="Important separation&lt;br&gt;Airflow client is allowed to schedule the job.&lt;br&gt;Runner client is the machine identity used inside CDA.&lt;br&gt;Batch Events stores the authorization decision and brokers only the env/secrets requested by the script."
+          vertex="1">
+          <mxGeometry height="160" width="310" x="210" y="845" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-19" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-4"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-5" value="1. client_credentials">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-20" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-5"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-4" value="2. scheduler access token azp=cwms-batch-airflow-swt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-21" edge="1" parent="1"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;entryX=0;entryY=0.5;entryDx=0;entryDy=0;"
+          target="yOy1WugJtw1jma-cY1r7-6" value="3. POST /jobs {scriptId} with bearer token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="250" />
+              <mxPoint x="840" y="285" />
+            </Array>
+            <mxPoint x="450" y="250" as="sourcePoint" />
+            <mxPoint x="880" y="235" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-22" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-6"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-7" value="4. resolve roles with same token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="250" />
+              <mxPoint x="1240" y="360" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-23" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-6"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-8"
+          value="5. create job if script roles intersect caller roles">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-24" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-6"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-9" value="6. enqueue job message">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1200" y="285" />
+              <mxPoint x="1200" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-25" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-9"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-10" value="7. dispatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-26" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-10"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-11" value="8. submit shared runtime job">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-27" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-14"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-12" value="9. runner asks for job env">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-28" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-12"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-13" value="10. broker reads allowed secrets">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-29" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-12"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-14" value="11. CDA_CLIENT_ID/SECRET + script env">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="760" />
+              <mxPoint x="1015" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-30" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-14"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          target="yOy1WugJtw1jma-cY1r7-5" value="12. client_credentials for runner token">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="705" y="910" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-31" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-14"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-17" value="13. run registered script with CDA_BEARER_TOKEN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yOy1WugJtw1jma-cY1r7-32" edge="1" parent="1" source="yOy1WugJtw1jma-cY1r7-17"
+          style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;"
+          target="yOy1WugJtw1jma-cY1r7-16" value="14. office script calls CDA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

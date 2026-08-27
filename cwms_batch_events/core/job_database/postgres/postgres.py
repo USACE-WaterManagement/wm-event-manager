@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import re
 from sqlalchemy import select
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 import uuid
@@ -61,8 +62,18 @@ class PostgresJobDatabase:
     def create_job(self, payload: ScriptRunRequest, user: User) -> JobRecord:
         script = self.db.get_one(ScriptModel, payload.script_id)
 
-        if set(script.roles).isdisjoint(user.roles[script.office]):
+        if not script.active:
+            raise PermissionError("Requested script is not active")
+
+        if set(script.roles).isdisjoint(user.roles.get(script.office, [])):
             raise PermissionError("Not authorized to run requested script")
+
+        runner_id = get_runner_id()
+        configured_runner_ids = {runner.id for runner in script.job_runners}
+        if configured_runner_ids and runner_id not in configured_runner_ids:
+            raise PermissionError(
+                "Requested script is not configured for the current job runner"
+            )
 
         job = JobModel()
         job.id = uuid.uuid4()
@@ -74,7 +85,18 @@ class PostgresJobDatabase:
         job.office = script.office
         job.repo_path = script.repo_path
         job.execution_type = script.execution_type
-        job.job_runner_id = get_runner_id()
+        job.runtime = script.runtime
+        job.resource_profile = script.resource_profile
+        job.command_args = script.command_args or []
+        job.timeout_minutes = script.timeout_minutes
+        job.schedule_enabled = script.schedule_enabled
+        job.schedule_type = script.schedule_type
+        job.schedule_minute = script.schedule_minute
+        job.schedule_cron = script.schedule_cron
+        job.schedule_timezone = script.schedule_timezone
+        job.env_vars = script.env_vars or {}
+        job.secret_env_names = script.secret_env_names or []
+        job.job_runner_id = runner_id
 
         self.db.add(job)
         self.db.commit()
@@ -95,10 +117,26 @@ class PostgresJobDatabase:
             return None
         return JobRecord.model_validate(job_model)
 
-    def get_jobs_for_user(self, user_id: str) -> list[JobRecord]:
+    def get_jobs_for_user(
+        self, user_id: str, offices: list[str] | None = None
+    ) -> list[JobRecord]:
+        offices = offices or []
         job_models = self.db.scalars(
             select(JobModel)
-            .where(JobModel.username == user_id)
+            .where(
+                or_(
+                    JobModel.username == user_id,
+                    JobModel.office.in_(offices),
+                )
+            )
+            .order_by(JobModel.created_time.desc())
+        ).all()
+        return [JobRecord.model_validate(model) for model in job_models]
+
+    def get_jobs_for_office(self, office: str) -> list[JobRecord]:
+        job_models = self.db.scalars(
+            select(JobModel)
+            .where(JobModel.office == office)
             .order_by(JobModel.created_time.desc())
         ).all()
         return [JobRecord.model_validate(model) for model in job_models]
@@ -135,12 +173,12 @@ class PostgresJobDatabase:
                 )
             self.db.delete(script)
 
-    def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
+    def _runnable_scripts(self, roles: dict[str, list[str]]) -> list[ScriptModel]:
         """Current method may become inefficient if all_scripts becomes huge. At that
         point, consider storing user roles (temporarily?) in database to perform
         filtering operation entirely within SQL."""
         all_scripts = self.db.scalars(select(ScriptModel)).all()
-        runnable_scripts = [
+        return [
             script
             for script in all_scripts
             if script.office in roles
@@ -148,6 +186,18 @@ class PostgresJobDatabase:
             and not set(script.roles).isdisjoint(roles[script.office])
         ]
 
+    def retrieve_script_catalog(self, roles: dict[str, list[str]]) -> list[ScriptRead]:
+        runnable_scripts = self._runnable_scripts(roles)
+        return [ScriptRead.model_validate(script) for script in runnable_scripts]
+
+    def retrieve_scheduled_script_catalog(
+        self, roles: dict[str, list[str]]
+    ) -> list[ScriptRead]:
+        runnable_scripts = [
+            script
+            for script in self._runnable_scripts(roles)
+            if script.schedule_enabled and script.schedule_type != "manual"
+        ]
         return [ScriptRead.model_validate(script) for script in runnable_scripts]
 
     def store_script(self, payload: ScriptCreate) -> ScriptRead:
@@ -160,6 +210,17 @@ class PostgresJobDatabase:
                 script.description = payload.description
                 script.repo_path = payload.repo_path
                 script.execution_type = payload.execution_type
+                script.runtime = payload.runtime
+                script.resource_profile = payload.resource_profile
+                script.command_args = payload.command_args
+                script.timeout_minutes = payload.timeout_minutes
+                script.schedule_enabled = payload.schedule_enabled
+                script.schedule_type = payload.schedule_type
+                script.schedule_minute = payload.schedule_minute
+                script.schedule_cron = payload.schedule_cron
+                script.schedule_timezone = payload.schedule_timezone
+                script.env_vars = payload.env_vars
+                script.secret_env_names = payload.secret_env_names
                 script.active = payload.active
                 script.roles = payload.roles
 

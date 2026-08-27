@@ -17,6 +17,7 @@ import requests
 from cwms_batch_events.lambdas.dispatch_job.job_runner.base import JobRunner
 from cwms_batch_events.lambdas.dispatch_job.job_runner.batch import BatchJobRunner
 from cwms_batch_events.core.models import BindExternalJobIdRequest, JobMessage
+from cwms_batch_events.core.settings import settings
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -77,6 +78,7 @@ def get_internal_token() -> str:
 
 def lambda_handler(event, context):
     internal_token = get_internal_token()
+    settings.app_key = internal_token
 
     headers = {
         "Content-Type": "application/json",

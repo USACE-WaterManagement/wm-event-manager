@@ -4,25 +4,41 @@ import { JobDetails } from "./useJobDetails";
 
 const jobFields: (keyof JobDetails)[] = [
   "scriptName",
+  "scriptSlug",
   "username",
   "jobStatus",
   "office",
+  "repoPath",
+  "runtime",
+  "resourceProfile",
+  "commandArgs",
+  "timeoutMinutes",
   "createdTime",
   "runTime",
   "endTime",
+  "externalJobId",
   "id",
 ];
 
 const wideFields: (keyof JobDetails)[] = [
+  "repoPath",
+  "commandArgs",
   "createdTime",
   "runTime",
   "endTime",
+  "externalJobId",
   "id",
 ];
 
 interface JobDetailProps {
   job: JobDetails;
 }
+
+const renderFieldValue = (value: JobDetails[keyof JobDetails]) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return value;
+};
 
 function JobDetail({ job }: JobDetailProps) {
   return (
@@ -44,7 +60,7 @@ function JobDetail({ job }: JobDetailProps) {
                   job.jobStatus
                 )
               ) : (
-                job[field]
+                renderFieldValue(job[field])
               )}
             </JobDetailField>
           );

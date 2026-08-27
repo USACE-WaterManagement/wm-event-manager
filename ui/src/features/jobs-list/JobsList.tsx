@@ -5,12 +5,17 @@ import { Link } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import JobDetail from "./JobDetail";
+import useUserOffices from "./useUserOffices";
+import { Dropdown } from "@usace/groundwork";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
 const JobsList = () => {
   const auth = useAuth();
-  const { data: jobs, isLoading, isError } = useJobsList();
+  const [office, setOffice] = useState("");
+  const userOffices = useUserOffices();
+  const { data: jobs, isLoading, isError } = useJobsList(office || undefined);
 
   if (!auth.isAuth) return <span>Login required to view job details.</span>;
 
@@ -18,19 +23,47 @@ const JobsList = () => {
 
   if (isLoading) return <span>Loading jobs list...</span>;
 
+  const officeFilter =
+    userOffices.data && userOffices.data.length > 0 ? (
+      <div className="mb-4 flex justify-end">
+        <Dropdown
+          className="w-48"
+          label="Office"
+          value={office}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            setOffice(e.target.value)
+          }
+          options={[
+            <option key="" value="">
+              All accessible jobs
+            </option>,
+            ...userOffices.data.sort().map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            )),
+          ]}
+        />
+      </div>
+    ) : null;
+
   if (!jobs || jobs.length <= 0)
     return (
-      <span>
-        No jobs found! You can submit a job{" "}
-        <span className="underline">
-          <Link to="/submit">here</Link>
+      <div className="mx-auto xl:w-1/2">
+        {officeFilter}
+        <span>
+          No jobs found! You can submit a job{" "}
+          <span className="underline">
+            <Link to="/submit">here</Link>
+          </span>
+          .
         </span>
-        .
-      </span>
+      </div>
     );
 
   return (
     <div className="mx-auto xl:w-1/2">
+      {officeFilter}
       {jobs.map((job) => {
         const dateAgo = dayjs(job.createdTime).fromNow();
         return (

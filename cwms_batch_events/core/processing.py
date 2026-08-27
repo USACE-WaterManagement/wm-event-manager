@@ -11,13 +11,20 @@ STATUS_PRIORITY = {
 }
 
 
+class MissingBatchJobError(Exception):
+    pass
+
+
 def update_batch_job_status(
     batch_job_id: str, status: JobStatus, time_iso: datetime, db: JobDatabase
 ):
+    if status not in STATUS_PRIORITY:
+        raise ValueError(f"Unsupported job status: {status}")
+
     job = db.get_job_by_external_id(batch_job_id)
 
     if not job:
-        raise ValueError(f"No job found with batch_job_id={batch_job_id}")
+        raise MissingBatchJobError(f"No job found with batch_job_id={batch_job_id}")
 
     # Idempotency guard
     if STATUS_PRIORITY[status] <= STATUS_PRIORITY[job.job_status]:

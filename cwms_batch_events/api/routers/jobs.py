@@ -27,11 +27,29 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 @router.get("")
 def get_jobs_for_user(
+    office: str | None = None,
     user: User = Depends(get_current_user),
     job_db: JobDatabase = Depends(get_job_database),
 ) -> list[JobRecord]:
-    job_list = job_db.get_jobs_for_user(user.username)
+    if office:
+        office = office.upper()
+        if office not in user.offices:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User does not have job list access for office '{office}'",
+            )
+        return job_db.get_jobs_for_office(office)
+
+    job_list = job_db.get_jobs_for_user(user.username, user.offices)
     return job_list
+
+
+def _authorize_job_access(job: JobRecord, user: User):
+    if job.username == user.username:
+        return
+    if job.office in user.offices:
+        return
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
 
 @router.post("")
@@ -53,7 +71,15 @@ def post_job(
         )
 
     options = ScriptRunOptions(
-        office=job.office.lower(), repo_path=job.repo_path, script_slug=job.script_slug
+        office=job.office.lower(),
+        repo_path=job.repo_path,
+        script_slug=job.script_slug,
+        execution_type=job.execution_type or "github_file",
+        runtime=job.runtime,
+        resource_profile=job.resource_profile,
+        command_args=job.command_args,
+        timeout_minutes=job.timeout_minutes,
+        env_vars=job.env_vars,
     )
     message = queue.create_job_message(job.id, user.username, JobSource.API, options)
     background_tasks.add_task(queue.send_job_message, message)
@@ -72,12 +98,28 @@ def get_job_by_id(
         raise HTTPException(
             status_code=404, detail=f"No job found for jobId '{job_id}'"
         )
+    _authorize_job_access(job, user)
     return job
 
 
 @router.get("/{job_id}/logs")
 def get_logs_for_job(
-    job_id: UUID, job_logger: JobLogger = Depends(get_job_logger)
+    job_id: UUID,
+    user: User = Depends(get_current_user),
+    job_db: JobDatabase = Depends(get_job_database),
+    job_logger: JobLogger = Depends(get_job_logger),
 ) -> JobLogs:
-    logs = job_logger.get_logs_for_job(job_id)
+    job = job_db.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=404, detail=f"No job found for jobId '{job_id}'"
+        )
+    _authorize_job_access(job, user)
+    try:
+        logs = job_logger.get_logs_for_job(job_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Logs are not available for job '{job_id}': {exc}",
+        ) from exc
     return JobLogs(logs=logs)

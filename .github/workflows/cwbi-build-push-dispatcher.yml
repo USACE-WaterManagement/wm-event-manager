@@ -6,6 +6,7 @@ on:
     branches: [cwbi-dev, cwbi-test, cwbi-prod]
     paths:
       - "cwms_batch_events/lambdas/dispatch_job/**"
+      - "cwms_batch_events/core/**"
   # Allow the workflow to be triggered manually from the GitHub UI
   workflow_dispatch:
 

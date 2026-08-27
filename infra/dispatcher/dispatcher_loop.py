@@ -16,7 +16,7 @@ logger.info("Starting the local job dispatcher (lambda mock)...")
 
 sqs = boto3.client(
     "sqs",
-    endpoint_url="http://elasticmq:9324",
+    endpoint_url=os.environ.get("SQS_ENDPOINT_URL", "http://elasticmq:9324"),
     region_name="us-gov-west-1",
     aws_access_key_id="x",
     aws_secret_access_key="x",
