@@ -4,7 +4,6 @@ import {
   Card, H1, H2, H3, Table, TableBody, TableCell, TableHead, TableHeader,
   TableRow, Tabs, Text,
 } from "@usace/groundwork";
-import LoadingSpinner from "../../shared/components/LoadingSpinner";
 import { type ApplicationInfo, useApplicationInfo, useSchemaInfo } from "./useAboutInfo";
 
 const uiVersion = import.meta.env.VITE_UI_VERSION || "local";
@@ -33,11 +32,16 @@ const ExternalLink = ({ href, children }: { href: string; children: ReactNode })
     href={href} target="_blank" rel="noreferrer">{children}</a>
 );
 
-const VersionCard = ({ label, version, detail }: { label: string; version: string; detail: string }) => (
+const VersionCard = ({ label, version, detail, error = false }: {
+  label: string;
+  version: string;
+  detail: string;
+  error?: boolean;
+}) => (
   <Card className="p-5">
     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
     <p className="mt-2 font-mono text-2xl font-semibold text-slate-900">{version}</p>
-    <p className="mt-2 text-sm text-slate-500">{detail}</p>
+    <p className={`mt-2 text-sm ${error ? "text-red-700" : "text-slate-500"}`}>{detail}</p>
   </Card>
 );
 
@@ -57,45 +61,53 @@ const OfficeTable = ({ offices, emptyMessage }: { offices: string[]; emptyMessag
 const VersionPane = () => {
   const application = useApplicationInfo();
   const schema = useSchemaInfo();
-  if (application.isLoading) return <LoadingSpinner />;
-  if (application.isError || !application.data) {
-    return <Card role="alert" className="border-red-200 bg-red-50 p-5 text-red-800">
-      Version information could not be loaded: {application.error?.message}
-    </Card>;
-  }
   const app = application.data;
-  const accessTabs = [
+  const applicationStatus = application.isLoading ? "Reading API version…" : application.error?.message ?? "Unavailable";
+  const schemaStatus = schema.isLoading ? "Reading applied migration…" : schema.error?.message ?? "Unavailable";
+  const accessTabs = app ? [
     { name: "Available offices", content: <OfficeTable offices={app.user.offices} emptyMessage="No offices available" /> },
     { name: "Script administration", content: <OfficeTable offices={app.user.adminOffices} emptyMessage="No offices available" /> },
-  ];
+  ] : [];
 
   return <section aria-labelledby="version-heading" className="space-y-5 py-6">
-    <div><H2 id="version-heading">Version and environment</H2><Text>Signed in as {app.user.username}.</Text></div>
+    <div><H2 id="version-heading">Version and environment</H2>
+      <Text>{app ? `Signed in as ${app.user.username}.` : "Live details for this deployment."}</Text>
+    </div>
     <div aria-label="Application versions" className="grid gap-4 md:grid-cols-3">
-      <VersionCard label="API version" version={app.apiVersion} detail={formatDate(app.buildTime)} />
+      <VersionCard label="API version"
+        version={app?.apiVersion ?? (application.isLoading ? "Loading…" : "Unavailable")}
+        detail={app ? formatDate(app.buildTime) : applicationStatus}
+        error={application.isError} />
       <VersionCard label="UI version" version={uiVersion} detail={formatDate(uiBuildTime)} />
       <VersionCard label="Schema version"
         version={schema.data?.version ?? (schema.isLoading ? "Loading…" : "Unavailable")}
-        detail={schema.data ? `Latest migration: ${schema.data.description}` : schema.error?.message ?? "Reading applied migration"} />
+        detail={schema.data ? `Latest migration: ${schema.data.description}` : schemaStatus}
+        error={schema.isError} />
     </div>
+    {application.isError && <Card role="alert" className="border-red-200 bg-red-50 p-5 text-red-800">
+      Application details could not be loaded: {applicationStatus}
+    </Card>}
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="p-6"><H3>Deployment</H3><dl className="mt-3">
+      <Card className="p-6"><H3>Deployment</H3>
+        {app ? <dl className="mt-3">
         <Detail label="Environment" value={app.environment} />
         <Detail label="API revision" value={app.buildRevision} />
         <Detail label="API base path" value={app.rootPath} />
         <Detail label="Authentication" value={app.authenticationEnvironment} />
         <Detail label="Job execution" value={app.jobRunner} />
-      </dl></Card>
+        </dl> : <Text className="mt-3">{applicationStatus}</Text>}
+      </Card>
       <Card className="p-6"><H3>Database schema</H3>
         {schema.data ? <dl className="mt-3">
           <Detail label="Schema" value={schema.data.name} />
           <Detail label="Applied version" value={schema.data.version} />
           <Detail label="Latest migration" value={schema.data.description} />
           <Detail label="Installed" value={formatDate(schema.data.installedOn)} />
-        </dl> : <Text className="mt-3">{schema.isLoading ? "Reading the applied schema version…" : schema.error?.message}</Text>}
+        </dl> : <Text className="mt-3">{schemaStatus}</Text>}
       </Card>
       <Card className="p-6 lg:col-span-2"><H3>Your access</H3>
-        <div className="mt-4"><Tabs tabs={accessTabs} fill /></div>
+        {app ? <div className="mt-4"><Tabs tabs={accessTabs} fill /></div>
+          : <Text className="mt-3">{applicationStatus}</Text>}
       </Card>
     </div>
   </section>;
