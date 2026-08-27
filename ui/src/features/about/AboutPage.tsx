@@ -76,7 +76,7 @@ const VersionPane = () => {
       <VersionCard label="UI version" version={uiVersion} detail={formatDate(uiBuildTime)} />
       <VersionCard label="Schema version"
         version={schema.data?.version ?? (schema.isLoading ? "Loading…" : "Unavailable")}
-        detail={schema.data?.description ?? schema.error?.message ?? "Reading applied migration"} />
+        detail={schema.data ? `Latest migration: ${schema.data.description}` : schema.error?.message ?? "Reading applied migration"} />
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="p-6"><H3>Deployment</H3><dl className="mt-3">
