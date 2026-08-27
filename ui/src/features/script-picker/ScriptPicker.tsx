@@ -5,6 +5,7 @@ import ScriptExecutor from "./ScriptExecutor";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
 import { useRememberedOffice } from "../../shared/hooks/useRememberedOffice";
+import LoginPrompt from "../auth/LoginPrompt";
 
 const ScriptPicker = () => {
   const [scriptId, setScriptId] = useState<string | undefined>();
@@ -14,7 +15,14 @@ const ScriptPicker = () => {
   const offices = Array.from(new Set(data?.map((s) => s.office) ?? []));
   const [office, setOffice] = useRememberedOffice(offices);
 
-  if (!auth.isAuth) return <span>You must log in to execute a script.</span>;
+  if (!auth.isAuth) {
+    return (
+      <LoginPrompt
+        title="Sign in to submit a job"
+        description="Choose an approved office script and provide the inputs it needs to run."
+      />
+    );
+  }
   if (isLoading) return <span>Loading...</span>;
   if (isError || !data) return <span>Error occurred!</span>;
 

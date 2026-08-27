@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import JobDetail from "./JobDetail";
+import LoginPrompt from "../auth/LoginPrompt";
 
 dayjs.extend(relativeTime);
 
@@ -12,7 +13,14 @@ const JobsList = () => {
   const auth = useAuth();
   const { data: jobs, isLoading, isError } = useJobsList();
 
-  if (!auth.isAuth) return <span>Login required to view job details.</span>;
+  if (!auth.isAuth) {
+    return (
+      <LoginPrompt
+        title="Sign in to view jobs"
+        description="Review the jobs you submitted, including their current status and output."
+      />
+    );
+  }
 
   if (isError) return <span>Error occurred while fetching jobs list.</span>;
 

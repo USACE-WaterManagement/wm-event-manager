@@ -3,13 +3,21 @@ import useAdminOffices from "./useAdminOffices";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
 import { ScriptsWorkspace } from "./ScriptsWorkspace";
 import { useRememberedOffice } from "../../shared/hooks/useRememberedOffice";
+import LoginPrompt from "../auth/LoginPrompt";
 
 export const ScriptsManager = () => {
   const auth = useAuth();
   const { data, isLoading, isError } = useAdminOffices();
   const [office, setOffice] = useRememberedOffice(data ?? []);
 
-  if (!auth.isAuth) return <span>Login required to manage scripts.</span>;
+  if (!auth.isAuth) {
+    return (
+      <LoginPrompt
+        title="Sign in to manage scripts"
+        description="Script administrators can define and maintain jobs for their offices."
+      />
+    );
+  }
 
   if (isLoading) return <span>Admin office list is loading...</span>;
   if (isError) return <span>Error fetching admin office list for user</span>;
