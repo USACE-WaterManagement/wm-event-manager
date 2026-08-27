@@ -10,6 +10,7 @@ db_url = URL.create(
     password=settings.pgpassword,
     database=settings.pgdatabase,
     host=settings.pghost,
+    port=settings.pgport,
 )
 
 engine = create_engine(db_url)

@@ -8,6 +8,8 @@ on:
     paths:
       - "cwms_batch_events/api/**"
       - "cwms_batch_events/core/**"
+      - "Dockerfile"
+      - ".github/workflows/cwbi-build-push-api.yml"
   schedule:
     - cron: "0 6 * * 1"
   # Allow the workflow to be triggered manually from the GitHub UI
@@ -75,6 +77,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build $BUILD_FLAGS \
+          --build-arg API_VERSION="$(git rev-parse --short=12 HEAD)" \
+          --build-arg BUILD_REVISION="$(git rev-parse HEAD)" \
+          --build-arg BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+          --build-arg DEPLOYMENT_ENVIRONMENT="$IMAGE_TAG" \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
           $PATH_TO_DOCKERFILE
@@ -124,6 +130,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build --pull --push \
+          --build-arg API_VERSION="$(git rev-parse --short=12 HEAD)" \
+          --build-arg BUILD_REVISION="$(git rev-parse HEAD)" \
+          --build-arg BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+          --build-arg DEPLOYMENT_ENVIRONMENT="${{ matrix.env.tag }}" \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
           --tag $ECR_REGISTRY/$ECR_REPOSITORY:${{ matrix.env.tag }} \
           $PATH_TO_DOCKERFILE
