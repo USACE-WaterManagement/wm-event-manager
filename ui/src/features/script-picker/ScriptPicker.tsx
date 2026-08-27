@@ -4,6 +4,7 @@ import { Dropdown } from "@usace/groundwork";
 import ScriptExecutor from "./ScriptExecutor";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
+import LoginPrompt from "../auth/LoginPrompt";
 
 const ScriptPicker = () => {
   const [office, setOffice] = useState<string | undefined>();
@@ -12,7 +13,14 @@ const ScriptPicker = () => {
   const auth = useAuth();
   const { data, isLoading, isError } = useScriptsCatalog();
 
-  if (!auth.isAuth) return <span>You must log in to execute a script.</span>;
+  if (!auth.isAuth) {
+    return (
+      <LoginPrompt
+        title="Sign in to submit a job"
+        description="Choose an approved office script and provide the inputs it needs to run."
+      />
+    );
+  }
   if (isLoading) return <span>Loading...</span>;
   if (isError || !data) return <span>Error occurred!</span>;
 

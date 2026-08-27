@@ -74,6 +74,8 @@ jobs:
       - name: Build React App with Vite
         run: |
           cd ui
+          VITE_UI_VERSION="$(git rev-parse --short=12 HEAD)" \
+          VITE_UI_BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
           npx vite build --mode $BUILD_MODE
 
       - name: Configure AWS Credentials
