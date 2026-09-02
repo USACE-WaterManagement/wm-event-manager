@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     pgport: int = 5432
     mock_user: bool = False
     root_path: str = ""
-    database_schema: str = "wm_events_schema"
+    # CWBI deployments use "events"; local Docker overrides this setting.
+    database_schema: str = "events"
     s3_bucket: str = ""
     s3_endpoint_url: str | None = None
     sqs_endpoint_url: str | None = None
