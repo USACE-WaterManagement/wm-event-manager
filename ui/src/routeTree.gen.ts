@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ScriptsManagerRouteImport } from './routes/scripts-manager'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,6 +23,11 @@ import { Route as AboutControlsRouteImport } from './routes/about_.controls'
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScriptsManagerRoute = ScriptsManagerRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/scripts-manager': typeof ScriptsManagerRoute
+  '/setup': typeof SetupRoute
   '/submit': typeof SubmitRoute
   '/about/controls': typeof AboutControlsRoute
   '/about/onboarding': typeof AboutOnboardingRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/scripts-manager': typeof ScriptsManagerRoute
+  '/setup': typeof SetupRoute
   '/submit': typeof SubmitRoute
   '/about/controls': typeof AboutControlsRoute
   '/about/onboarding': typeof AboutOnboardingRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/scripts-manager': typeof ScriptsManagerRoute
+  '/setup': typeof SetupRoute
   '/submit': typeof SubmitRoute
   '/about_/controls': typeof AboutControlsRoute
   '/about_/onboarding': typeof AboutOnboardingRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/scripts-manager'
+    | '/setup'
     | '/submit'
     | '/about/controls'
     | '/about/onboarding'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/scripts-manager'
+    | '/setup'
     | '/submit'
     | '/about/controls'
     | '/about/onboarding'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/scripts-manager'
+    | '/setup'
     | '/submit'
     | '/about_/controls'
     | '/about_/onboarding'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ScriptsManagerRoute: typeof ScriptsManagerRoute
+  SetupRoute: typeof SetupRoute
   SubmitRoute: typeof SubmitRoute
   AboutControlsRoute: typeof AboutControlsRoute
   AboutOnboardingRoute: typeof AboutOnboardingRoute
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/submit'
       fullPath: '/submit'
       preLoaderRoute: typeof SubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scripts-manager': {
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ScriptsManagerRoute: ScriptsManagerRoute,
+  SetupRoute: SetupRoute,
   SubmitRoute: SubmitRoute,
   AboutControlsRoute: AboutControlsRoute,
   AboutOnboardingRoute: AboutOnboardingRoute,

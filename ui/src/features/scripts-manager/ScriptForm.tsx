@@ -15,6 +15,7 @@ import { MdErrorOutline } from "react-icons/md";
 import { useState } from "react";
 import { RoleMultiSelect } from "./RoleMultiSelect";
 import { allRoles } from "./utils";
+import { HelpTip } from "../../shared/components/HelpTip";
 
 const slugify = (str: string) => {
   return str
@@ -112,7 +113,14 @@ export const ScriptForm = ({
             />
           </FormRow>
           <FormRow>
-            <InputLabel htmlFor="repoPath">GitHub Repo Path</InputLabel>
+            <div className="flex items-start gap-1">
+              <InputLabel htmlFor="repoPath">GitHub Repo Path</InputLabel>
+              <HelpTip title="Repository path" className="mt-2">
+                Enter the path to the runnable file inside the configured GitHub
+                repository, such as <code>bin/hourly.sh</code>. Do not enter a
+                repository URL.
+              </HelpTip>
+            </div>
             <Input
               id="repoPath"
               name="repoPath"
@@ -127,7 +135,14 @@ export const ScriptForm = ({
             {script?.executionType ?? "python"}
           </ViewField>
           <FormRow>
-            <Label htmlFor="roles">Roles</Label>
+            <div className="flex items-center gap-1 self-start">
+              <Label htmlFor="roles">Roles</Label>
+              <HelpTip title="Allowed roles">
+                A user needs at least one selected role in this script&apos;s
+                office to view or run it. Select CWMS Users when every
+                authorized office user should have access.
+              </HelpTip>
+            </div>
             <RoleMultiSelect
               allRoles={allRoles}
               initialSelectedRoles={form.roles}
@@ -135,7 +150,14 @@ export const ScriptForm = ({
             />
           </FormRow>
           <FormRow>
-            <Label htmlFor="active">Active</Label>
+            <div className="flex items-center gap-1 self-start">
+              <Label htmlFor="active">Active</Label>
+              <HelpTip title="Active scripts">
+                Active scripts can appear in authorized script lists and be
+                submitted. Clear this while a script should remain configured
+                but unavailable to users.
+              </HelpTip>
+            </div>
             <Checkboxes
               content={[
                 {

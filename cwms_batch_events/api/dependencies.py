@@ -10,6 +10,7 @@ from cwms_batch_events.core.job_database.postgres.session import create_session
 from cwms_batch_events.core.job_logger.base import JobLogger
 from cwms_batch_events.core.job_logger.cloudwatch import CloudWatchJobLogger
 from cwms_batch_events.core.job_logger.s3 import S3JobLogger
+from cwms_batch_events.core.notification_queue import NotificationQueue
 from cwms_batch_events.core.queue import JobQueue
 from cwms_batch_events.core.settings import settings
 
@@ -40,3 +41,7 @@ def get_job_logger(db=Depends(get_job_database)) -> JobLogger:
 
 def get_job_queue() -> JobQueue:
     return JobQueue()
+
+
+def get_notification_queue() -> NotificationQueue:
+    return NotificationQueue()

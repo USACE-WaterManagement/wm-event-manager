@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/jobs/": {
+    "/jobs": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,10 +12,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Jobs For User */
-        get: operations["get_jobs_for_user_jobs__get"];
+        get: operations["get_jobs_for_user_jobs_get"];
         put?: never;
         /** Post Job */
-        post: operations["post_job_jobs__post"];
+        post: operations["post_job_jobs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -56,6 +56,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Templates */
+        get: operations["get_templates_notifications_templates_get"];
+        put?: never;
+        /** Post Template */
+        post: operations["post_template_notifications_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/cda-user-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Available Cda User Lists */
+        get: operations["get_available_cda_user_lists_notifications_cda_user_lists_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Template */
+        put: operations["put_template_notifications_templates__template_id__put"];
+        post?: never;
+        /** Delete Template */
+        delete: operations["delete_template_notifications_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/templates/{template_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Template */
+        post: operations["preview_template_notifications_templates__template_id__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rules */
+        get: operations["get_rules_notifications_rules_get"];
+        put?: never;
+        /** Post Rule */
+        post: operations["post_rule_notifications_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Rule */
+        put: operations["put_rule_notifications_rules__rule_id__put"];
+        post?: never;
+        /** Delete Rule */
+        delete: operations["delete_rule_notifications_rules__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scripts/{script_id}": {
         parameters: {
             query?: never;
@@ -74,7 +180,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scripts/": {
+    "/scripts": {
         parameters: {
             query?: never;
             header?: never;
@@ -82,10 +188,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Scripts For Office Endpoint */
-        get: operations["get_scripts_for_office_endpoint_scripts__get"];
+        get: operations["get_scripts_for_office_endpoint_scripts_get"];
         put?: never;
         /** Post Script */
-        post: operations["post_script_scripts__post"];
+        post: operations["post_script_scripts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -130,6 +236,15 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CdaUserListRead */
+        CdaUserListRead: {
+            /** Office-Id */
+            "office-id": string;
+            /** User-List-Id */
+            "user-list-id": string;
+            /** Description */
+            description?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -184,6 +299,90 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "Failed" | "Pending" | "Running" | "Completed";
+        /**
+         * NotificationEventType
+         * @enum {string}
+         */
+        NotificationEventType: "job_failed";
+        /** NotificationPreviewRequest */
+        NotificationPreviewRequest: {
+            /** Jobid */
+            jobId?: string | null;
+            /** Data */
+            data?: {
+                [key: string]: string | null;
+            };
+            /** Subjecttemplate */
+            subjectTemplate?: string | null;
+            /** Bodytemplate */
+            bodyTemplate?: string | null;
+        };
+        /** NotificationTemplateCreate */
+        NotificationTemplateCreate: {
+            /** Office */
+            office: string;
+            /** Slug */
+            slug: string;
+            /** Subjecttemplate */
+            subjectTemplate: string;
+            /** Bodytemplate */
+            bodyTemplate: string;
+        };
+        /** NotificationTemplateRead */
+        NotificationTemplateRead: {
+            /** Office */
+            office: string;
+            /** Slug */
+            slug: string;
+            /** Subjecttemplate */
+            subjectTemplate: string;
+            /** Bodytemplate */
+            bodyTemplate: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Usagecount
+             * @default 0
+             */
+            usageCount: number;
+            /**
+             * Createdtime
+             * Format: date-time
+             */
+            createdTime: string;
+            /**
+             * Updatedtime
+             * Format: date-time
+             */
+            updatedTime: string;
+        };
+        /** NotificationTemplateUpdate */
+        NotificationTemplateUpdate: {
+            /** Office */
+            office: string;
+            /** Slug */
+            slug: string;
+            /** Subjecttemplate */
+            subjectTemplate: string;
+            /** Bodytemplate */
+            bodyTemplate: string;
+        };
+        /** RenderedNotification */
+        RenderedNotification: {
+            /** Recipients */
+            recipients: string[];
+            /** Subject */
+            subject: string;
+            /** Body */
+            body: string;
+            /** Data */
+            data: {
+                [key: string]: string | null;
+            };
+        };
         /** ScriptCreate */
         ScriptCreate: {
             /** Name */
@@ -211,6 +410,99 @@ export interface components {
             jobRunners: string[];
             /** Office */
             office: string;
+        };
+        /** ScriptNotificationRuleCreate */
+        ScriptNotificationRuleCreate: {
+            /**
+             * Scriptid
+             * Format: uuid
+             */
+            scriptId: string;
+            /** @default job_failed */
+            eventType: components["schemas"]["NotificationEventType"];
+            /**
+             * Templateid
+             * Format: uuid
+             */
+            templateId: string;
+            /** Cdauserlistid */
+            cdaUserListId?: string | null;
+            /** Cdauserlistoffice */
+            cdaUserListOffice?: string | null;
+            /** Manualrecipients */
+            manualRecipients?: string[];
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /** ScriptNotificationRuleRead */
+        ScriptNotificationRuleRead: {
+            /**
+             * Scriptid
+             * Format: uuid
+             */
+            scriptId: string;
+            /** @default job_failed */
+            eventType: components["schemas"]["NotificationEventType"];
+            /**
+             * Templateid
+             * Format: uuid
+             */
+            templateId: string;
+            /** Cdauserlistid */
+            cdaUserListId?: string | null;
+            /** Cdauserlistoffice */
+            cdaUserListOffice?: string | null;
+            /** Manualrecipients */
+            manualRecipients?: string[];
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Createdtime
+             * Format: date-time
+             */
+            createdTime: string;
+            /**
+             * Updatedtime
+             * Format: date-time
+             */
+            updatedTime: string;
+        };
+        /** ScriptNotificationRuleUpdate */
+        ScriptNotificationRuleUpdate: {
+            /**
+             * Scriptid
+             * Format: uuid
+             */
+            scriptId: string;
+            /** @default job_failed */
+            eventType: components["schemas"]["NotificationEventType"];
+            /**
+             * Templateid
+             * Format: uuid
+             */
+            templateId: string;
+            /** Cdauserlistid */
+            cdaUserListId?: string | null;
+            /** Cdauserlistoffice */
+            cdaUserListOffice?: string | null;
+            /** Manualrecipients */
+            manualRecipients?: string[];
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
         };
         /** ScriptRead */
         ScriptRead: {
@@ -299,6 +591,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -309,7 +605,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_jobs_for_user_jobs__get: {
+    get_jobs_for_user_jobs_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -329,7 +625,7 @@ export interface operations {
             };
         };
     };
-    post_job_jobs__post: {
+    post_job_jobs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -424,6 +720,328 @@ export interface operations {
             };
         };
     };
+    get_templates_notifications_templates_get: {
+        parameters: {
+            query: {
+                office: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationTemplateRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_template_notifications_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationTemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationTemplateRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_available_cda_user_lists_notifications_cda_user_lists_get: {
+        parameters: {
+            query: {
+                office: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CdaUserListRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_template_notifications_templates__template_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationTemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationTemplateRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_notifications_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_template_notifications_templates__template_id__preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RenderedNotification"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rules_notifications_rules_get: {
+        parameters: {
+            query: {
+                script_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptNotificationRuleRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_rule_notifications_rules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptNotificationRuleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptNotificationRuleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_rule_notifications_rules__rule_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScriptNotificationRuleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptNotificationRuleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_rule_notifications_rules__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     put_script_scripts__script_id__put: {
         parameters: {
             query?: never;
@@ -488,7 +1106,7 @@ export interface operations {
             };
         };
     };
-    get_scripts_for_office_endpoint_scripts__get: {
+    get_scripts_for_office_endpoint_scripts_get: {
         parameters: {
             query: {
                 office: string;
@@ -519,7 +1137,7 @@ export interface operations {
             };
         };
     };
-    post_script_scripts__post: {
+    post_script_scripts_post: {
         parameters: {
             query?: never;
             header?: never;
