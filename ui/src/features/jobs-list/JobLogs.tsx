@@ -9,7 +9,7 @@ interface JobLogsProps {
 const JobLogs = ({ jobId, disabled = false }: JobLogsProps) => {
   const { data, isLoading, isError } = useJobLogs(jobId, !disabled);
 
-  let message = "";
+  let message: string;
   if (disabled) message = "Logs unavailable until job is finished";
   else if (isLoading) message = "Loading logs...";
   else if (isError) message = "Error loading logs!";
