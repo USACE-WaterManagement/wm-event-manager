@@ -11,9 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as ScriptsManagerRouteImport } from './routes/scripts-manager'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsIndexRouteImport } from './routes/jobs/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs/$jobId'
+import { Route as AboutVersionRouteImport } from './routes/about_.version'
+import { Route as AboutOnboardingRouteImport } from './routes/about_.onboarding'
+import { Route as AboutControlsRouteImport } from './routes/about_.controls'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -23,6 +27,11 @@ const SubmitRoute = SubmitRouteImport.update({
 const ScriptsManagerRoute = ScriptsManagerRouteImport.update({
   id: '/scripts-manager',
   path: '/scripts-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -40,47 +49,100 @@ const JobsJobIdRoute = JobsJobIdRouteImport.update({
   path: '/jobs/$jobId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutVersionRoute = AboutVersionRouteImport.update({
+  id: '/about_/version',
+  path: '/about/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutOnboardingRoute = AboutOnboardingRouteImport.update({
+  id: '/about_/onboarding',
+  path: '/about/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutControlsRoute = AboutControlsRouteImport.update({
+  id: '/about_/controls',
+  path: '/about/controls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/scripts-manager': typeof ScriptsManagerRoute
   '/submit': typeof SubmitRoute
+  '/about/controls': typeof AboutControlsRoute
+  '/about/onboarding': typeof AboutOnboardingRoute
+  '/about/version': typeof AboutVersionRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/jobs/': typeof JobsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/scripts-manager': typeof ScriptsManagerRoute
   '/submit': typeof SubmitRoute
+  '/about/controls': typeof AboutControlsRoute
+  '/about/onboarding': typeof AboutOnboardingRoute
+  '/about/version': typeof AboutVersionRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/jobs': typeof JobsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/scripts-manager': typeof ScriptsManagerRoute
   '/submit': typeof SubmitRoute
+  '/about_/controls': typeof AboutControlsRoute
+  '/about_/onboarding': typeof AboutOnboardingRoute
+  '/about_/version': typeof AboutVersionRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/jobs/': typeof JobsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/scripts-manager' | '/submit' | '/jobs/$jobId' | '/jobs/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/scripts-manager'
+    | '/submit'
+    | '/about/controls'
+    | '/about/onboarding'
+    | '/about/version'
+    | '/jobs/$jobId'
+    | '/jobs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/scripts-manager' | '/submit' | '/jobs/$jobId' | '/jobs'
+  to:
+    | '/'
+    | '/about'
+    | '/scripts-manager'
+    | '/submit'
+    | '/about/controls'
+    | '/about/onboarding'
+    | '/about/version'
+    | '/jobs/$jobId'
+    | '/jobs'
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/scripts-manager'
     | '/submit'
+    | '/about_/controls'
+    | '/about_/onboarding'
+    | '/about_/version'
     | '/jobs/$jobId'
     | '/jobs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   ScriptsManagerRoute: typeof ScriptsManagerRoute
   SubmitRoute: typeof SubmitRoute
+  AboutControlsRoute: typeof AboutControlsRoute
+  AboutOnboardingRoute: typeof AboutOnboardingRoute
+  AboutVersionRoute: typeof AboutVersionRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
   JobsIndexRoute: typeof JobsIndexRoute
 }
@@ -99,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/scripts-manager'
       fullPath: '/scripts-manager'
       preLoaderRoute: typeof ScriptsManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -122,13 +191,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsJobIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about_/version': {
+      id: '/about_/version'
+      path: '/about/version'
+      fullPath: '/about/version'
+      preLoaderRoute: typeof AboutVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about_/onboarding': {
+      id: '/about_/onboarding'
+      path: '/about/onboarding'
+      fullPath: '/about/onboarding'
+      preLoaderRoute: typeof AboutOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about_/controls': {
+      id: '/about_/controls'
+      path: '/about/controls'
+      fullPath: '/about/controls'
+      preLoaderRoute: typeof AboutControlsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   ScriptsManagerRoute: ScriptsManagerRoute,
   SubmitRoute: SubmitRoute,
+  AboutControlsRoute: AboutControlsRoute,
+  AboutOnboardingRoute: AboutOnboardingRoute,
+  AboutVersionRoute: AboutVersionRoute,
   JobsJobIdRoute: JobsJobIdRoute,
   JobsIndexRoute: JobsIndexRoute,
 }
