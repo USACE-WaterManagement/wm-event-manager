@@ -3,6 +3,7 @@ import useAdminOffices from "./useAdminOffices";
 import { useState } from "react";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
 import { ScriptsWorkspace } from "./ScriptsWorkspace";
+import LoginPrompt from "../auth/LoginPrompt";
 
 export const ScriptsManager = () => {
   const auth = useAuth();
@@ -10,7 +11,14 @@ export const ScriptsManager = () => {
 
   const [office, setOffice] = useState<string | undefined>();
 
-  if (!auth.isAuth) return <span>Login required to manage scripts.</span>;
+  if (!auth.isAuth) {
+    return (
+      <LoginPrompt
+        title="Sign in to manage scripts"
+        description="Script administrators can define and maintain jobs for their offices."
+      />
+    );
+  }
 
   if (isLoading) return <span>Admin office list is loading...</span>;
   if (isError) return <span>Error fetching admin office list for user</span>;

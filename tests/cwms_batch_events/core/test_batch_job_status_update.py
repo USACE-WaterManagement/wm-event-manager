@@ -7,84 +7,48 @@ from cwms_batch_events.core.models import JobStatus
 from cwms_batch_events.core.processing import update_batch_job_status
 
 
-def test_update_running_status():
+@pytest.mark.parametrize(
+    ("current_status", "new_status"),
+    [
+        (JobStatus.PENDING, JobStatus.RUNNING),
+        (JobStatus.RUNNING, JobStatus.COMPLETED),
+        (JobStatus.RUNNING, JobStatus.FAILED),
+    ],
+)
+def test_update_higher_priority_status(current_status, new_status):
     mock_db = MagicMock()
     job = MagicMock()
     job.id = 123
-    job.job_status = JobStatus.PENDING
+    job.job_status = current_status
     mock_db.get_job_by_external_id.return_value = job
 
     update_batch_job_status(
         batch_job_id="abc",
-        status=JobStatus.RUNNING,
+        status=new_status,
         time_iso=datetime.now(timezone.utc),
         db=mock_db,
     )
 
-    mock_db.update_job_status.assert_any_call(123, JobStatus.RUNNING)
+    mock_db.update_job_status.assert_called_once_with(123, new_status)
 
 
-def test_update_completed_status():
+@pytest.mark.parametrize(
+    ("current_status", "new_status"),
+    [
+        (JobStatus.RUNNING, JobStatus.RUNNING),
+        (JobStatus.COMPLETED, JobStatus.RUNNING),
+    ],
+)
+def test_update_duplicate_or_lower_priority_status(current_status, new_status):
     mock_db = MagicMock()
     job = MagicMock()
     job.id = 123
-    job.job_status = JobStatus.RUNNING
+    job.job_status = current_status
     mock_db.get_job_by_external_id.return_value = job
 
     update_batch_job_status(
         batch_job_id="abc",
-        status=JobStatus.COMPLETED,
-        time_iso=datetime.now(timezone.utc),
-        db=mock_db,
-    )
-
-    mock_db.update_job_status.assert_any_call(123, JobStatus.COMPLETED)
-
-
-def test_update_failed_status():
-    mock_db = MagicMock()
-    job = MagicMock()
-    job.id = 123
-    job.job_status = JobStatus.RUNNING
-    mock_db.get_job_by_external_id.return_value = job
-
-    update_batch_job_status(
-        batch_job_id="abc",
-        status=JobStatus.FAILED,
-        time_iso=datetime.now(timezone.utc),
-        db=mock_db,
-    )
-
-    mock_db.update_job_status.assert_any_call(123, JobStatus.FAILED)
-
-
-def test_update_duplicate_status():
-    mock_db = MagicMock()
-    job = MagicMock()
-    job.id = 123
-    job.job_status = JobStatus.RUNNING
-    mock_db.get_job_by_external_id.return_value = job
-
-    update_batch_job_status(
-        batch_job_id="abc",
-        status=JobStatus.RUNNING,
-        time_iso=datetime.now(timezone.utc),
-        db=mock_db,
-    )
-
-    mock_db.update_job_status.assert_not_called()
-
-
-def test_update_lower_priority_status():
-    mock_db = MagicMock()
-    job = MagicMock()
-    job.id = 123
-    job.job_status = JobStatus.COMPLETED
-    mock_db.get_job_by_external_id.return_value = job
-
-    update_batch_job_status(
-        batch_job_id="abc",
-        status=JobStatus.RUNNING,
+        status=new_status,
         time_iso=datetime.now(timezone.utc),
         db=mock_db,
     )

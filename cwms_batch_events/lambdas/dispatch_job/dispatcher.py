@@ -100,6 +100,7 @@ def lambda_handler(event, context):
             external_job_id = dispatch_job(message)
         except ClientError:
             logger.exception("Failed to submit batch job for message: %s", message)
+            raise
 
         try:
             bind_request = BindExternalJobIdRequest(external_job_id=external_job_id)
