@@ -48,19 +48,23 @@ export const ScriptsList = ({
           .map((script) => (
             <TableRow
               key={script.id}
+              tabIndex={0}
+              aria-selected={script.id === selectedScriptId}
+              onClick={() => selectScript(script.id)}
+              onKeyDown={(event: React.KeyboardEvent<HTMLTableRowElement>) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  selectScript(script.id);
+                }
+              }}
               className={
                 script.id === selectedScriptId
-                  ? "bg-blue-100"
-                  : "hover:bg-gray-100"
+                  ? "cursor-pointer bg-blue-100"
+                  : "cursor-pointer hover:bg-gray-100"
               }
             >
               <TableCell>
-                <button
-                  className="block w-full text-left"
-                  onClick={() => selectScript(script.id)}
-                >
-                  <span className="font-bold">{script.name}</span>
-                </button>
+                <span className="font-bold">{script.name}</span>
               </TableCell>
               <TableCell>{script.executionType}</TableCell>
               <TableCell>{script.repoPath}</TableCell>

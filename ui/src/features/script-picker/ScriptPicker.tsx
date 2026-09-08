@@ -4,14 +4,16 @@ import { Dropdown } from "@usace/groundwork";
 import ScriptExecutor from "./ScriptExecutor";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import { OfficeSelector } from "../../shared/components/OfficeSelector";
+import { useRememberedOffice } from "../../shared/hooks/useRememberedOffice";
 import LoginPrompt from "../auth/LoginPrompt";
 
 const ScriptPicker = () => {
-  const [office, setOffice] = useState<string | undefined>();
   const [scriptId, setScriptId] = useState<string | undefined>();
 
   const auth = useAuth();
   const { data, isLoading, isError } = useScriptsCatalog();
+  const offices = Array.from(new Set(data?.map((script) => script.office) ?? []));
+  const [office, setOffice] = useRememberedOffice(offices);
 
   if (!auth.isAuth) {
     return (
@@ -24,7 +26,6 @@ const ScriptPicker = () => {
   if (isLoading) return <span>Loading...</span>;
   if (isError || !data) return <span>Error occurred!</span>;
 
-  const offices = Array.from(new Set(data.map((s) => s.office)));
   const scriptsForOffice = data.filter((script) => script.office === office);
 
   const officeChange = (office: string) => {
