@@ -79,5 +79,15 @@ def get_job_by_id(
 def get_logs_for_job(
     job_id: UUID, job_logger: JobLogger = Depends(get_job_logger)
 ) -> JobLogs:
-    logs = job_logger.get_logs_for_job(job_id)
+    try:
+        logs = job_logger.get_logs_for_job(job_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Logs are not available for job '{job_id}': {exc}",
+        ) from exc
     return JobLogs(logs=logs)
