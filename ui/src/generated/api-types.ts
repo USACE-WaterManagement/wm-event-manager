@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/scripts/scheduled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Scheduled Scripts */
+        get: operations["get_scheduled_scripts_scripts_scheduled_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/jobs/": {
         parameters: {
             query?: never;
@@ -186,6 +203,25 @@ export interface components {
         JobStatus: "Failed" | "Pending" | "Running" | "Completed";
         /** ScriptCreate */
         ScriptCreate: {
+            /**
+             * Scheduleenabled
+             * @default false
+             */
+            scheduleEnabled: boolean;
+            /**
+             * Scheduletype
+             * @default manual
+             */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Name */
             name: string;
             /** Description */
@@ -214,6 +250,25 @@ export interface components {
         };
         /** ScriptRead */
         ScriptRead: {
+            /**
+             * Scheduleenabled
+             * @default false
+             */
+            scheduleEnabled: boolean;
+            /**
+             * Scheduletype
+             * @default manual
+             */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Name */
             name: string;
             /** Description */
@@ -267,6 +322,25 @@ export interface components {
         };
         /** ScriptUpdate */
         ScriptUpdate: {
+            /**
+             * Scheduleenabled
+             * @default false
+             */
+            scheduleEnabled: boolean;
+            /**
+             * Scheduletype
+             * @default manual
+             */
+            scheduleType: string;
+            /** Scheduleminute */
+            scheduleMinute?: number | null;
+            /** Schedulecron */
+            scheduleCron?: string | null;
+            /**
+             * Scheduletimezone
+             * @default UTC
+             */
+            scheduleTimezone: string;
             /** Name */
             name: string;
             /** Description */
@@ -309,6 +383,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_scheduled_scripts_scripts_scheduled_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScriptRead"][];
+                };
+            };
+        };
+    };
     get_jobs_for_user_jobs__get: {
         parameters: {
             query?: never;

@@ -160,6 +160,11 @@ class PostgresJobDatabase:
                 script.description = payload.description
                 script.repo_path = payload.repo_path
                 script.execution_type = payload.execution_type
+                script.schedule_enabled = payload.schedule_enabled
+                script.schedule_type = payload.schedule_type
+                script.schedule_minute = payload.schedule_minute
+                script.schedule_cron = payload.schedule_cron
+                script.schedule_timezone = payload.schedule_timezone
                 script.active = payload.active
                 script.roles = payload.roles
 

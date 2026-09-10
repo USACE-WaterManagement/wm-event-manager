@@ -62,6 +62,11 @@ export const ScriptForm = ({
     description: script?.description ?? "",
     active: script?.active ?? true,
     repoPath: script?.repoPath ?? "",
+    scheduleEnabled: script?.scheduleEnabled ?? false,
+    scheduleType: script?.scheduleType ?? "manual",
+    scheduleMinute: script?.scheduleMinute ?? 0,
+    scheduleCron: script?.scheduleCron ?? "",
+    scheduleTimezone: script?.scheduleTimezone ?? "UTC",
     roles: script?.roles ?? ["CWMS Users"],
   });
 
@@ -126,6 +131,106 @@ export const ScriptForm = ({
           <ViewField label="Execution Type">
             {script?.executionType ?? "python"}
           </ViewField>
+          <FormRow>
+            <InputLabel htmlFor="scheduleType">Schedule</InputLabel>
+            <select
+              id="scheduleType"
+              className="rounded border p-2"
+              value={form.scheduleType}
+              onChange={(e) => {
+                update("scheduleType", e.target.value);
+                if (e.target.value === "manual")
+                  update("scheduleEnabled", false);
+              }}
+            >
+              <option value="manual">Manual only</option>
+              <option value="hourly">Every hour</option>
+              <option value="cron">Cron expression</option>
+            </select>
+          </FormRow>
+          {form.scheduleType !== "manual" && (
+            <>
+              {form.scheduleType === "hourly" ? (
+                <FormRow>
+                  <InputLabel htmlFor="scheduleMinute">Minute</InputLabel>
+                  <Input
+                    id="scheduleMinute"
+                    type="number"
+                    min={0}
+                    max={59}
+                    required
+                    value={form.scheduleMinute ?? ""}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      update(
+                        "scheduleMinute",
+                        e.target.value === "" ? null : Number(e.target.value),
+                      )
+                    }
+                  />
+                </FormRow>
+              ) : (
+                <FormRow>
+                  <InputLabel htmlFor="scheduleCron">
+                    Cron expression
+                  </InputLabel>
+                  <div>
+                    <Input
+                      id="scheduleCron"
+                      required
+                      value={form.scheduleCron ?? ""}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        update("scheduleCron", e.target.value)
+                      }
+                    />
+                    <Text>
+                      Minute, hour, day of month, month, day of week. For
+                      example: 0 8 * * 1-5.
+                    </Text>
+                  </div>
+                </FormRow>
+              )}
+              <FormRow>
+                <InputLabel htmlFor="scheduleTimezone">Timezone</InputLabel>
+                <div>
+                  <Input
+                    id="scheduleTimezone"
+                    required
+                    list="schedule-timezones"
+                    value={form.scheduleTimezone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      update("scheduleTimezone", e.target.value)
+                    }
+                  />
+                  <datalist id="schedule-timezones">
+                    {[
+                      "UTC",
+                      "America/New_York",
+                      "America/Chicago",
+                      "America/Denver",
+                      "America/Los_Angeles",
+                      "America/Anchorage",
+                      "Pacific/Honolulu",
+                    ].map((zone) => (
+                      <option key={zone} value={zone} />
+                    ))}
+                  </datalist>
+                  <Text>
+                    Use an IANA timezone. Missing daylight-saving times are
+                    skipped; repeated times run once.
+                  </Text>
+                </div>
+              </FormRow>
+              <FormRow>
+                <Label htmlFor="scheduleEnabled">Enable schedule</Label>
+                <input
+                  id="scheduleEnabled"
+                  type="checkbox"
+                  checked={form.scheduleEnabled}
+                  onChange={(e) => update("scheduleEnabled", e.target.checked)}
+                />
+              </FormRow>
+            </>
+          )}
           <FormRow>
             <Label htmlFor="roles">Roles</Label>
             <RoleMultiSelect
