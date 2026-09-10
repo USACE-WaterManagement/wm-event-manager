@@ -10,3 +10,4 @@ gunicorn
 uvicorn[standard]
 pyjwt[crypto]
 httpx
+tzdata

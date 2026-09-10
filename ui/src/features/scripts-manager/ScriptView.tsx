@@ -33,6 +33,16 @@ export const ScriptView = ({ script, onEdit }: ScriptViewProps) => {
           <ViewField label="Description">{script.description}</ViewField>
           <ViewField label="GitHub Repo Path">{script.repoPath}</ViewField>
           <ViewField label="Execution Type">{script.executionType}</ViewField>
+          <ViewField label="Schedule">
+            {script.scheduleEnabled
+              ? script.scheduleType === "hourly"
+                ? `Every hour at minute ${script.scheduleMinute}`
+                : script.scheduleCron
+              : "Disabled"}
+          </ViewField>
+          <ViewField label="Timezone">
+            {script.scheduleTimezone ?? "UTC"}
+          </ViewField>
           <ViewField label="Roles">
             <RoleList roles={script.roles} />
           </ViewField>
