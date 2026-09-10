@@ -7,10 +7,21 @@ Script administrators can select a district repository file or an installed comm
 | District GitHub repository | Python | `python/report.py` | `python /jobs/python/report.py` |
 | District GitHub repository | Java JAR | `lib/report.jar` | `java -jar /jobs/lib/report.jar` |
 | District GitHub repository | Bash | `bin/report.sh` | `bash /jobs/bin/report.sh` |
-| Installed command | `java` | `-jar`, `/opt/report.jar`, `two words` | `java -jar /opt/report.jar 'two words'` |
+| Installed command | `cwms-cli` | `blob`, `upload`, `--help` | `cwms-cli blob upload --help` |
 
 Enter one argument per line in the form. The API stores `commandArgs` as an array, preserving spaces and literal shell characters. Commands execute directly; shell expressions require an explicit `bash` executable with `-lc` and the expression as separate arguments. The runtime selector applies to repository files; an installed command supplies its executable directly.
 
 Installed commands skip district repository checkout and repository Python dependency installation. Their executable and files, including any JAR, must be available in the container before execution.
+
+For example, `cwms-cli` is already installed in the runner image. A job can create a file and upload it as a CWMS blob without a district script in GitHub, avoiding the checkout and dependency installation time.
+
+Select **Installed command**, set the executable to `bash`, and enter these two argument lines:
+
+```text
+-lc
+printf 'Job completed\n' > /tmp/job-status.txt && cwms-cli blob upload --input-file /tmp/job-status.txt --blob-id JOB-STATUS --media-type text/plain --office "$OFFICE"
+```
+
+The second line is one argument. Bash runs the upload only if file creation succeeds. Configure `CDA_API_ROOT` and `CDA_API_KEY` in the job environment for the target CDA service; `OFFICE` supplies the district office. Use a unique blob ID for each output, or add `--overwrite` to replace an existing blob.
 
 Runtime and arguments are copied into the job record and queue message when submitted, so later script edits do not change an already submitted job. Local Docker execution uses the same command construction as AWS Batch.
