@@ -62,6 +62,9 @@ export const ScriptForm = ({
     description: script?.description ?? "",
     active: script?.active ?? true,
     repoPath: script?.repoPath ?? "",
+    executionType: script?.executionType ?? "github_file",
+    runtime: script?.runtime ?? "python",
+    commandArgs: script?.commandArgs ?? [],
     roles: script?.roles ?? ["CWMS Users"],
   });
 
@@ -112,7 +115,11 @@ export const ScriptForm = ({
             />
           </FormRow>
           <FormRow>
-            <InputLabel htmlFor="repoPath">GitHub Repo Path</InputLabel>
+            <InputLabel htmlFor="repoPath">
+              {form.executionType === "command"
+                ? "Executable"
+                : "GitHub Repo Path"}
+            </InputLabel>
             <Input
               id="repoPath"
               name="repoPath"
@@ -123,9 +130,70 @@ export const ScriptForm = ({
               required
             />
           </FormRow>
-          <ViewField label="Execution Type">
-            {script?.executionType ?? "python"}
-          </ViewField>
+          <FormRow>
+            <InputLabel htmlFor="executionType">Source</InputLabel>
+            <select
+              id="executionType"
+              value={form.executionType}
+              onChange={(e) =>
+                update(
+                  "executionType",
+                  e.target.value as "github_file" | "command",
+                )
+              }
+              className="rounded border p-2"
+            >
+              <option value="github_file">District GitHub repository</option>
+              <option value="command">Installed command</option>
+            </select>
+          </FormRow>
+          {form.executionType !== "command" && (
+            <FormRow>
+              <InputLabel htmlFor="runtime">Runtime</InputLabel>
+              <select
+                id="runtime"
+                value={form.runtime}
+                onChange={(e) =>
+                  update(
+                    "runtime",
+                    e.target.value as "python" | "java" | "shell",
+                  )
+                }
+                className="rounded border p-2"
+              >
+                <option value="python">Python</option>
+                <option value="java">Java JAR</option>
+                <option value="shell">Bash</option>
+              </select>
+            </FormRow>
+          )}
+          <FormRow>
+            <InputLabel htmlFor="commandArgs">Arguments</InputLabel>
+            <div>
+              <textarea
+                id="commandArgs"
+                className="w-full rounded border p-2"
+                rows={4}
+                value={(form.commandArgs ?? []).join("\n")}
+                onChange={(e) =>
+                  update(
+                    "commandArgs",
+                    e.target.value === "" ? [] : e.target.value.split("\n"),
+                  )
+                }
+              />
+              <Text>
+                One argument per line. Spaces within a line are preserved.
+              </Text>
+              {form.executionType === "command" && (
+                <Text>
+                  Use an executable already available in the image, such as
+                  java, with -jar and the JAR path as separate arguments. The
+                  district repository is not downloaded.
+                </Text>
+              )}
+            </div>
+          </FormRow>
           <FormRow>
             <Label htmlFor="roles">Roles</Label>
             <RoleMultiSelect

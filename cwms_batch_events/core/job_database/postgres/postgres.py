@@ -74,6 +74,8 @@ class PostgresJobDatabase:
         job.office = script.office
         job.repo_path = script.repo_path
         job.execution_type = script.execution_type
+        job.runtime = script.runtime
+        job.command_args = list(script.command_args)
         job.job_runner_id = get_runner_id()
 
         self.db.add(job)
@@ -160,6 +162,8 @@ class PostgresJobDatabase:
                 script.description = payload.description
                 script.repo_path = payload.repo_path
                 script.execution_type = payload.execution_type
+                script.runtime = payload.runtime
+                script.command_args = payload.command_args
                 script.active = payload.active
                 script.roles = payload.roles
 

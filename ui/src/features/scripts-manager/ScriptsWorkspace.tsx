@@ -69,7 +69,6 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     if (selectedScriptId) {
       const payload: ScriptUpdate = {
         ...data,
-        executionType: "python",
         jobRunners,
       };
       await updateScriptMutation.mutateAsync({
@@ -80,7 +79,6 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
       const payload: ScriptCreate = {
         ...data,
         office: office,
-        executionType: "python",
         jobRunners,
       };
       const script = await createScriptMutation.mutateAsync({

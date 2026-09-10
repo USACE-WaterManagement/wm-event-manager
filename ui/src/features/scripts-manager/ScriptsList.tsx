@@ -66,7 +66,11 @@ export const ScriptsList = ({
               <TableCell>
                 <span className="font-bold">{script.name}</span>
               </TableCell>
-              <TableCell>{script.executionType}</TableCell>
+              <TableCell>
+                {script.executionType === "command"
+                  ? script.repoPath
+                  : script.runtime}
+              </TableCell>
               <TableCell>{script.repoPath}</TableCell>
               <TableCell>
                 <ActiveIcon isActive={script.active} />

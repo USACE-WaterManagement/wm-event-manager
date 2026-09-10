@@ -1,6 +1,8 @@
 from datetime import datetime
+from pathlib import PurePosixPath
+from typing import Literal
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from uuid import UUID
 
@@ -13,6 +15,44 @@ class CamelModel(BaseModel):
     def model_dump(self, **kwargs):
         kwargs.setdefault("by_alias", True)
         return super().model_dump(**kwargs)
+
+
+class ExecutionOptions(CamelModel):
+    """Commands supported by the existing combined Python/Java/Bash image."""
+
+    execution_type: Literal["github_file", "command"] = "github_file"
+    runtime: Literal["python", "java", "shell"] = "python"
+    repo_path: str
+    command_args: list[str] = Field(default_factory=list)
+
+    @field_validator("execution_type", mode="before")
+    @classmethod
+    def legacy_execution_type(cls, value):
+        # These historical values all dispatched Python repository files.
+        return "github_file" if value in (None, "", "python", "batch") else value
+
+    @field_validator("repo_path")
+    @classmethod
+    def nonempty_target(cls, value):
+        if not value.strip() or "\x00" in value:
+            raise ValueError("A script path or executable is required")
+        return value
+
+    @model_validator(mode="after")
+    def valid_repository_path(self):
+        path = PurePosixPath(self.repo_path)
+        if self.execution_type == "github_file" and (
+            path.is_absolute() or ".." in path.parts
+        ):
+            raise ValueError("Repository paths must stay within /jobs")
+        return self
+
+    @field_validator("command_args")
+    @classmethod
+    def valid_arguments(cls, values):
+        if any("\x00" in value for value in values):
+            raise ValueError("Command arguments cannot contain NUL characters")
+        return values
 
 
 class JobStatus(str, Enum):
@@ -33,7 +73,7 @@ class JobLogs(CamelModel):
     logs: str
 
 
-class JobRecord(CamelModel):
+class JobRecord(ExecutionOptions):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -44,7 +84,6 @@ class JobRecord(CamelModel):
     username: str
     office: str
     repo_path: str
-    execution_type: str | None
     created_time: datetime
     run_time: datetime | None = None
     end_time: datetime | None = None
@@ -80,7 +119,7 @@ class ScriptRunRequest(CamelModel):
     script_id: UUID
 
 
-class ScriptRunOptions(CamelModel):
+class ScriptRunOptions(ExecutionOptions):
     office: str
     repo_path: str
     script_slug: str | None
@@ -113,11 +152,10 @@ class BindExternalJobIdRequest(BaseModel):
     external_job_id: str
 
 
-class ScriptBase(CamelModel):
+class ScriptBase(ExecutionOptions):
     name: str
     description: str
     repo_path: str
-    execution_type: str
     active: bool = True
     roles: list[str] = []
     job_runners: list[UUID] = []
