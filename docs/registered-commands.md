@@ -15,13 +15,22 @@ Installed commands skip district repository checkout and repository Python depen
 
 For example, `cwms-cli` is already installed in the runner image. A job can create a file and upload it as a CWMS blob without a district script in GitHub, avoiding the checkout and dependency installation time.
 
-Select **Installed command**, set the executable to `bash`, and enter these two argument lines:
+In Scripts Manager, register the script with these values:
+
+| Field | Value |
+| --- | --- |
+| Office | `SWT` |
+| Name | Upload job status |
+| Source | Installed command |
+| Executable | `bash` |
+
+Enter these two lines in **Arguments**:
 
 ```text
 -lc
-printf 'Job completed\n' > /tmp/job-status.txt && cwms-cli blob upload --input-file /tmp/job-status.txt --blob-id JOB-STATUS --media-type text/plain --office "$OFFICE"
+printf 'Job completed\n' > /tmp/job-status.txt && cwms-cli blob upload --input-file /tmp/job-status.txt --blob-id JOB-STATUS --media-type text/plain --office SWT
 ```
 
-The second line is one argument. Bash runs the upload only if file creation succeeds. Configure `CDA_API_ROOT` and `CDA_API_KEY` in the job environment for the target CDA service; `OFFICE` supplies the district office. Use a unique blob ID for each output, or add `--overwrite` to replace an existing blob.
+The second line is one argument. Bash runs the upload only if file creation succeeds. The job environment supplies `CDA_API_ROOT` and `CDA_API_KEY` for the target CDA service. Use a unique blob ID for each output, or add `--overwrite` to replace an existing blob. Save the registration, then run it from **Submit Job**.
 
 Runtime and arguments are copied into the job record and queue message when submitted, so later script edits do not change an already submitted job. Local Docker execution uses the same command construction as AWS Batch.
