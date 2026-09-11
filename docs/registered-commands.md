@@ -34,3 +34,17 @@ printf 'Job completed\n' > /tmp/job-status.txt && cwms-cli blob upload --input-f
 The second line is one argument. Bash runs the upload only if file creation succeeds. The job environment supplies `CDA_API_ROOT` and `CDA_API_KEY` for the target CDA service. Use a unique blob ID for each output, or add `--overwrite` to replace an existing blob. Save the registration, then run it from **Submit Job**.
 
 Runtime and arguments are copied into the job record and queue message when submitted, so later script edits do not change an already submitted job. Local Docker execution uses the same command construction as AWS Batch.
+
+## Repository browsing configuration
+
+The API reads `OFFICE_REPOSITORIES` as a JSON map keyed by uppercase office code. Configure the repository and branch to match the checkout used by that office's runner, for example:
+
+```json
+{"SWT":{"repository":"USACE-WaterManagement/swt-wm-cwbi-jobs","ref":"cwbi-dev"}}
+```
+
+For private repositories, supply a server-side `GITHUB_TOKEN` with read access to repository contents through the deployment's secret configuration. The token is never sent to the browser. The API needs outbound HTTPS access to `api.github.com`. Catalog requests require script administrator access for the selected office. Large, truncated GitHub tree responses are rejected instead of showing an incomplete file list.
+
+Without this configuration or repository access, users can still enter paths manually; Browse reports that files are unavailable and the district GitHub button is disabled. The GitHub button uses the configured repository, not a name inferred from the office code. Browser configuration does not change the runner's checkout configuration.
+
+Help → Script setup (`/events/help/script-files`) explains cloning, adding files, review, and registration. Help → Onboarding (`/events/help/onboarding`) covers job setup and execution.

@@ -1,8 +1,16 @@
 from functools import lru_cache
+from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 
+class RepositorySettings(BaseModel):
+    repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    ref: str = Field(min_length=1)
+
+
 class Settings(BaseSettings):
+    office_repositories: dict[str, RepositorySettings] = {}
+    github_token: SecretStr = SecretStr("")
     api_version: str = "local"
     app_key: str = ""
     auth_environment: str = ""
