@@ -17,8 +17,8 @@ class CamelModel(BaseModel):
         return super().model_dump(**kwargs)
 
 
-class ExecutionOptions(CamelModel):
-    """Commands supported by the existing combined Python/Java/Bash image."""
+class ExecutionRecord(CamelModel):
+    """Stored execution fields, including paths accepted by older API versions."""
 
     execution_type: Literal["github_file", "command"] = "github_file"
     runtime: Literal["python", "java", "shell"] = "python"
@@ -30,6 +30,10 @@ class ExecutionOptions(CamelModel):
     def legacy_execution_type(cls, value):
         # These historical values all dispatched Python repository files.
         return "github_file" if value in (None, "", "python", "batch") else value
+
+
+class ExecutionOptions(ExecutionRecord):
+    """Validated options for saving scripts and dispatching jobs."""
 
     @field_validator("repo_path")
     @classmethod
@@ -73,7 +77,7 @@ class JobLogs(CamelModel):
     logs: str
 
 
-class JobRecord(ExecutionOptions):
+class JobRecord(ExecutionRecord):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -152,7 +156,7 @@ class BindExternalJobIdRequest(BaseModel):
     external_job_id: str
 
 
-class ScriptBase(ExecutionOptions):
+class ScriptBase(ExecutionRecord):
     name: str
     description: str
     repo_path: str
@@ -161,7 +165,7 @@ class ScriptBase(ExecutionOptions):
     job_runners: list[UUID] = []
 
 
-class ScriptCreate(ScriptBase):
+class ScriptCreate(ScriptBase, ExecutionOptions):
     office: str
 
 
@@ -180,5 +184,5 @@ class ScriptRead(ScriptBase):
         return [jr.id if hasattr(jr, "id") else jr for jr in v]
 
 
-class ScriptUpdate(ScriptBase):
+class ScriptUpdate(ScriptBase, ExecutionOptions):
     pass

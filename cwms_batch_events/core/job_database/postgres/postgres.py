@@ -12,6 +12,7 @@ from cwms_batch_events.core.job_database.postgres.models import (
     ScriptModel,
 )
 from cwms_batch_events.core.models import (
+    ExecutionOptions,
     JobRecord,
     JobStatus,
     ScriptCreate,
@@ -63,6 +64,10 @@ class PostgresJobDatabase:
 
         if set(script.roles).isdisjoint(user.roles[script.office]):
             raise PermissionError("Not authorized to run requested script")
+
+        # Old registrations remain readable, but must be corrected before a
+        # job is persisted or dispatched with an invalid execution target.
+        ExecutionOptions.model_validate(script, from_attributes=True)
 
         job = JobModel()
         job.id = uuid.uuid4()
