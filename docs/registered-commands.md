@@ -37,6 +37,26 @@ Runtime and arguments are copied into the job record and queue message when subm
 
 ## Repository browsing configuration
 
+### Java programs from office releases
+
+With the runner's Java artifact loader deployed, repository jobs download the
+versions pinned in `java/artifacts.json` before running the registered command.
+For SWT, select **District GitHub repository**, runtime **Java JAR**, and manually
+enter `java-artifacts/BuildWSmetadataViaCDA.jar`. The resulting command is
+`java -jar /jobs/java-artifacts/BuildWSmetadataViaCDA.jar`. Generated release JARs
+are not tracked files, so they do not appear in the repository browser.
+
+The pin must be enabled and its release asset accessible to the runner. A failed
+download or checksum prevents startup. **Installed command** skips checkout and
+artifact loading; it cannot obtain a JAR through the office manifest.
+
+SWT can merge the Java build workflow first with its initial disabled (`null`)
+pin. Deploy the artifact-loader image before promoting that pin or enabling a
+direct Java registration. The hourly launcher handles a disabled pin gracefully;
+a direct Java registration requires the JAR to exist.
+
+### Catalog access
+
 The API reads `OFFICE_REPOSITORIES` as a JSON map keyed by uppercase office code. Configure the repository and branch to match the checkout used by that office's runner, for example:
 
 ```json
