@@ -6,16 +6,15 @@ export function FieldHelp({ label, children }: { label: string; children: ReactN
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<CSSProperties>({});
   useEffect(() => {
-    if (!open) return;
     const closeHelp = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || !panel.current?.matches(":popover-open")) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       panel.current?.hidePopover();
     };
     window.addEventListener("keydown", closeHelp, true);
     return () => window.removeEventListener("keydown", closeHelp, true);
-  }, [open]);
+  }, []);
   return <>
     <button type="button" aria-label={`Help with ${label}`} aria-expanded={open} aria-controls={id}
       onClick={event => {
