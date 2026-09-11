@@ -58,7 +58,7 @@ export function RepositoryPathPicker({ office, runtime, value, onChange }: {
             event.preventDefault(); chooseSuggestion(suggestions[active]);
           }
         }}
-        placeholder={`Directory or ${extension} file path`} aria-describedby="repository-path-help"
+        placeholder={runtime === "java" ? "java-artifacts/BuildWSmetadataViaCDA.jar" : `Directory or ${extension} file path`} aria-describedby="repository-path-help"
         title={value || `Directory or ${extension} file path`}
         className="min-w-0 flex-1 truncate rounded border border-gray-300 bg-white px-3 py-2 focus:text-clip" />
       <Button type="button" aria-haspopup="dialog" onClick={() => {
@@ -77,7 +77,7 @@ export function RepositoryPathPicker({ office, runtime, value, onChange }: {
         {!suggestions.length && <p className="p-2 text-sm text-gray-600">{catalog.isPending ? "Loading files…" : "No matching files or folders. You can keep this manual path."}</p>}
       </div>}
     </div>
-    <p id="repository-path-help" className="sr-only">Type a directory to see its contents, or browse for a file. Manual paths are accepted. Use the question mark beside GitHub Repo Path for help adding files.</p>
+    <p id="repository-path-help" className={runtime === "java" ? "text-xs text-gray-600" : "sr-only"}>{runtime === "java" ? <>Path relative to <code>/jobs</code>. Enabled release JARs are downloaded from <code>java/artifacts.json</code> pins before execution. Enter their paths manually; Browse lists GitHub files only.</> : "Type a directory to see its contents, or browse for a file. Manual paths are accepted. Use the question mark beside the path for help adding files."}</p>
     {catalog.data && <p title={`${catalog.data.repository} · ${catalog.data.ref}`} className="truncate text-xs text-gray-600">{catalog.data.repository} · {catalog.data.ref}</p>}
     <Modal opened={open} onClose={() => setOpen(false)} dialogTitle={`Choose a file · ${office}`} size="3xl"
       className="[&_[id^=headlessui-dialog-panel]]:w-[min(48rem,100%)]! [&_[id^=headlessui-dialog-panel]]:min-w-0 [&_[id^=headlessui-dialog-panel]]:p-4! [&_[id^=headlessui-dialog-panel]]:max-h-[calc(100dvh-2rem)] [&_[id^=headlessui-dialog-panel]]:overscroll-contain sm:[&_[id^=headlessui-dialog-panel]]:p-6! [&_[id^=headlessui-dialog-panel]]:overflow-y-auto"

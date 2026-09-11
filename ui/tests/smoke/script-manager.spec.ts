@@ -41,7 +41,10 @@ test("browse files, field help, responsive footer, and help navigation", async (
   await expect(page.getByLabel("GitHub Repo Path",{exact:true})).toHaveValue("python/reports/daily_report.py");
   await capture("python-registration");
   await page.getByLabel("Runtime",{exact:true}).selectOption("java");
-  await page.getByLabel("GitHub Repo Path",{exact:true}).fill("lib/report.jar");
+  await page.getByLabel("Name",{exact:true}).fill("Build water supply metadata");
+  await page.getByLabel("JAR Path",{exact:true}).fill("java-artifacts/BuildWSmetadataViaCDA.jar");
+  await page.getByLabel("Name",{exact:true}).click();
+  await expect(page.getByText(/Browse lists GitHub files only/)).toBeVisible();
   await capture("java-registration");
   await page.getByLabel("Runtime",{exact:true}).selectOption("shell");
   await page.getByLabel("GitHub Repo Path",{exact:true}).fill("bin/daily.sh");

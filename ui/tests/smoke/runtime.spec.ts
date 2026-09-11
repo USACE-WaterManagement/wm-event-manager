@@ -53,14 +53,15 @@ test("registers and edits an installed Java command with separate arguments", as
   await page.getByLabel("Source", { exact: true }).selectOption("github_file");
   await page.getByLabel("Runtime", { exact: true }).selectOption("java");
   await page
-    .getByLabel("GitHub Repo Path", { exact: true })
-    .fill("lib/report.jar");
+    .getByLabel("JAR Path", { exact: true })
+    .fill("java-artifacts/BuildWSmetadataViaCDA.jar");
   await page.getByLabel("Arguments", { exact: true }).fill("two words");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Edit", exact: true }),
   ).toBeVisible();
   expect(saved?.runtime).toBe("java");
+  expect(saved?.repoPath).toBe("java-artifacts/BuildWSmetadataViaCDA.jar");
   expect(saved?.executionType).toBe("github_file");
   expect(errors).toEqual([]);
 });

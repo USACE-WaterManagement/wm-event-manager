@@ -21,8 +21,8 @@ import { Link } from "@tanstack/react-router";
 const fieldHelp: Record<string, React.ReactNode> = {
   name: "A descriptive name for this job. Its slug is generated from the name when you create it.",
   description: "Describe what this job does and when someone should run it.",
-  repoPath: <>For a repository file, enter its path relative to the repository root or browse to it. Typing a directory shows its contents. Files and directories cannot be created here; clone the district repository to add them. <Link to="/help/script-files" target="_blank" rel="noopener noreferrer">How to add script files (new tab)</Link>. For an installed command, enter the executable available in the job image, such as bash, java, or cwms-cli.</>,
-  executionType: "District GitHub repository downloads the office repository to run a file. Installed command runs an executable already available in the job image without cloning the repository.",
+  repoPath: <>Enter a path relative to /jobs. Repository files are checked out there. With the Java artifact loader deployed, enabled pins in java/artifacts.json download release JARs into java-artifacts/ before the job runs. Enter those generated paths manually; Browse lists only files committed to GitHub. Files and directories cannot be created here. <Link to="/help/script-files" target="_blank" rel="noopener noreferrer">Script setup (new tab)</Link>. For an installed command, enter its executable; that mode skips checkout and artifact downloads.</>,
+  executionType: "District GitHub repository checks out the office repository and, when configured, downloads its pinned Java release artifacts before running the job. Installed command runs an executable already available in the image and skips both checkout and artifact downloads.",
   runtime: "Choose Python for .py files, Bash for .sh files, or Java JAR for a built .jar file. The runtime determines how the file is invoked and the default browser filter.",
   commandArgs: "Enter one argument per line. Spaces within each line are preserved. For the installed java command, put -jar on one line and the JAR path on the next.",
   roles: "Select the roles permitted to run this script. Choose a role and click Add; use its remove button to remove access for that role.",
@@ -133,7 +133,7 @@ export const ScriptForm = ({
             <InputLabel htmlFor="repoPath">
               {form.executionType === "command"
                 ? "Executable"
-                : "GitHub Repo Path"}
+                : form.runtime === "java" ? "JAR Path" : "GitHub Repo Path"}
             </InputLabel>
             {form.executionType === "command" ? <Input
               id="repoPath"

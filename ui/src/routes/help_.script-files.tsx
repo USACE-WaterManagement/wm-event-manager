@@ -30,6 +30,9 @@ git push -u origin add-daily-report`}</code></pre>
     <H2>4. Register the job</H2>
     <p>Open <Link to="/scripts-manager">Scripts Manager</Link>, select <strong>SWT</strong>, and choose <strong>New +</strong>. Select <strong>District GitHub repository</strong> as the source and the matching runtime. Browse to the file or type its repository-relative path, such as <code>python/reports/daily_report.py</code>. Add the required arguments and roles, then save.</p>
     <p>The browser filters files for the selected runtime. Use <strong>All files</strong> when needed. Saving a script definition does not create or upload a file in GitHub.</p>
-    <p>Jobs that use an <strong>Installed command</strong> do not need a repository file. Select that source when the command is already available in the job image.</p>
+    <H2>Java programs from release artifacts</H2>
+    <p>With the Java artifact loader deployed, the runner reads <code>java/artifacts.json</code> in the district repository, downloads each enabled release JAR, and verifies its checksum before running the job. These JARs are downloaded at startup, not stored in the image or committed to the repository.</p>
+    <p>For SWT, select <strong>District GitHub repository</strong> and <strong>Java JAR</strong>, then enter <code>java-artifacts/BuildWSmetadataViaCDA.jar</code> in <strong>JAR Path</strong>. This path is relative to <code>/jobs</code>. Enter it manually because the file browser lists only committed GitHub files. Enable the registration after the loader is deployed and the artifact pin is promoted; a disabled pin does not provide a JAR.</p>
+    <p>Jobs that use an <strong>Installed command</strong> skip repository checkout and artifact downloads. Select that source only when the command and its files are already available in the container.</p>
   </article>;
 }
