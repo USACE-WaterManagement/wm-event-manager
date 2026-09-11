@@ -1,5 +1,6 @@
 from cwms_batch_events.core.job_database.base import JobDatabase
 from cwms_batch_events.core.job_logger.base import JobLogger
+from cwms_batch_events.core.execution import command_for_payload
 from cwms_batch_events.core.models import JobMessage, JobStatus
 from cwms_batch_events.core.settings import settings
 
@@ -21,12 +22,14 @@ class LocalExecutor:
         try:
             container = client.containers.run(
                 image=f"{message.payload.office}-jobs",
-                command=f"python /jobs/{message.payload.repo_path}",
+                command=command_for_payload(message.payload),
                 detach=True,
                 stderr=True,
                 environment=[
                     f"OFFICE={message.payload.office}",
                     "GITHUB_BRANCH=cwbi-dev",
+                    "ENVIRONMENT=cwbi-dev",
+                    f"SKIP_GIT_CLONE={str(message.payload.execution_type == 'command').lower()}",
                     f"CDA_API_ROOT={CDA_API_ROOT}",
                 ],
             )

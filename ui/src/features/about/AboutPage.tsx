@@ -282,7 +282,7 @@ const OnboardingPane = ({ user }: { user?: ApplicationInfo["user"] }) => {
     </Card>
     <ol className="space-y-6">
       <OnboardingStep number={1} title="Confirm your office access">
-        <p>Open the <strong>Controls</strong> tab above. To define a job for {officeLabel}, your CDA
+        <p>Open <strong>About → Controls</strong>. To define a job for {officeLabel}, your CDA
           profile needs <strong>Data Acquisition Mgr</strong> or <strong>Data Exchange Mgr</strong> for
           that office. To run it, you need an office role allowed by the script.</p>
         <p>If a role is missing, contact the person who manages CDA user roles for your office.</p>
@@ -366,17 +366,21 @@ export const AboutPage = ({ initialTab = "about" }: { initialTab?: AboutTab }) =
   const tabs = [
     { name: "About", content: <AboutOverview /> },
     { name: "Controls", content: <ControlsPane user={user} /> },
-    { name: "Onboarding", content: <OnboardingPane user={user} /> },
     ...(auth.isAuth ? [{ name: "Version", content: <VersionPane /> }] : []),
   ];
   const requestedTabIndex = {
     about: 0,
     controls: 1,
     onboarding: 2,
-    version: 3,
+    version: 2,
   }[initialTab];
   const defaultTabIndex =
-    requestedTabIndex === 3 && !auth.isAuth ? 0 : requestedTabIndex;
+    requestedTabIndex === 2 && !auth.isAuth ? 0 : requestedTabIndex;
+
+  if (initialTab === "onboarding") return <div className="mx-auto max-w-6xl">
+    <H1>Onboarding</H1>
+    <OnboardingPane user={user} />
+  </div>;
 
   return <div className="mx-auto max-w-6xl">
     <section className="space-y-4 py-4">

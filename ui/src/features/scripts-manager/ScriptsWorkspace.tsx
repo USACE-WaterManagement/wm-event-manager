@@ -1,13 +1,15 @@
 import { ScriptDetailPanel } from "./ScriptDetailPanel";
+import { ScriptForm } from "./ScriptForm";
 import { ScriptsList } from "./ScriptsList";
 import { ScriptCreate, ScriptFormData, ScriptUpdate } from "./types";
 import useOfficeScripts from "./useOfficeScripts";
 import { useState } from "react";
-import { Button, H2 } from "@usace/groundwork";
+import { Button, H2, Modal } from "@usace/groundwork";
 import { useUpdateScript } from "./useUpdateScript";
 import { useCreateScript } from "./useCreateScript";
 import { useDeleteScript } from "./useDeleteScript";
 import { useDefaultJobRunner } from "./useDefaultJobRunner";
+import { MdCode } from "react-icons/md";
 
 interface ScriptsWorkspaceProps {
   office: string;
@@ -25,6 +27,7 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
   >();
 
   const [panelMode, setPanelMode] = useState<"view" | "edit">("view");
+  const [creating, setCreating] = useState(false);
 
   if (scripts.isLoading) return <span>Loading scripts...</span>;
   if (defaultJobRunner.isLoading) return <span>Loading job runner...</span>;
@@ -44,10 +47,25 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
   };
   const onNew = () => {
     createScriptMutation.reset();
-    deleteScriptMutation.reset();
-    updateScriptMutation.reset();
-    setPanelMode("edit");
-    setSelectedScriptId(undefined);
+    setCreating(true);
+  };
+  const onCancelCreate = () => {
+    if (!createScriptMutation.isPending) setCreating(false);
+  };
+  const onCreate = async (data: ScriptFormData) => {
+    const payload: ScriptCreate = {
+      ...data,
+      office,
+      jobRunners: [defaultJobRunner.data.id],
+    };
+    try {
+      const script = await createScriptMutation.mutateAsync({ payload });
+      setSelectedScriptId(script.id);
+      setPanelMode("view");
+      setCreating(false);
+    } catch {
+      // The form displays the mutation error and retains the entered values.
+    }
   };
   const onEdit = () => {
     createScriptMutation.reset();
@@ -69,24 +87,12 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     if (selectedScriptId) {
       const payload: ScriptUpdate = {
         ...data,
-        executionType: "python",
         jobRunners,
       };
       await updateScriptMutation.mutateAsync({
         scriptId: selectedScriptId,
         payload: payload,
       });
-    } else {
-      const payload: ScriptCreate = {
-        ...data,
-        office: office,
-        executionType: "python",
-        jobRunners,
-      };
-      const script = await createScriptMutation.mutateAsync({
-        payload: payload,
-      });
-      setSelectedScriptId(script.id);
     }
 
     setPanelMode("view");
@@ -104,19 +110,34 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
     updateScriptMutation.error;
 
   return (
-    <div className="w-full grid grid-cols-2 gap-6 mt-4">
-      <div>
+    <div className={`w-full grid grid-cols-1 gap-6 mt-4 ${scripts.data.length > 0 ? "xl:grid-cols-2" : ""}`}>
+      <div className="min-w-0">
         <header className="flex justify-between">
           <H2>{office.toUpperCase()} Scripts</H2>
-          <Button onClick={onNew}>New +</Button>
+          {scripts.data.length > 0 && <Button onClick={onNew}>New +</Button>}
         </header>
-        <ScriptsList
-          scripts={scripts.data}
-          selectScript={onSelect}
-          selectedScriptId={selectedScriptId}
-        />
+        {scripts.data.length === 0 ? (
+          <div className="mt-3 flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center">
+            <MdCode aria-hidden className="text-4xl text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900">No scripts yet for {office.toUpperCase()}</h3>
+            <p className="max-w-md text-sm text-gray-600">Create a script to define what this office can run, including its runtime, file path, and arguments.</p>
+            <Button onClick={onNew}>Create first script</Button>
+          </div>
+        ) : <div
+          role="region"
+          aria-label={`${office.toUpperCase()} scripts list`}
+          tabIndex={0}
+          className="mt-3 min-w-0 rounded border border-gray-200"
+        >
+          <ScriptsList
+            scripts={scripts.data}
+            selectScript={onSelect}
+            selectedScriptId={selectedScriptId}
+          />
+        </div>}
       </div>
-      <ScriptDetailPanel
+      {scripts.data.length > 0 && <ScriptDetailPanel
+        office={office}
         script={selectedScript}
         mode={panelMode}
         isPending={isPending}
@@ -125,7 +146,19 @@ export const ScriptsWorkspace = ({ office }: ScriptsWorkspaceProps) => {
         onEdit={onEdit}
         onSave={onSave}
         onCancelEdit={onCancelEdit}
-      />
+      />}
+      <Modal opened={creating} onClose={onCancelCreate}
+        dialogTitle={`New script · ${office.toUpperCase()}`} size="3xl"
+        className="[&_[id^=headlessui-dialog-panel]]:w-[min(48rem,100%)]! [&_[id^=headlessui-dialog-panel]]:min-w-0 [&_[id^=headlessui-dialog-panel]]:p-4! [&_[id^=headlessui-dialog-panel]]:max-h-[calc(100dvh-2rem)] [&_[id^=headlessui-dialog-panel]]:overscroll-contain sm:[&_[id^=headlessui-dialog-panel]]:p-6! [&_[id^=headlessui-dialog-panel]]:flex [&_[id^=headlessui-dialog-panel]]:flex-col [&_[id^=headlessui-dialog-panel]]:overflow-hidden [&_.script-form]:flex [&_.script-form]:flex-col [&_.script-form]:min-h-0 [&_.script-form]:overflow-hidden [&_.script-form-layout]:flex [&_.script-form-layout]:flex-col [&_.script-form-layout]:min-h-0 [&_.script-form-layout]:overflow-hidden [&_.script-form-fields]:min-h-0 [&_.script-form-fields]:overflow-y-auto [&_.script-form-fields]:overscroll-contain [&_.script-form-fields]:p-1 [&_.script-form-fields]:[scrollbar-gutter:stable] [&_.script-form-actions]:shrink-0 [&_.script-form-actions]:border-t [&_.script-form-actions]:border-gray-200 [&_.script-form-actions]:pt-4">
+        {creating && <ScriptForm
+          office={office}
+          isPending={createScriptMutation.isPending}
+          mutationError={createScriptMutation.error}
+          onDelete={onDelete}
+          onSave={onCreate}
+          onCancelEdit={onCancelCreate}
+        />}
+      </Modal>
     </div>
   );
 };

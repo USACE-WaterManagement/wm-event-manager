@@ -1,1 +1,2 @@
-@import "tailwindcss"
+@import "tailwindcss";
+@import "@usace/groundwork/dist/groundwork.css" layer(components);

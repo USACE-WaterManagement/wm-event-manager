@@ -143,6 +143,22 @@ export interface components {
         /** JobRecord */
         JobRecord: {
             /**
+             * Executiontype
+             * @default github_file
+             * @enum {string}
+             */
+            executionType: "github_file" | "command";
+            /**
+             * Runtime
+             * @default python
+             * @enum {string}
+             */
+            runtime: "python" | "java" | "shell";
+            /** Repopath */
+            repoPath: string;
+            /** Commandargs */
+            commandArgs?: string[];
+            /**
              * Id
              * Format: uuid
              */
@@ -158,10 +174,6 @@ export interface components {
             username: string;
             /** Office */
             office: string;
-            /** Repopath */
-            repoPath: string;
-            /** Executiontype */
-            executionType: string | null;
             /**
              * Createdtime
              * Format: date-time
@@ -186,14 +198,26 @@ export interface components {
         JobStatus: "Failed" | "Pending" | "Running" | "Completed";
         /** ScriptCreate */
         ScriptCreate: {
+            /**
+             * Executiontype
+             * @default github_file
+             * @enum {string}
+             */
+            executionType: "github_file" | "command";
+            /**
+             * Runtime
+             * @default python
+             * @enum {string}
+             */
+            runtime: "python" | "java" | "shell";
+            /** Repopath */
+            repoPath: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Repopath */
-            repoPath: string;
-            /** Executiontype */
-            executionType: string;
             /**
              * Active
              * @default true
@@ -214,14 +238,26 @@ export interface components {
         };
         /** ScriptRead */
         ScriptRead: {
+            /**
+             * Executiontype
+             * @default github_file
+             * @enum {string}
+             */
+            executionType: "github_file" | "command";
+            /**
+             * Runtime
+             * @default python
+             * @enum {string}
+             */
+            runtime: "python" | "java" | "shell";
+            /** Repopath */
+            repoPath: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Repopath */
-            repoPath: string;
-            /** Executiontype */
-            executionType: string;
             /**
              * Active
              * @default true
@@ -267,14 +303,26 @@ export interface components {
         };
         /** ScriptUpdate */
         ScriptUpdate: {
+            /**
+             * Executiontype
+             * @default github_file
+             * @enum {string}
+             */
+            executionType: "github_file" | "command";
+            /**
+             * Runtime
+             * @default python
+             * @enum {string}
+             */
+            runtime: "python" | "java" | "shell";
+            /** Repopath */
+            repoPath: string;
+            /** Commandargs */
+            commandArgs?: string[];
             /** Name */
             name: string;
             /** Description */
             description: string;
-            /** Repopath */
-            repoPath: string;
-            /** Executiontype */
-            executionType: string;
             /**
              * Active
              * @default true

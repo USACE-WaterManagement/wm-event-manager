@@ -21,7 +21,6 @@ from cwms_batch_events.core.models import (
 )
 from cwms_batch_events.core.queue import JobQueue
 
-
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
@@ -53,7 +52,12 @@ def post_job(
         )
 
     options = ScriptRunOptions(
-        office=job.office.lower(), repo_path=job.repo_path, script_slug=job.script_slug
+        office=job.office.lower(),
+        repo_path=job.repo_path,
+        script_slug=job.script_slug,
+        execution_type=job.execution_type,
+        runtime=job.runtime,
+        command_args=job.command_args,
     )
     message = queue.create_job_message(job.id, user.username, JobSource.API, options)
     background_tasks.add_task(queue.send_job_message, message)

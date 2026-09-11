@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import { ViewField } from "./ViewField";
 import {
   Button,
-  Checkboxes,
   DeleteConfirm,
   Field,
   Fieldset,
@@ -15,6 +14,19 @@ import { MdErrorOutline } from "react-icons/md";
 import { useState } from "react";
 import { RoleMultiSelect } from "./RoleMultiSelect";
 import { allRoles } from "./utils";
+import { RepositoryPathPicker } from "./RepositoryPathPicker";
+import { FieldHelp } from "./FieldHelp";
+import { Link } from "@tanstack/react-router";
+
+const fieldHelp: Record<string, React.ReactNode> = {
+  name: "A descriptive name for this job. Its slug is generated from the name when you create it.",
+  description: "Describe what this job does and when someone should run it.",
+  repoPath: <>Enter a path relative to /jobs. Repository files are checked out there. With the Java artifact loader deployed, enabled pins in java/artifacts.json download release JARs into java-artifacts/ before the job runs. Enter those generated paths manually; Browse lists only files committed to GitHub. Files and directories cannot be created here. <Link to="/help/script-files" target="_blank" rel="noopener noreferrer">Script setup (new tab)</Link>. For an installed command, enter its executable; that mode skips checkout and artifact downloads.</>,
+  executionType: "District GitHub repository checks out the office repository and, when configured, downloads its pinned Java release artifacts before running the job. Installed command runs an executable already available in the image and skips both checkout and artifact downloads.",
+  runtime: "Choose Python for .py files, Bash for .sh files, or Java JAR for a built .jar file. The runtime determines how the file is invoked and the default browser filter.",
+  commandArgs: "Enter one argument per line. Spaces within each line are preserved. For the installed java command, put -jar on one line and the JAR path on the next.",
+  roles: "Select the roles permitted to run this script. Choose a role and click Add; use its remove button to remove access for that role.",
+};
 
 const slugify = (str: string) => {
   return str
@@ -26,7 +38,7 @@ const slugify = (str: string) => {
 };
 
 const FormRow = ({ children }: React.PropsWithChildren) => {
-  return <Field className="grid grid-cols-[120px_1fr] gap-6">{children}</Field>;
+  return <Field className="grid grid-cols-1 gap-2 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6">{children}</Field>;
 };
 
 const InputLabel = ({
@@ -34,13 +46,15 @@ const InputLabel = ({
   children,
 }: React.PropsWithChildren<{ htmlFor: string }>) => {
   return (
-    <Label className="mt-4" htmlFor={htmlFor}>
-      {children}
-    </Label>
+    <div className="flex items-center gap-2">
+      <Label htmlFor={htmlFor}>{children}</Label>
+      <FieldHelp label={typeof children === "string" ? children : "Script path"}>{fieldHelp[htmlFor]}</FieldHelp>
+    </div>
   );
 };
 
 interface ScriptFormProps {
+  office: string;
   script?: Script;
   isPending: boolean;
   mutationError: Error | null;
@@ -50,6 +64,7 @@ interface ScriptFormProps {
 }
 
 export const ScriptForm = ({
+  office,
   script,
   isPending,
   mutationError,
@@ -62,6 +77,9 @@ export const ScriptForm = ({
     description: script?.description ?? "",
     active: script?.active ?? true,
     repoPath: script?.repoPath ?? "",
+    executionType: script?.executionType ?? "github_file",
+    runtime: script?.runtime ?? "python",
+    commandArgs: script?.commandArgs ?? [],
     roles: script?.roles ?? ["CWMS Users"],
   });
 
@@ -76,15 +94,17 @@ export const ScriptForm = ({
 
   return (
     <form
+      className="script-form"
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
         handleSubmit();
       }}
     >
-      <div className="flex flex-col gap-y-6">
-        <Fieldset disabled={isPending} className="flex flex-col gap-2">
-          <ViewField label="Id">{script?.id ?? "<unassigned>"}</ViewField>
+      <div className="script-form-layout flex flex-col gap-y-2">
+        <div className="script-form-fields">
+        <Fieldset disabled={isPending} className="flex min-w-0 flex-col gap-1">
+          {script && <ViewField label="Id">{script.id}</ViewField>}
           <FormRow>
             <InputLabel htmlFor="name">Name</InputLabel>
             <Input
@@ -97,9 +117,7 @@ export const ScriptForm = ({
               required
             />
           </FormRow>
-          <ViewField label="Slug">
-            {script?.slug ?? slugify(form.name)}
-          </ViewField>
+          {script && <ViewField label="Slug">{script.slug ?? slugify(form.name)}</ViewField>}
           <FormRow>
             <InputLabel htmlFor="description">Description</InputLabel>
             <Input
@@ -112,8 +130,12 @@ export const ScriptForm = ({
             />
           </FormRow>
           <FormRow>
-            <InputLabel htmlFor="repoPath">GitHub Repo Path</InputLabel>
-            <Input
+            <InputLabel htmlFor="repoPath">
+              {form.executionType === "command"
+                ? "Executable"
+                : form.runtime === "java" ? "JAR Path" : "GitHub Repo Path"}
+            </InputLabel>
+            {form.executionType === "command" ? <Input
               id="repoPath"
               name="repoPath"
               value={form.repoPath}
@@ -121,30 +143,74 @@ export const ScriptForm = ({
                 update("repoPath", e.target.value)
               }
               required
-            />
+            /> : <RepositoryPathPicker
+              key={`${office}:${form.runtime}`}
+              office={office}
+              runtime={form.runtime ?? "python"}
+              value={form.repoPath}
+              onChange={(path) => update("repoPath", path)}
+            />}
           </FormRow>
-          <ViewField label="Execution Type">
-            {script?.executionType ?? "python"}
-          </ViewField>
           <FormRow>
-            <Label htmlFor="roles">Roles</Label>
+            <InputLabel htmlFor="executionType">Source</InputLabel>
+            <select
+              id="executionType"
+              value={form.executionType}
+              onChange={(e) =>
+                update(
+                  "executionType",
+                  e.target.value as "github_file" | "command",
+                )
+              }
+              className="rounded border p-2"
+            >
+              <option value="github_file">District GitHub repository</option>
+              <option value="command">Installed command</option>
+            </select>
+          </FormRow>
+          {form.executionType !== "command" && (
+            <FormRow>
+              <InputLabel htmlFor="runtime">Runtime</InputLabel>
+              <select
+                id="runtime"
+                value={form.runtime}
+                onChange={(e) =>
+                  update(
+                    "runtime",
+                    e.target.value as "python" | "java" | "shell",
+                  )
+                }
+                className="rounded border p-2"
+              >
+                <option value="python">Python</option>
+                <option value="java">Java JAR</option>
+                <option value="shell">Bash</option>
+              </select>
+            </FormRow>
+          )}
+          <FormRow>
+            <InputLabel htmlFor="commandArgs">Arguments</InputLabel>
+            <div>
+              <textarea
+                id="commandArgs"
+                className="w-full rounded border p-2"
+                rows={2}
+                value={(form.commandArgs ?? []).join("\n")}
+                onChange={(e) =>
+                  update(
+                    "commandArgs",
+                    e.target.value === "" ? [] : e.target.value.split("\n"),
+                  )
+                }
+              />
+            </div>
+          </FormRow>
+          <FormRow>
+            <InputLabel htmlFor="roles">Roles</InputLabel>
             <RoleMultiSelect
               allRoles={allRoles}
               initialSelectedRoles={form.roles}
               onChange={(selectedRoles) => update("roles", selectedRoles)}
-            />
-          </FormRow>
-          <FormRow>
-            <Label htmlFor="active">Active</Label>
-            <Checkboxes
-              content={[
-                {
-                  id: "active",
-                  defaultChecked: script?.active ?? true,
-                  onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                    update("active", e.target.checked),
-                },
-              ]}
             />
           </FormRow>
           {script && (
@@ -158,9 +224,24 @@ export const ScriptForm = ({
             </>
           )}
         </Fieldset>
-        <div className="w-full flex justify-between">
+        {mutationError && (
+          <div role="alert" className="mt-3 flex gap-2">
+            <MdErrorOutline className="text-red-500 flex-none size-6" />
+            <Text className="text-red-500">{mutationError.message}</Text>
+          </div>
+        )}
+        </div>
+        <div className="script-form-actions flex w-full flex-wrap items-center justify-between gap-3 bg-white">
+          <div className="flex items-center gap-2">
+            <label className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 font-semibold ${form.active ? "border-green-600 bg-green-50 text-green-800" : "border-gray-300 bg-gray-100 text-gray-700"}`}>
+              <input id="active" type="checkbox" checked={form.active} disabled={isPending}
+                onChange={event => update("active", event.target.checked)} className="size-5 accent-green-700" />
+              Active
+            </label>
+            <FieldHelp label="Active">Active scripts are available to run. Clear this option to keep the script definition while disabling it.</FieldHelp>
+          </div>
           {script && <DeleteConfirm onDelete={() => onDelete(script?.id)} />}
-          <div className="flex justify-between gap-6 ml-auto">
+          <div className="ml-auto flex justify-between gap-3">
             <Button type="submit" disabled={isPending}>
               Save
             </Button>
@@ -169,12 +250,6 @@ export const ScriptForm = ({
             </Button>
           </div>
         </div>
-        {mutationError && (
-          <div className="flex gap-2">
-            <MdErrorOutline className="text-red-500 flex-none size-6" />
-            <Text className="text-red-500">{mutationError.message}</Text>
-          </div>
-        )}
       </div>
     </form>
   );
