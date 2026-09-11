@@ -33,7 +33,11 @@ export const ScriptsList = ({
   selectedScriptId,
 }: ScriptsListProps) => {
   return (
-    <Table>
+    <Table
+      overflow
+      stickyHeader
+      overflowHeight="min-h-48 max-h-72 overscroll-contain xl:max-h-[65vh]"
+    >
       <TableHead>
         <TableRow>
           <TableHeader>Name</TableHeader>
@@ -71,7 +75,7 @@ export const ScriptsList = ({
                   ? script.repoPath
                   : script.runtime}
               </TableCell>
-              <TableCell>{script.repoPath}</TableCell>
+              <TableCell><span className="block max-w-32 truncate sm:max-w-64" title={script.repoPath}>{script.repoPath}</span></TableCell>
               <TableCell>
                 <ActiveIcon isActive={script.active} />
               </TableCell>

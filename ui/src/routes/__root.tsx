@@ -1,13 +1,15 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { FaGithub } from "react-icons/fa";
 import {
   createRootRoute,
   Outlet,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { Button, Card, Container, H1, SiteWrapper, Text } from "@usace/groundwork";
+import { Button, Card, Container, H1, Modal, SiteWrapper, Text } from "@usace/groundwork";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
-import "@usace/groundwork/dist/groundwork.css";
 import AuthButton from "../features/auth/AuthButton";
+import { useRememberedOffice } from "../shared/hooks/useRememberedOffice";
+import { useRepositoryFiles } from "../features/scripts-manager/useRepositoryFiles";
 
 const primaryLinks = [
   { id: "jobs", text: "Jobs List", href: "/jobs" },
@@ -18,7 +20,11 @@ const primaryLinks = [
 const publicAboutLinks = [
   { id: "about", text: "About", href: "/about" },
   { id: "controls", text: "Controls", href: "/about/controls" },
-  { id: "onboarding", text: "Onboarding", href: "/about/onboarding" },
+];
+
+const helpLinks = [
+  { id: "onboarding", text: "Onboarding", href: "/help/onboarding" },
+  { id: "script-files", text: "Script setup", href: "/help/script-files" },
 ];
 
 const authenticatedAboutLinks = [
@@ -36,6 +42,12 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: ReactNode }) {
   const auth = useAuth();
+  const [githubOpen, setGithubOpen] = useState(false);
+  const [office] = useRememberedOffice([]);
+  const catalog = useRepositoryFiles(office ?? "", auth.isAuth);
+  const repository = catalog.data?.repository;
+  const repositoryUrl = repository && /^[\w.-]+\/[\w.-]+$/.test(repository)
+    ? `https://github.com/${repository}` : undefined;
   const aboutLink = {
     id: "about-menu",
     text: "About",
@@ -44,10 +56,29 @@ function RootShell({ children }: { children: ReactNode }) {
       ? [...publicAboutLinks, ...authenticatedAboutLinks]
       : publicAboutLinks,
   };
-  const navLinks = [...primaryLinks, aboutLink];
+  const helpLink = {
+    id: "help-menu",
+    text: "Help",
+    href: "/help/onboarding",
+    children: helpLinks,
+  };
+  const navLinks = [...primaryLinks, aboutLink, helpLink];
 
   return (
-    <SiteWrapper links={navLinks} navRight={<AuthButton />}>
+    <SiteWrapper links={navLinks} navRight={<div className="flex flex-wrap items-center gap-3 [&_button]:inline-flex [&_button]:items-center [&_button]:gap-2">
+      <Button type="button" disabled={!auth.isAuth || !repositoryUrl} title={!office ? "Select an office to open its repository" : !repositoryUrl ? `Repository unavailable for ${office}` : `Open ${repository}`}
+        onClick={() => setGithubOpen(true)}><FaGithub aria-hidden /> {office ? `${office} GitHub` : "GitHub"}</Button>
+      <AuthButton />
+    </div>}>
+      <Modal opened={githubOpen} onClose={() => setGithubOpen(false)} dialogTitle="Open GitHub repository?"
+        buttons={<div className="flex flex-wrap items-center gap-3 [&_button]:inline-flex [&_button]:items-center [&_button]:gap-2">
+          <Button type="button" onClick={() => setGithubOpen(false)}>Cancel</Button>
+          <Button type="button" disabled={!repositoryUrl} onClick={() => { setGithubOpen(false); if (repositoryUrl) window.open(repositoryUrl, "_blank", "noopener,noreferrer"); }}>Continue to GitHub</Button>
+        </div>}>
+        <p>Are you sure you wish to navigate to the GitHub jobs repository for {office}?</p>
+        <p className="my-3 break-all font-medium">{repositoryUrl}</p>
+        <p>You must be logged in to GitHub with access to the repository to view it. It will open in a new tab.</p>
+      </Modal>
       <Container>
         <div className="my-6">{children}</div>
       </Container>

@@ -28,7 +28,7 @@ export const ScriptsManager = () => {
   return (
     <>
       <OfficeSelector offices={data} value={office} onChange={setOffice} />
-      {office && <ScriptsWorkspace office={office} />}
+      {office && <ScriptsWorkspace key={office} office={office} />}
     </>
   );
 };
