@@ -12,6 +12,7 @@ const useJobDetails = (jobId: string) => {
     queryKey: ["job", jobId],
     queryFn: () => fetchJob(jobId, auth.token),
     refetchInterval: (query) => {
+      if (query.state.status === "error") return false;
       const data = query.state.data;
       if (
         data &&

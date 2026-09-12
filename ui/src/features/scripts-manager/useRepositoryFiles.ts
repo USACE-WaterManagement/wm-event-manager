@@ -14,7 +14,6 @@ export function useRepositoryFiles(office: string, enabled = true) {
       return response.json();
     },
     enabled: enabled && auth.isAuth && Boolean(office),
-    retry: false,
     staleTime: 60_000,
   });
 }

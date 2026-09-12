@@ -50,6 +50,11 @@ def post_job(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Script {payload.script_id} not found",
         )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="The saved script has invalid execution settings. Correct its path and arguments in Scripts Manager before running it.",
+        ) from exc
 
     options = ScriptRunOptions(
         office=job.office.lower(),
